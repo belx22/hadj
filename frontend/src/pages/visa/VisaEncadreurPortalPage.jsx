@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { getEncadreurGroup } from '../../api/visaApi';
 import StatCard from '../../components/ui/StatCard';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 import { formatCurrency } from '../../utils/formatters';
 import { exportToExcel } from '../../utils/excel';
 import { generateReportingPdf } from '../../utils/pdf';
@@ -29,6 +31,8 @@ export default function VisaEncadreurPortalPage() {
     const incomplete = group.filter((b) => !b.isComplete).length;
     return { collected, target, eligible, incomplete };
   }, [group]);
+
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(group);
 
   function handleExportExcel() {
     exportToExcel(
@@ -95,7 +99,7 @@ export default function VisaEncadreurPortalPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
-            {group.map((b) => (
+            {pageItems.map((b) => (
               <tr key={b.id}>
                 <td className="px-4 py-3">{b.pilgrimFirstName} {b.pilgrimLastName}</td>
                 <td className="px-4 py-3 font-mono text-xs">{b.idNumber}</td>
@@ -112,6 +116,7 @@ export default function VisaEncadreurPortalPage() {
             ))}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
       </div>
     </div>
   );

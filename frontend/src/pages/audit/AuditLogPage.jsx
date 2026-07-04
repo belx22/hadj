@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAuditLogs } from '../../api/auditApi';
 import { formatDateTime } from '../../utils/formatters';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 
 export default function AuditLogPage() {
   const { t } = useTranslation();
   const [logs, setLogs] = useState([]);
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(logs);
 
   useEffect(() => {
     getAuditLogs().then(setLogs);
@@ -25,7 +28,7 @@ export default function AuditLogPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
-            {logs.map((log) => (
+            {pageItems.map((log) => (
               <tr key={log.id}>
                 <td className="px-4 py-3 font-medium">{log.action.replaceAll('_', ' ')}</td>
                 <td className="px-4 py-3 font-mono text-xs">{log.target}</td>
@@ -35,6 +38,7 @@ export default function AuditLogPage() {
             ))}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
       </div>
     </div>
   );

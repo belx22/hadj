@@ -7,6 +7,8 @@ import { createVersementOnline } from '../../api/visaApi';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import StatCard from '../../components/ui/StatCard';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { AGENCIES, VERSEMENT_METHODS, VERSEMENT_STATUS_COLORS } from '../../utils/constants';
 
@@ -21,6 +23,7 @@ export default function VisaPelerinPaymentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(dossier?.versements || []);
 
   if (!dossier) {
     return <Navigate to="/visa/pelerin" replace />;
@@ -195,7 +198,7 @@ export default function VisaPelerinPaymentPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-afriland-gray-200">
-              {dossier.versements.map((v) => {
+              {pageItems.map((v) => {
                 const colors = VERSEMENT_STATUS_COLORS[v.status];
                 return (
                   <tr key={v.id}>
@@ -217,6 +220,9 @@ export default function VisaPelerinPaymentPage() {
               )}
             </tbody>
           </table>
+          <div className="-mx-5 -mb-5 mt-3">
+            <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
+          </div>
         </div>
       </main>
 

@@ -41,6 +41,12 @@
     "print": "طباعة",
     "mockBanner": "وضع العرض التجريبي — بيانات وهمية (النظام الخلفي غير متصل)"
   },
+  "pagination": {
+    "previous": "السابق",
+    "next": "التالي",
+    "page": "صفحة {{page}} / {{totalPages}}",
+    "range": "{{start}}–{{end}} من {{total}}"
+  },
   "nav": {
     "dashboard": "لوحة القيادة",
     "bordereauList": "قسائم الاكتتاب",

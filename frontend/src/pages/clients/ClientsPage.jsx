@@ -7,6 +7,8 @@ import { getEncadreurs } from '../../api/referenceDataApi';
 import { importVisaStatuses, checkStatusAnomalies } from '../../api/visaApi';
 import { exportToExcel } from '../../utils/excel';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { REGIONS, VISA_STATUSES } from '../../utils/constants';
 
@@ -57,6 +59,8 @@ export default function ClientsPage() {
       return true;
     });
   }, [bordereaux, region, visaStatus, search]);
+
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(filtered);
 
   async function handleCheckBI() {
     setChecking(true);
@@ -244,7 +248,7 @@ export default function ClientsPage() {
             {!loading && filtered.length === 0 && (
               <tr><td colSpan={6} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
-            {!loading && filtered.map((b) => (
+            {!loading && pageItems.map((b) => (
               <tr key={b.id}>
                 <td className="px-4 py-3">
                   <p className="font-medium">{b.pilgrimFirstName} {b.pilgrimLastName}</p>
@@ -262,6 +266,7 @@ export default function ClientsPage() {
             ))}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
       </div>
     </div>
   );

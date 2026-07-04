@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { getPendingVersements, getVersementsHistory, validateVersement, rejectVersement } from '../../api/paymentsApi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { VERSEMENT_STATUS_COLORS } from '../../utils/constants';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 
 const TABS = ['pending', 'history'];
 
@@ -46,6 +48,7 @@ function PendingTab() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState(null);
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(rows);
 
   function reload() {
     setLoading(true);
@@ -116,7 +119,7 @@ function PendingTab() {
             {!loading && rows.length === 0 && (
               <tr><td colSpan={7} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
-            {!loading && rows.map((row) => (
+            {!loading && pageItems.map((row) => (
               <tr key={row.id}>
                 <td className="px-4 py-3">
                   <p className="font-medium">{row.pilgrimName}</p>
@@ -151,6 +154,7 @@ function PendingTab() {
             ))}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
       </div>
     </div>
   );
@@ -161,6 +165,7 @@ function HistoryTab() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ status: '', from: '', to: '' });
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(rows);
 
   useEffect(() => {
     setLoading(true);
@@ -230,7 +235,7 @@ function HistoryTab() {
             {!loading && rows.length === 0 && (
               <tr><td colSpan={7} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
-            {!loading && rows.map((row) => {
+            {!loading && pageItems.map((row) => {
               const colors = VERSEMENT_STATUS_COLORS[row.status];
               return (
                 <tr key={row.id}>
@@ -254,6 +259,7 @@ function HistoryTab() {
             })}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
       </div>
     </div>
   );

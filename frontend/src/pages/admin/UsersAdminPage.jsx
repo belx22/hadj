@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { getUsers, createUser, updateUser, getEncadreurs } from '../../api/referenceDataApi';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 import { AGENCIES, ROLES } from '../../utils/constants';
 
 const EMPTY_FORM = { username: '', password: '', name: '', role: ROLES.OPERATEUR_HADJ, agency: AGENCIES[0], encadreurId: '' };
@@ -15,6 +17,7 @@ export default function UsersAdminPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(users);
 
   function reload() {
     setLoading(true);
@@ -108,7 +111,7 @@ export default function UsersAdminPage() {
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
             {loading && <tr><td colSpan={5} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>}
-            {!loading && users.map((u) => (
+            {!loading && pageItems.map((u) => (
               <tr key={u.id}>
                 <td className="px-4 py-3 font-mono text-xs">{u.username}</td>
                 <td className="px-4 py-3">{u.name}</td>
@@ -127,6 +130,7 @@ export default function UsersAdminPage() {
             ))}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
       </div>
     </div>
   );

@@ -10,11 +10,14 @@ import StatCard from '../../components/ui/StatCard';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { generatePilgrimAttestation } from '../../utils/pdf';
 import { VERSEMENT_STATUS_COLORS } from '../../utils/constants';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 
 export default function VisaPelerinDossierPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { dossier, logout } = usePilgrim();
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(dossier?.versements || []);
 
   useEffect(() => {
     document.title = 'Copilote Hadj — ' + t('visa.myFile');
@@ -78,7 +81,7 @@ export default function VisaPelerinDossierPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-afriland-gray-200">
-              {dossier.versements.map((v) => {
+              {pageItems.map((v) => {
                 const colors = VERSEMENT_STATUS_COLORS[v.status];
                 return (
                   <tr key={v.id}>
@@ -99,6 +102,9 @@ export default function VisaPelerinDossierPage() {
               )}
             </tbody>
           </table>
+          <div className="-mx-5 -mb-5 mt-3">
+            <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
+          </div>
         </div>
 
         <div className="card">

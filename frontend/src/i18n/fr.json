@@ -41,6 +41,12 @@
     "print": "Imprimer",
     "mockBanner": "Mode démonstration — données simulées (backend non connecté)"
   },
+  "pagination": {
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page {{page}} / {{totalPages}}",
+    "range": "{{start}}–{{end}} sur {{total}}"
+  },
   "nav": {
     "dashboard": "Tableau de bord",
     "bordereauList": "Bordereaux",

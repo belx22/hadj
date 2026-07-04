@@ -9,6 +9,8 @@ import { exportToExcel } from '../../utils/excel';
 import { generateBordereauReceipt } from '../../utils/pdf';
 import { AGENCIES, PILGRIM_TYPES, REGIONS, VISA_STATUSES } from '../../utils/constants';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 import { useAuth } from '../../context/AuthContext';
 
 const STATUS_EDITOR_ROLES = ['GESTIONNAIRE_HADJ', 'SUPERVISEUR', 'ADMIN_DSI'];
@@ -22,6 +24,7 @@ export default function BordereauListPage() {
   const [filters, setFilters] = useState({ region: '', encadreurId: '', agency: '', pilgrimType: '' });
 
   const canEditStatus = STATUS_EDITOR_ROLES.includes(user?.role);
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(items);
 
   useEffect(() => {
     getEncadreurs().then(setEncadreurs);
@@ -127,7 +130,7 @@ export default function BordereauListPage() {
             {!loading && items.length === 0 && (
               <tr><td colSpan={9} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
-            {!loading && items.map((b) => (
+            {!loading && pageItems.map((b) => (
               <tr key={b.id}>
                 <td className="px-4 py-3 font-mono text-xs">{b.id}</td>
                 <td className="px-4 py-3">{b.pilgrimFirstName} {b.pilgrimLastName}</td>
@@ -163,6 +166,7 @@ export default function BordereauListPage() {
             ))}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
       </div>
     </div>
   );

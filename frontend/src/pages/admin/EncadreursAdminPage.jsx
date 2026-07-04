@@ -4,6 +4,8 @@ import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
 import { getEncadreurs, createEncadreur, updateEncadreur, importEncadreurs } from '../../api/referenceDataApi';
 import { exportToExcel } from '../../utils/excel';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 import { REGIONS } from '../../utils/constants';
 
 const EMPTY_FORM = { name: '', region: REGIONS[0] };
@@ -34,6 +36,7 @@ export default function EncadreursAdminPage() {
   const [importSummary, setImportSummary] = useState(null);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(encadreurs);
 
   function reload() {
     setLoading(true);
@@ -189,7 +192,7 @@ export default function EncadreursAdminPage() {
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
             {loading && <tr><td colSpan={4} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>}
-            {!loading && encadreurs.map((enc) => (
+            {!loading && pageItems.map((enc) => (
               <tr key={enc.id}>
                 {editingId === enc.id ? (
                   <>
@@ -242,6 +245,7 @@ export default function EncadreursAdminPage() {
             ))}
           </tbody>
         </table>
+        <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
       </div>
     </div>
   );
