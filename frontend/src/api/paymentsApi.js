@@ -1,9 +1,20 @@
 import axiosClient, { USE_MOCK } from './axiosClient';
-import { mockGetPendingVersements, mockValidateVersement, mockRejectVersement } from '../mock/mockApi';
+import {
+  mockGetPendingVersements,
+  mockGetVersementsHistory,
+  mockValidateVersement,
+  mockRejectVersement,
+} from '../mock/mockApi';
 
 export async function getPendingVersements() {
   if (USE_MOCK) return mockGetPendingVersements();
   const { data } = await axiosClient.get('/versements/en-attente');
+  return data;
+}
+
+export async function getVersementsHistory(filters) {
+  if (USE_MOCK) return mockGetVersementsHistory(filters);
+  const { data } = await axiosClient.get('/versements/historique', { params: filters });
   return data;
 }
 

@@ -391,6 +391,38 @@ export async function mockGetPendingVersements() {
   return rows.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
+// Historique des paiements déjà traités (validés ou rejetés), filtrable par
+// statut et par période (du/au, ou un jour précis en renseignant from = to).
+export async function mockGetVersementsHistory({ status, from, to } = {}) {
+  await delay(350);
+  const rows = [];
+  db.bordereaux.forEach((bordereau) => {
+    bordereau.versements
+      .filter((v) => v.status === 'VALIDE' || v.status === 'REJETE')
+      .forEach((v) => {
+        rows.push({
+          ...v,
+          bordereauId: bordereau.id,
+          pilgrimName: `${bordereau.pilgrimFirstName} ${bordereau.pilgrimLastName}`,
+          idNumber: bordereau.idNumber,
+          phone: bordereau.phone,
+          season: bordereau.season,
+        });
+      });
+  });
+
+  let filtered = rows;
+  if (status) filtered = filtered.filter((v) => v.status === status);
+  if (from) filtered = filtered.filter((v) => (v.validatedAt || v.createdAt) >= from);
+  if (to) filtered = filtered.filter((v) => (v.validatedAt || v.createdAt) <= to);
+
+  return filtered.sort((a, b) => {
+    const dateA = a.validatedAt || a.createdAt;
+    const dateB = b.validatedAt || b.createdAt;
+    return dateA < dateB ? 1 : -1;
+  });
+}
+
 // Une référence de versement (Mobile Money ou bordereau agence) ne peut être
 // validée et comptabilisée qu'une seule fois, tous bordereaux confondus.
 function isReferenceAlreadyValidated(reference, excludeVersementId) {

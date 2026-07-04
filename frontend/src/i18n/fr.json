@@ -268,6 +268,14 @@
     "validate": "Valider",
     "reject": "Rejeter",
     "rejectPrompt": "Motif du rejet (optionnel)",
+    "tabs": {
+      "pending": "En attente",
+      "history": "Historique (validés / rejetés)"
+    },
+    "singleDay": "Filtrer sur un jour précis",
+    "singleDayHelp": "Utilisez le 4e champ pour filtrer sur un seul jour (du = au = date choisie), ou les deux premiers champs pour une période.",
+    "processedOn": "Traité le",
+    "processedBy": "Traité par",
     "errors": {
       "referenceAlreadyUsed": "La référence « {{reference}} » a déjà été validée sur un autre versement. Une même référence ne peut être utilisée qu'une seule fois."
     }
