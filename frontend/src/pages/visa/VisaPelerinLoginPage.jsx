@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../../components/layout/AuthLayout';
 import { usePilgrim } from '../../context/PilgrimContext';
 
@@ -46,6 +46,13 @@ export default function VisaPelerinLoginPage() {
           {loading ? t('common.loading') : t('visa.checkStatus')}
         </button>
       </form>
+
+      <p className="mt-4 text-center text-sm text-afriland-gray-600">
+        {t('visa.notRegisteredYet')}{' '}
+        <Link to="/inscription" className="font-semibold text-afriland-red hover:underline">
+          {t('visa.registerOnline')}
+        </Link>
+      </p>
     </AuthLayout>
   );
 }

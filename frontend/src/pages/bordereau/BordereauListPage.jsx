@@ -1,30 +1,49 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { getBordereaux, getEncadreurs } from '../../api/bordereauApi';
+import { getBordereaux } from '../../api/bordereauApi';
+import { getEncadreurs } from '../../api/referenceDataApi';
+import { changeVisaStatus } from '../../api/visaApi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { exportToExcel } from '../../utils/excel';
 import { generateBordereauReceipt } from '../../utils/pdf';
-import { AGENCIES, PILGRIM_TYPES, REGIONS } from '../../utils/constants';
+import { AGENCIES, PILGRIM_TYPES, REGIONS, VISA_STATUSES } from '../../utils/constants';
+import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
+import { useAuth } from '../../context/AuthContext';
+
+const STATUS_EDITOR_ROLES = ['GESTIONNAIRE_HADJ', 'SUPERVISEUR', 'ADMIN_DSI'];
 
 export default function BordereauListPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [encadreurs, setEncadreurs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ region: '', encadreurId: '', agency: '', pilgrimType: '' });
 
+  const canEditStatus = STATUS_EDITOR_ROLES.includes(user?.role);
+
   useEffect(() => {
     getEncadreurs().then(setEncadreurs);
   }, []);
 
-  useEffect(() => {
+  function reload() {
     setLoading(true);
     getBordereaux(filters).then((data) => {
       setItems(data);
       setLoading(false);
     });
+  }
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
+
+  async function handleStatusChange(bordereauId, newStatus) {
+    await changeVisaStatus(bordereauId, newStatus, null, user);
+    reload();
+  }
 
   const encadreurName = useMemo(() => {
     const map = new Map(encadreurs.map((enc) => [enc.id, enc.name]));
@@ -97,25 +116,44 @@ export default function BordereauListPage() {
               <th className="px-4 py-3">{t('bordereau.table.encadreur')}</th>
               <th className="px-4 py-3">{t('bordereau.table.date')}</th>
               <th className="px-4 py-3">{t('bordereau.table.priority')}</th>
+              <th className="px-4 py-3">{t('visa.visaStatus')}</th>
               <th className="px-4 py-3">{t('bordereau.table.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
             {loading && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
+              <tr><td colSpan={9} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
             )}
             {!loading && items.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
+              <tr><td colSpan={9} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
             {!loading && items.map((b) => (
               <tr key={b.id}>
                 <td className="px-4 py-3 font-mono text-xs">{b.id}</td>
                 <td className="px-4 py-3">{b.pilgrimFirstName} {b.pilgrimLastName}</td>
-                <td className="px-4 py-3">{formatCurrency(b.amountPaid)}</td>
+                <td className="px-4 py-3">
+                  {formatCurrency(b.amountPaid)}
+                  {b.balance > 0 && <span className="block text-xs text-afriland-gray-600">/ {formatCurrency(b.targetAmount)}</span>}
+                </td>
                 <td className="px-4 py-3">{b.region}</td>
                 <td className="px-4 py-3">{encadreurName(b.encadreurId)}</td>
                 <td className="px-4 py-3">{formatDate(b.createdAt)}</td>
                 <td className="px-4 py-3">{b.onlinePriority ? '⭐' : '—'}</td>
+                <td className="px-4 py-3">
+                  {canEditStatus ? (
+                    <select
+                      className="form-input !py-1 text-xs"
+                      value={b.visaStatus}
+                      onChange={(e) => handleStatusChange(b.id, e.target.value)}
+                    >
+                      {VISA_STATUSES.map((status) => (
+                        <option key={status} value={status}>{t(`visa.statuses.${status}`)}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <VisaStatusBadge status={b.visaStatus} />
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <button type="button" className="text-xs font-semibold text-afriland-red hover:underline" onClick={() => generateBordereauReceipt(b)}>
                     {t('common.download')}

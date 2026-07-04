@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import logo from '../../assets/logo-afriland.svg';
+import logo from '../../assets/logo-afriland.png';
 import KaabaIllustration from '../illustrations/KaabaIllustration';
 import ArabesquePattern from '../illustrations/ArabesquePattern';
 import LanguageSwitcher from '../ui/LanguageSwitcher';

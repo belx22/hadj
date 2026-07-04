@@ -1,36 +1,36 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
-import { useAuth } from '../../context/AuthContext';
-import { createBordereau, checkDuplicate } from '../../api/bordereauApi';
+import AuthLayout from '../../components/layout/AuthLayout';
+import { usePilgrim } from '../../context/PilgrimContext';
+import { registerPilgrimOnline } from '../../api/visaApi';
+import { checkDuplicate } from '../../api/bordereauApi';
 import { getEncadreurs, getOfficialPrice } from '../../api/referenceDataApi';
-import { generateBordereauReceipt } from '../../utils/pdf';
-import { formatCurrency } from '../../utils/formatters';
 import { validateBordereau } from '../../utils/validators';
-import { AGENCIES, CURRENT_SEASON, PILGRIM_STATUSES, PILGRIM_TYPES, REGIONS } from '../../utils/constants';
+import { formatCurrency } from '../../utils/formatters';
+import { CURRENT_SEASON, PILGRIM_STATUSES, PILGRIM_TYPES, REGIONS } from '../../utils/constants';
 
 const EMPTY_FORM = {
-  reference: '',
   pilgrimLastName: '',
   pilgrimFirstName: '',
   phone: '',
   email: '',
   idNumber: '',
   region: '',
-  agency: '',
   encadreurId: '',
   pilgrimType: 'PELERIN',
   pilgrimStatus: 'NOUVEAU',
   pilgrimCount: 1,
   season: CURRENT_SEASON,
-  onlinePriority: false,
 };
 
-export default function BordereauFormPage() {
+export default function PilgrimSelfRegisterPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { login: loginPilgrim } = usePilgrim();
 
-  const [form, setForm] = useState({ ...EMPTY_FORM, agency: user?.agency || '' });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [encadreurs, setEncadreurs] = useState([]);
   const [officialPrice, setOfficialPrice] = useState(0);
@@ -38,18 +38,16 @@ export default function BordereauFormPage() {
   const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-  const [createdBordereau, setCreatedBordereau] = useState(null);
 
   useEffect(() => {
-    getEncadreurs().then(setEncadreurs);
-  }, []);
+    getEncadreurs({ region: form.region || undefined }).then(setEncadreurs);
+  }, [form.region]);
 
   useEffect(() => {
     getOfficialPrice(form.season, form.pilgrimType).then(setOfficialPrice);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.season, form.pilgrimType]);
 
-  const computedAmount = useMemo(
+  const targetAmount = useMemo(
     () => (Number(form.pilgrimCount) || 0) * officialPrice,
     [form.pilgrimCount, officialPrice]
   );
@@ -73,9 +71,8 @@ export default function BordereauFormPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setSubmitError(null);
-    setCreatedBordereau(null);
 
-    const validationErrors = validateBordereau(form, t);
+    const validationErrors = validateBordereau(form, t, { requireAgency: false, requireEmail: true });
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -86,12 +83,9 @@ export default function BordereauFormPage() {
 
     setSubmitting(true);
     try {
-      const record = await createBordereau(
-        { ...form, pilgrimCount: Number(form.pilgrimCount) },
-        user
-      );
-      setCreatedBordereau(record);
-      setForm({ ...EMPTY_FORM, agency: user?.agency || '' });
+      await registerPilgrimOnline({ ...form, pilgrimCount: Number(form.pilgrimCount) });
+      await loginPilgrim(form.idNumber.trim(), form.phone.trim());
+      navigate('/visa/pelerin/paiement');
     } catch (err) {
       if (err.code === 'DUPLICATE_PILGRIM') {
         setSubmitError(t('bordereau.errors.duplicate', { season: form.season }));
@@ -104,38 +98,8 @@ export default function BordereauFormPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-afriland-black">{t('bordereau.newTitle')}</h1>
-        <p className="text-sm text-afriland-gray-600">{t('bordereau.subtitle')}</p>
-      </div>
-
-      {createdBordereau && (
-        <div className="card border-visa-granted/30 bg-visa-granted/5">
-          <p className="font-semibold text-visa-granted">{t('bordereau.submitSuccess')}</p>
-          <p className="mt-1 text-sm text-afriland-gray-600">
-            {t('bordereau.receiptId')} : <span className="font-mono">{createdBordereau.id}</span>
-          </p>
-          <p className="text-sm text-afriland-gray-600">{t('bordereau.smsSent', { phone: createdBordereau.phone })}</p>
-          <button
-            type="button"
-            className="btn-primary mt-3"
-            onClick={() => generateBordereauReceipt(createdBordereau)}
-          >
-            {t('bordereau.generateReceipt')}
-          </button>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="card grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label={t('bordereau.reference')}>
-          <input className="form-input" value={form.reference} onChange={(e) => update('reference', e.target.value)} />
-        </Field>
-
-        <Field label={t('bordereau.season')}>
-          <input className="form-input bg-afriland-gray-50" value={form.season} disabled />
-        </Field>
-
+    <AuthLayout subtitle={t('pilgrimRegister.subtitle')}>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <Field label={t('bordereau.pilgrimLastName')} error={errors.pilgrimLastName}>
           <input
             className={clsx('form-input', errors.pilgrimLastName && 'form-input-error')}
@@ -161,10 +125,10 @@ export default function BordereauFormPage() {
           />
         </Field>
 
-        <Field label={t('bordereau.email')} help={t('bordereau.emailHelp')}>
+        <Field label={t('bordereau.email')} error={errors.email}>
           <input
             type="email"
-            className="form-input"
+            className={clsx('form-input', errors.email && 'form-input-error')}
             value={form.email}
             onChange={(e) => update('email', e.target.value)}
           />
@@ -196,20 +160,7 @@ export default function BordereauFormPage() {
           </select>
         </Field>
 
-        <Field label={t('bordereau.agency')} error={errors.agency}>
-          <select
-            className={clsx('form-input', errors.agency && 'form-input-error')}
-            value={form.agency}
-            onChange={(e) => update('agency', e.target.value)}
-          >
-            <option value="">{t('common.all')}</option>
-            {AGENCIES.map((agency) => (
-              <option key={agency} value={agency}>{agency}</option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label={t('bordereau.encadreur')} error={errors.encadreurId}>
+        <Field label={t('pilgrimRegister.chooseEncadreur')} error={errors.encadreurId}>
           <select
             className={clsx('form-input', errors.encadreurId && 'form-input-error')}
             value={form.encadreurId}
@@ -217,26 +168,28 @@ export default function BordereauFormPage() {
           >
             <option value="">{t('common.all')}</option>
             {encadreurs.map((enc) => (
-              <option key={enc.id} value={enc.id}>{enc.name}</option>
+              <option key={enc.id} value={enc.id}>{enc.name} — {enc.region}</option>
             ))}
           </select>
         </Field>
 
-        <Field label={t('bordereau.pilgrimType')}>
-          <select className="form-input" value={form.pilgrimType} onChange={(e) => update('pilgrimType', e.target.value)}>
-            {PILGRIM_TYPES.map((type) => (
-              <option key={type} value={type}>{t(`bordereau.pilgrimTypes.${type}`)}</option>
-            ))}
-          </select>
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={t('bordereau.pilgrimType')}>
+            <select className="form-input" value={form.pilgrimType} onChange={(e) => update('pilgrimType', e.target.value)}>
+              {PILGRIM_TYPES.map((type) => (
+                <option key={type} value={type}>{t(`bordereau.pilgrimTypes.${type}`)}</option>
+              ))}
+            </select>
+          </Field>
 
-        <Field label={t('bordereau.pilgrimStatus')}>
-          <select className="form-input" value={form.pilgrimStatus} onChange={(e) => update('pilgrimStatus', e.target.value)}>
-            {PILGRIM_STATUSES.map((status) => (
-              <option key={status} value={status}>{t(`bordereau.pilgrimStatuses.${status}`)}</option>
-            ))}
-          </select>
-        </Field>
+          <Field label={t('bordereau.pilgrimStatus')}>
+            <select className="form-input" value={form.pilgrimStatus} onChange={(e) => update('pilgrimStatus', e.target.value)}>
+              {PILGRIM_STATUSES.map((status) => (
+                <option key={status} value={status}>{t(`bordereau.pilgrimStatuses.${status}`)}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
 
         <Field label={t('bordereau.pilgrimCount')} error={errors.pilgrimCount}>
           <input
@@ -248,30 +201,18 @@ export default function BordereauFormPage() {
           />
         </Field>
 
-        <Field label={t('bordereau.computedAmount')}>
-          <input className="form-input bg-afriland-gray-50 font-semibold" value={formatCurrency(computedAmount)} disabled />
-        </Field>
-
-        <div className="flex items-center gap-2 sm:col-span-2">
-          <input
-            id="onlinePriority"
-            type="checkbox"
-            checked={form.onlinePriority}
-            onChange={(e) => update('onlinePriority', e.target.checked)}
-            className="h-4 w-4 rounded border-afriland-gray-400 text-afriland-red focus:ring-afriland-red"
-          />
-          <label htmlFor="onlinePriority" className="text-sm text-afriland-gray-600">{t('bordereau.onlinePriority')}</label>
+        <div className="rounded-lg bg-afriland-gray-50 p-3">
+          <p className="text-xs font-medium uppercase text-afriland-gray-600">{t('pilgrimRegister.targetAmount')}</p>
+          <p className="text-lg font-bold text-afriland-red">{formatCurrency(targetAmount)}</p>
         </div>
 
-        {submitError && <p className="form-error sm:col-span-2">{submitError}</p>}
+        {submitError && <p className="form-error">{submitError}</p>}
 
-        <div className="sm:col-span-2">
-          <button type="submit" className="btn-primary" disabled={submitting || checkingDuplicate}>
-            {submitting ? t('common.loading') : t('common.submit')}
-          </button>
-        </div>
+        <button type="submit" className="btn-primary w-full" disabled={submitting || checkingDuplicate}>
+          {submitting ? t('common.loading') : t('pilgrimRegister.submit')}
+        </button>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
 

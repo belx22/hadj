@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import logo from '../../assets/logo-afriland.svg';
+import logo from '../../assets/logo-afriland.png';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 
 export default function Header({ children }) {

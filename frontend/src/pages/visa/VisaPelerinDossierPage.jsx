@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, Link, useNavigate } from 'react-router-dom';
+import clsx from 'clsx';
 import { usePilgrim } from '../../context/PilgrimContext';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
@@ -8,6 +9,7 @@ import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import StatCard from '../../components/ui/StatCard';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { generatePilgrimAttestation } from '../../utils/pdf';
+import { VERSEMENT_STATUS_COLORS } from '../../utils/constants';
 
 export default function VisaPelerinDossierPage() {
   const { t } = useTranslation();
@@ -46,9 +48,10 @@ export default function VisaPelerinDossierPage() {
           <VisaStatusBadge status={dossier.visaStatus} />
         </div>
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard label={t('paymentPage.target')} value={formatCurrency(dossier.targetAmount)} />
           <StatCard label={t('visa.totalPaid')} value={formatCurrency(dossier.amountPaid)} accent="text-afriland-red" />
-          <StatCard label={t('visa.balance')} value={formatCurrency(dossier.balance)} />
+          <StatCard label={t('visa.balance')} value={formatCurrency(Math.max(dossier.balance, 0))} />
           <StatCard
             label={t('visa.eligibility')}
             value={dossier.isEligible ? t('visa.eligible') : t('visa.notEligible')}
@@ -56,26 +59,61 @@ export default function VisaPelerinDossierPage() {
           />
         </div>
 
+        {dossier.balance > 0 && (
+          <div className="card flex flex-wrap items-center justify-between gap-3 border-afriland-red/20 bg-afriland-red/5">
+            <p className="text-sm font-medium text-afriland-black">{t('paymentPage.incompleteNotice')}</p>
+            <Link to="/visa/pelerin/paiement" className="btn-primary">{t('paymentPage.makePayment')}</Link>
+          </div>
+        )}
+
         <div className="card">
           <p className="mb-3 text-sm font-semibold text-afriland-black">{t('visa.paymentHistory')}</p>
           <table className="w-full text-left text-sm">
             <thead className="text-xs uppercase text-afriland-gray-600">
               <tr>
                 <th className="py-2">{t('bordereau.date')}</th>
-                <th className="py-2">{t('bordereau.receiptNumber')}</th>
+                <th className="py-2">{t('paymentPage.reference')}</th>
                 <th className="py-2 text-right">{t('bordereau.amountPaid')}</th>
+                <th className="py-2 text-right">{t('paymentPage.status')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-afriland-gray-200">
-              {dossier.versements.map((v) => (
-                <tr key={v.receiptNumber}>
-                  <td className="py-2">{formatDate(v.date)}</td>
-                  <td className="py-2 font-mono text-xs">{v.receiptNumber}</td>
-                  <td className="py-2 text-right">{formatCurrency(v.amount)}</td>
-                </tr>
-              ))}
+              {dossier.versements.map((v) => {
+                const colors = VERSEMENT_STATUS_COLORS[v.status];
+                return (
+                  <tr key={v.id}>
+                    <td className="py-2">{formatDate(v.createdAt)}</td>
+                    <td className="py-2 font-mono text-xs">{v.reference}</td>
+                    <td className="py-2 text-right">{formatCurrency(v.amount)}</td>
+                    <td className="py-2 text-right">
+                      <span className={clsx('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold', colors.bg, colors.text)}>
+                        <span className={clsx('h-1.5 w-1.5 rounded-full', colors.dot)} />
+                        {t(`paymentPage.statuses.${v.status}`)}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+              {dossier.versements.length === 0 && (
+                <tr><td colSpan={4} className="py-4 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
+              )}
             </tbody>
           </table>
+        </div>
+
+        <div className="card">
+          <p className="mb-3 text-sm font-semibold text-afriland-black">{t('visa.notifications')}</p>
+          <ul className="space-y-2">
+            {[...dossier.notifications].reverse().map((n, index) => (
+              <li key={index} className="rounded-md bg-afriland-gray-50 px-3 py-2 text-sm">
+                <span className="mr-2 text-xs font-medium text-afriland-gray-600">{formatDate(n.date)}</span>
+                {n.message}
+              </li>
+            ))}
+            {dossier.notifications.length === 0 && (
+              <li className="text-sm text-afriland-gray-600">{t('common.noData')}</li>
+            )}
+          </ul>
         </div>
 
         <button type="button" className="btn-primary" onClick={() => generatePilgrimAttestation(dossier)}>

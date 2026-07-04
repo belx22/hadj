@@ -11,9 +11,17 @@ import BordereauListPage from '../pages/bordereau/BordereauListPage';
 import BordereauFormPage from '../pages/bordereau/BordereauFormPage';
 import AuditLogPage from '../pages/audit/AuditLogPage';
 
+import PilgrimSelfRegisterPage from '../pages/pilgrim/PilgrimSelfRegisterPage';
+
 import VisaPelerinLoginPage from '../pages/visa/VisaPelerinLoginPage';
 import VisaPelerinDossierPage from '../pages/visa/VisaPelerinDossierPage';
+import VisaPelerinPaymentPage from '../pages/visa/VisaPelerinPaymentPage';
 import VisaEncadreurPortalPage from '../pages/visa/VisaEncadreurPortalPage';
+
+import PaymentValidationPage from '../pages/payments/PaymentValidationPage';
+import UsersAdminPage from '../pages/admin/UsersAdminPage';
+import EncadreursAdminPage from '../pages/admin/EncadreursAdminPage';
+import SeasonsAdminPage from '../pages/admin/SeasonsAdminPage';
 
 import NotFoundPage from '../pages/NotFoundPage';
 
@@ -39,8 +47,10 @@ export default function AppRouter() {
       <Route path="/" element={<HomeRoute />} />
       <Route path="/login/staff" element={<StaffLoginPage />} />
 
+      <Route path="/inscription" element={<PilgrimSelfRegisterPage />} />
       <Route path="/visa/pelerin" element={<VisaPelerinLoginPage />} />
       <Route path="/visa/pelerin/dossier" element={<VisaPelerinDossierPage />} />
+      <Route path="/visa/pelerin/paiement" element={<VisaPelerinPaymentPage />} />
 
       <Route element={<ProtectedRoute roles={['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ', 'ADMIN_DSI']} />}>
         <Route element={<MainLayout />}>
@@ -52,12 +62,31 @@ export default function AppRouter() {
       <Route element={<ProtectedRoute roles={['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI']} />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/paiements" element={<PaymentValidationPage />} />
         </Route>
       </Route>
 
       <Route element={<ProtectedRoute roles={['ADMIN_DSI', 'SUPERVISEUR']} />}>
         <Route element={<MainLayout />}>
           <Route path="/audit" element={<AuditLogPage />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute roles={['ADMIN_DSI', 'GESTIONNAIRE_HADJ']} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/parametrage/utilisateurs" element={<UsersAdminPage />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute roles={['ADMIN_DSI', 'GESTIONNAIRE_HADJ']} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/parametrage/encadreurs" element={<EncadreursAdminPage />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute roles={['GESTIONNAIRE_HADJ', 'ADMIN_DSI']} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/parametrage/saisons" element={<SeasonsAdminPage />} />
         </Route>
       </Route>
 

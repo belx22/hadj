@@ -47,7 +47,11 @@
     "reporting": "التقارير",
     "visaPortal": "متابعة التأشيرات",
     "settings": "الإعدادات",
-    "audit": "سجل التدقيق"
+    "audit": "سجل التدقيق",
+    "payments": "التحقق من الدفعات",
+    "seasons": "مواسم الحج",
+    "encadreurs": "المؤطرون",
+    "users": "المستخدمون"
   },
   "roles": {
     "SUPERVISEUR": "مشرف",
@@ -89,6 +93,8 @@
     "receiptNumber": "رقم الإيصال",
     "phone": "رقم الهاتف",
     "phoneHelp": "9 أرقام، إلزامي",
+    "email": "البريد الإلكتروني",
+    "emailHelp": "يُستخدم لإشعارات متابعة الملف",
     "region": "منطقة التسجيل",
     "encadreur": "المؤطر",
     "pilgrimType": "نوع الحاج",
@@ -201,10 +207,98 @@
     "incompleteAlert": "حجاج بملفات غير مكتملة",
     "seasonHistory": "تاريخ المواسم",
     "target": "الهدف",
-    "collected": "المحصَّل"
+    "collected": "المحصَّل",
+    "notifications": "الإشعارات المستلمة",
+    "notRegisteredYet": "لم تسجل بعد؟",
+    "registerOnline": "سجّل عبر الإنترنت"
   },
   "footer": {
     "rights": "جميع الحقوق محفوظة",
     "islamicWindow": "النافذة الإسلامية"
+  },
+  "pilgrimRegister": {
+    "subtitle": "سجّل عبر الإنترنت للحج / العمرة",
+    "chooseEncadreur": "اختر مؤطرك",
+    "targetAmount": "المبلغ المستهدف",
+    "submit": "تسجيل"
+  },
+  "paymentPage": {
+    "title": "إجراء دفعة",
+    "backToDossier": "العودة إلى ملفي",
+    "target": "المبلغ المستهدف",
+    "validated": "المبلغ المصادَق عليه",
+    "pending": "قيد التحقق",
+    "remaining": "الرصيد المتبقي",
+    "newPayment": "دفعة جديدة",
+    "method": "وسيلة الدفع",
+    "methods": {
+      "MOBILE_MONEY_ORANGE": "أورنج موني",
+      "MOBILE_MONEY_MTN": "إم تي إن موبايل موني",
+      "AGENCE": "الدفع في الوكالة"
+    },
+    "agencyReference": "مرجع قسيمة الدفع",
+    "mobileReference": "مرجع معاملة الدفع عبر الهاتف",
+    "amount": "المبلغ المراد دفعه",
+    "maxAmount": "الحد الأقصى: {{amount}}",
+    "submit": "إرسال دفعتي",
+    "reference": "المرجع",
+    "status": "الحالة",
+    "statuses": {
+      "PENDING": "قيد التحقق",
+      "VALIDE": "تم التحقق",
+      "REJETE": "مرفوض"
+    },
+    "pendingNotice": "تم تسجيل دفعتك وهي قيد التحقق من طرف البنك.",
+    "complete": "تم بلوغ المبلغ المستهدف. شكراً لكم!",
+    "incompleteNotice": "ملفك غير مكتمل بعد.",
+    "makePayment": "إجراء دفعة",
+    "errors": {
+      "amountRequired": "يرجى إدخال مبلغ صحيح",
+      "amountTooHigh": "المبلغ يتجاوز الرصيد المتبقي",
+      "agencyRefRequired": "يرجى اختيار الوكالة وإدخال مرجع قسيمة الدفع",
+      "mobileRefRequired": "يرجى إدخال مرجع معاملة الدفع عبر الهاتف"
+    }
+  },
+  "paymentValidation": {
+    "title": "التحقق من الدفعات",
+    "subtitle": "تحقق من المرجع والمبلغ قبل التصديق على أي دفعة",
+    "validate": "تصديق",
+    "reject": "رفض",
+    "rejectPrompt": "سبب الرفض (اختياري)"
+  },
+  "adminEncadreurs": {
+    "title": "إدارة المؤطرين",
+    "subtitle": "سجل المؤطرين حسب المنطقة",
+    "name": "اسم المؤطر",
+    "add": "إضافة",
+    "edit": "تعديل",
+    "status": "الحالة",
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "activate": "تفعيل",
+    "deactivate": "تعطيل"
+  },
+  "adminUsers": {
+    "title": "إدارة المستخدمين",
+    "subtitle": "إنشاء وإدارة حسابات الموظفين / الإدارة",
+    "name": "الاسم الكامل",
+    "role": "الدور",
+    "add": "إنشاء المستخدم",
+    "errors": {
+      "usernameTaken": "اسم المستخدم هذا مستعمل بالفعل"
+    }
+  },
+  "adminSeasons": {
+    "title": "إدارة مواسم الحج",
+    "subtitle": "إنشاء موسم وتحديد المبلغ الرسمي حسب نوع الحاج",
+    "newSeason": "موسم جديد",
+    "year": "السنة",
+    "month": "شهر الحج",
+    "create": "إنشاء الموسم",
+    "open": "الموسم مفتوح",
+    "closed": "الموسم مغلق",
+    "errors": {
+      "exists": "هذا الموسم موجود بالفعل"
+    }
   }
 }

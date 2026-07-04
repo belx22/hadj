@@ -16,7 +16,7 @@ import {
   YAxis,
 } from 'recharts';
 import { getReporting } from '../../api/reportingApi';
-import { getEncadreurs } from '../../api/bordereauApi';
+import { getEncadreurs } from '../../api/referenceDataApi';
 import StatCard from '../../components/ui/StatCard';
 import { formatCurrency } from '../../utils/formatters';
 import { exportToExcel } from '../../utils/excel';

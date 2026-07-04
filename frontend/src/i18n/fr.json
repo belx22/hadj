@@ -47,7 +47,11 @@
     "reporting": "Reporting",
     "visaPortal": "Suivi des visas",
     "settings": "Paramètres",
-    "audit": "Journal d'audit"
+    "audit": "Journal d'audit",
+    "payments": "Validation des paiements",
+    "seasons": "Saisons Hadj",
+    "encadreurs": "Encadreurs",
+    "users": "Utilisateurs"
   },
   "roles": {
     "SUPERVISEUR": "Superviseur",
@@ -89,6 +93,8 @@
     "receiptNumber": "N° reçu",
     "phone": "N° téléphone",
     "phoneHelp": "9 chiffres, obligatoire",
+    "email": "Adresse email",
+    "emailHelp": "Utilisée pour les notifications de suivi de dossier",
     "region": "Région d'inscription",
     "encadreur": "Encadreur",
     "pilgrimType": "Type de pèlerin",
@@ -201,10 +207,98 @@
     "incompleteAlert": "Pèlerins avec dossier incomplet",
     "seasonHistory": "Historique des saisons",
     "target": "Cible",
-    "collected": "Collecté"
+    "collected": "Collecté",
+    "notifications": "Notifications reçues",
+    "notRegisteredYet": "Pas encore inscrit ?",
+    "registerOnline": "Inscrivez-vous en ligne"
   },
   "footer": {
     "rights": "Tous droits réservés",
     "islamicWindow": "Fenêtre Islamique"
+  },
+  "pilgrimRegister": {
+    "subtitle": "Inscrivez-vous en ligne au Hadj / Oumra",
+    "chooseEncadreur": "Choisissez votre encadreur",
+    "targetAmount": "Montant cible à atteindre",
+    "submit": "M'inscrire"
+  },
+  "paymentPage": {
+    "title": "Effectuer un versement",
+    "backToDossier": "Retour à mon dossier",
+    "target": "Montant cible",
+    "validated": "Montant validé",
+    "pending": "En attente de validation",
+    "remaining": "Solde restant",
+    "newPayment": "Nouveau versement",
+    "method": "Moyen de paiement",
+    "methods": {
+      "MOBILE_MONEY_ORANGE": "Orange Money",
+      "MOBILE_MONEY_MTN": "MTN Mobile Money",
+      "AGENCE": "Paiement en agence"
+    },
+    "agencyReference": "Référence du bordereau de versement",
+    "mobileReference": "Référence de la transaction Mobile Money",
+    "amount": "Montant à verser",
+    "maxAmount": "Maximum : {{amount}}",
+    "submit": "Envoyer mon versement",
+    "reference": "Référence",
+    "status": "Statut",
+    "statuses": {
+      "PENDING": "En attente de validation",
+      "VALIDE": "Validé",
+      "REJETE": "Rejeté"
+    },
+    "pendingNotice": "Votre versement a été enregistré et est en attente de vérification par la banque.",
+    "complete": "Le montant cible a été atteint. Merci !",
+    "incompleteNotice": "Votre dossier n'est pas encore complet.",
+    "makePayment": "Effectuer un versement",
+    "errors": {
+      "amountRequired": "Veuillez indiquer un montant valide",
+      "amountTooHigh": "Le montant dépasse le solde restant",
+      "agencyRefRequired": "Veuillez sélectionner l'agence et indiquer la référence du bordereau",
+      "mobileRefRequired": "Veuillez indiquer la référence de la transaction Mobile Money"
+    }
+  },
+  "paymentValidation": {
+    "title": "Validation des paiements",
+    "subtitle": "Vérifiez la référence et le montant avant de valider un versement",
+    "validate": "Valider",
+    "reject": "Rejeter",
+    "rejectPrompt": "Motif du rejet (optionnel)"
+  },
+  "adminEncadreurs": {
+    "title": "Gestion des encadreurs",
+    "subtitle": "Référentiel des encadreurs par région",
+    "name": "Nom de l'encadreur",
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "status": "Statut",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "activate": "Activer",
+    "deactivate": "Désactiver"
+  },
+  "adminUsers": {
+    "title": "Gestion des utilisateurs",
+    "subtitle": "Créer et administrer les comptes agents / direction",
+    "name": "Nom complet",
+    "role": "Rôle",
+    "add": "Créer l'utilisateur",
+    "errors": {
+      "usernameTaken": "Cet identifiant est déjà utilisé"
+    }
+  },
+  "adminSeasons": {
+    "title": "Gestion des saisons Hadj",
+    "subtitle": "Créer une saison et définir le montant officiel par type de pèlerin",
+    "newSeason": "Nouvelle saison",
+    "year": "Année",
+    "month": "Mois du Hadj",
+    "create": "Créer la saison",
+    "open": "Saison ouverte",
+    "closed": "Saison clôturée",
+    "errors": {
+      "exists": "Cette saison existe déjà"
+    }
   }
 }

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { getEncadreurGroup } from '../../api/visaApi';
-import { getOfficialPrice } from '../../api/bordereauApi';
 import StatCard from '../../components/ui/StatCard';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import { formatCurrency } from '../../utils/formatters';
@@ -14,25 +13,22 @@ export default function VisaEncadreurPortalPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [group, setGroup] = useState([]);
-  const [officialPrice, setOfficialPrice] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getEncadreurGroup(user.encadreurId), getOfficialPrice(CURRENT_SEASON)]).then(([groupData, price]) => {
+    getEncadreurGroup(user.encadreurId).then((groupData) => {
       setGroup(groupData);
-      setOfficialPrice(price);
       setLoading(false);
     });
   }, [user.encadreurId]);
 
   const stats = useMemo(() => {
     const collected = group.reduce((sum, b) => sum + b.amountPaid, 0);
-    const pilgrims = group.reduce((sum, b) => sum + b.pilgrimCount, 0);
-    const target = pilgrims * officialPrice;
+    const target = group.reduce((sum, b) => sum + b.targetAmount, 0);
     const eligible = group.reduce((sum, b) => sum + b.eligiblePilgrims, 0);
     const incomplete = group.filter((b) => !b.isComplete).length;
     return { collected, target, eligible, incomplete };
-  }, [group, officialPrice]);
+  }, [group]);
 
   function handleExportExcel() {
     exportToExcel(
