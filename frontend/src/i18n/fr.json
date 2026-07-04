@@ -35,6 +35,7 @@
     "error": "Erreur",
     "warning": "Avertissement",
     "noData": "Aucune donnée disponible",
+    "select": "Sélectionner...",
     "total": "Total",
     "seeMore": "Voir plus",
     "print": "Imprimer",
@@ -51,7 +52,8 @@
     "payments": "Validation des paiements",
     "seasons": "Saisons Hadj",
     "encadreurs": "Encadreurs",
-    "users": "Utilisateurs"
+    "users": "Utilisateurs",
+    "powerbi": "Connecteur Power BI"
   },
   "roles": {
     "SUPERVISEUR": "Superviseur",
@@ -264,7 +266,10 @@
     "subtitle": "Vérifiez la référence et le montant avant de valider un versement",
     "validate": "Valider",
     "reject": "Rejeter",
-    "rejectPrompt": "Motif du rejet (optionnel)"
+    "rejectPrompt": "Motif du rejet (optionnel)",
+    "errors": {
+      "referenceAlreadyUsed": "La référence « {{reference}} » a déjà été validée sur un autre versement. Une même référence ne peut être utilisée qu'une seule fois."
+    }
   },
   "adminEncadreurs": {
     "title": "Gestion des encadreurs",
@@ -276,7 +281,14 @@
     "active": "Actif",
     "inactive": "Inactif",
     "activate": "Activer",
-    "deactivate": "Désactiver"
+    "deactivate": "Désactiver",
+    "importTitle": "Import en masse (Excel / CSV)",
+    "importHelp": "Colonnes attendues : \"name\" (nom de l'encadreur) et \"region\". Les doublons (même nom) sont ignorés.",
+    "downloadTemplate": "Télécharger le modèle",
+    "importFile": "Importer un fichier",
+    "importCreated": "{{count}} encadreur(s) importé(s) avec succès",
+    "importSkipped": "{{count}} ligne(s) ignorée(s) (déjà existantes)",
+    "importErrorRow": "Ligne {{row}} : {{reason}}"
   },
   "adminUsers": {
     "title": "Gestion des utilisateurs",
@@ -287,6 +299,22 @@
     "errors": {
       "usernameTaken": "Cet identifiant est déjà utilisé"
     }
+  },
+  "powerBi": {
+    "title": "Connecteur Power BI",
+    "subtitle": "Vérifiez l'état de validation des opérations et exportez le jeu de données pour Power BI",
+    "totalOperations": "Opérations totales",
+    "validated": "Validées",
+    "pending": "En attente",
+    "rejected": "Rejetées",
+    "exportTitle": "Export du jeu de données",
+    "exportHelp": "Génère un fichier Excel détaillant chaque versement (référence, méthode, montant, statut de validation) prêt à être importé dans Power BI Desktop.",
+    "exportButton": "Exporter le jeu de données (.xlsx)",
+    "howToTitle": "Comment charger ces données dans Power BI",
+    "step1": "Dans Power BI Desktop : Accueil → Obtenir les données → Excel classeur.",
+    "step2": "Sélectionnez le fichier exporté ci-dessus et la feuille « Versements ».",
+    "step3": "Construisez vos visuels (montants validés/en attente, par encadreur, par région, etc.) puis actualisez le classeur après chaque nouvel export.",
+    "futureNote": "Une fois le backend Spring Boot connecté, un flux live (API OData/REST) remplacera cet export manuel pour une actualisation automatique dans Power BI."
   },
   "adminSeasons": {
     "title": "Gestion des saisons Hadj",

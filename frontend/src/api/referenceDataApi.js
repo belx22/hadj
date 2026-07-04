@@ -3,6 +3,7 @@ import {
   mockGetEncadreurs,
   mockCreateEncadreur,
   mockUpdateEncadreur,
+  mockImportEncadreurs,
   mockGetSeasons,
   mockGetOfficialPrice,
   mockCreateSeason,
@@ -28,6 +29,12 @@ export async function createEncadreur(payload, actor) {
 export async function updateEncadreur(id, updates, actor) {
   if (USE_MOCK) return mockUpdateEncadreur(id, updates, actor);
   const { data } = await axiosClient.put(`/encadreurs/${id}`, updates);
+  return data;
+}
+
+export async function importEncadreurs(rows, actor) {
+  if (USE_MOCK) return mockImportEncadreurs(rows, actor);
+  const { data } = await axiosClient.post('/encadreurs/import', { rows });
   return data;
 }
 

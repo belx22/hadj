@@ -19,7 +19,7 @@ const EMPTY_FORM = {
   idNumber: '',
   region: '',
   encadreurId: '',
-  pilgrimType: 'PELERIN',
+  pilgrimType: '',
   pilgrimStatus: 'NOUVEAU',
   pilgrimCount: 1,
   season: CURRENT_SEASON,
@@ -100,7 +100,7 @@ export default function PilgrimSelfRegisterPage() {
   return (
     <AuthLayout subtitle={t('pilgrimRegister.subtitle')}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Field label={t('bordereau.pilgrimLastName')} error={errors.pilgrimLastName}>
+        <Field label={t('bordereau.pilgrimLastName')} error={errors.pilgrimLastName} required>
           <input
             className={clsx('form-input', errors.pilgrimLastName && 'form-input-error')}
             value={form.pilgrimLastName}
@@ -108,7 +108,7 @@ export default function PilgrimSelfRegisterPage() {
           />
         </Field>
 
-        <Field label={t('bordereau.pilgrimFirstName')} error={errors.pilgrimFirstName}>
+        <Field label={t('bordereau.pilgrimFirstName')} error={errors.pilgrimFirstName} required>
           <input
             className={clsx('form-input', errors.pilgrimFirstName && 'form-input-error')}
             value={form.pilgrimFirstName}
@@ -116,7 +116,7 @@ export default function PilgrimSelfRegisterPage() {
           />
         </Field>
 
-        <Field label={t('bordereau.phone')} error={errors.phone} help={t('bordereau.phoneHelp')}>
+        <Field label={t('bordereau.phone')} error={errors.phone} help={t('bordereau.phoneHelp')} required>
           <input
             className={clsx('form-input', errors.phone && 'form-input-error')}
             value={form.phone}
@@ -125,7 +125,7 @@ export default function PilgrimSelfRegisterPage() {
           />
         </Field>
 
-        <Field label={t('bordereau.email')} error={errors.email}>
+        <Field label={t('bordereau.email')} error={errors.email} required>
           <input
             type="email"
             className={clsx('form-input', errors.email && 'form-input-error')}
@@ -134,7 +134,7 @@ export default function PilgrimSelfRegisterPage() {
           />
         </Field>
 
-        <Field label={t('bordereau.idNumber')} error={errors.idNumber}>
+        <Field label={t('bordereau.idNumber')} error={errors.idNumber} required>
           <input
             className={clsx('form-input', (errors.idNumber || duplicateWarning) && 'form-input-error')}
             value={form.idNumber}
@@ -147,26 +147,26 @@ export default function PilgrimSelfRegisterPage() {
           )}
         </Field>
 
-        <Field label={t('bordereau.region')} error={errors.region}>
+        <Field label={t('bordereau.region')} error={errors.region} required>
           <select
             className={clsx('form-input', errors.region && 'form-input-error')}
             value={form.region}
             onChange={(e) => update('region', e.target.value)}
           >
-            <option value="">{t('common.all')}</option>
+            <option value="">{t('common.select')}</option>
             {REGIONS.map((region) => (
               <option key={region} value={region}>{region}</option>
             ))}
           </select>
         </Field>
 
-        <Field label={t('pilgrimRegister.chooseEncadreur')} error={errors.encadreurId}>
+        <Field label={t('pilgrimRegister.chooseEncadreur')} error={errors.encadreurId} required>
           <select
             className={clsx('form-input', errors.encadreurId && 'form-input-error')}
             value={form.encadreurId}
             onChange={(e) => update('encadreurId', e.target.value)}
           >
-            <option value="">{t('common.all')}</option>
+            <option value="">{t('common.select')}</option>
             {encadreurs.map((enc) => (
               <option key={enc.id} value={enc.id}>{enc.name} — {enc.region}</option>
             ))}
@@ -174,8 +174,13 @@ export default function PilgrimSelfRegisterPage() {
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label={t('bordereau.pilgrimType')}>
-            <select className="form-input" value={form.pilgrimType} onChange={(e) => update('pilgrimType', e.target.value)}>
+          <Field label={t('bordereau.pilgrimType')} error={errors.pilgrimType} required>
+            <select
+              className={clsx('form-input', errors.pilgrimType && 'form-input-error')}
+              value={form.pilgrimType}
+              onChange={(e) => update('pilgrimType', e.target.value)}
+            >
+              <option value="">{t('common.select')}</option>
               {PILGRIM_TYPES.map((type) => (
                 <option key={type} value={type}>{t(`bordereau.pilgrimTypes.${type}`)}</option>
               ))}
@@ -191,7 +196,7 @@ export default function PilgrimSelfRegisterPage() {
           </Field>
         </div>
 
-        <Field label={t('bordereau.pilgrimCount')} error={errors.pilgrimCount}>
+        <Field label={t('bordereau.pilgrimCount')} error={errors.pilgrimCount} required>
           <input
             type="number"
             min="1"
@@ -216,10 +221,13 @@ export default function PilgrimSelfRegisterPage() {
   );
 }
 
-function Field({ label, error, help, children }) {
+function Field({ label, error, help, required, children }) {
   return (
     <div>
-      <label className="form-label">{label}</label>
+      <label className="form-label">
+        {label}
+        {required && <span className="ml-0.5 text-afriland-red">*</span>}
+      </label>
       {children}
       {help && !error && <p className="mt-1 text-xs text-afriland-gray-600">{help}</p>}
       {error && <p className="form-error">{error}</p>}

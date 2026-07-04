@@ -1,10 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
-import { getEncadreurs, createEncadreur, updateEncadreur } from '../../api/referenceDataApi';
+import { getEncadreurs, createEncadreur, updateEncadreur, importEncadreurs } from '../../api/referenceDataApi';
+import { exportToExcel } from '../../utils/excel';
 import { REGIONS } from '../../utils/constants';
 
 const EMPTY_FORM = { name: '', region: REGIONS[0] };
+
+const HEADER_ALIASES = {
+  name: ['name', 'nom', 'nom de l\'encadreur', 'اسم المؤطر'],
+  region: ['region', 'région', 'منطقة'],
+};
+
+function normalizeRow(rawRow) {
+  const lowerEntries = Object.entries(rawRow).map(([key, value]) => [key.trim().toLowerCase(), value]);
+  const pick = (field) => {
+    const match = lowerEntries.find(([key]) => HEADER_ALIASES[field].includes(key));
+    return match ? String(match[1] ?? '').trim() : '';
+  };
+  return { name: pick('name'), region: pick('region') };
+}
 
 export default function EncadreursAdminPage() {
   const { t } = useTranslation();
@@ -15,6 +31,9 @@ export default function EncadreursAdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
+  const [importSummary, setImportSummary] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
 
   function reload() {
     setLoading(true);
@@ -57,11 +76,86 @@ export default function EncadreursAdminPage() {
     reload();
   }
 
+  function handleDownloadTemplate() {
+    exportToExcel(
+      [{ name: 'El Hadj Exemple Nom', region: REGIONS[0] }],
+      'modele-encadreurs.xlsx',
+      'Encadreurs'
+    );
+  }
+
+  function handleImportClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setImporting(true);
+    setImportSummary(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      const rows = rawRows.map(normalizeRow);
+      const summary = await importEncadreurs(rows, user);
+      setImportSummary(summary);
+      reload();
+    } catch {
+      setImportSummary({ created: [], skipped: [], errors: [{ row: 0, reason: 'PARSE_ERROR' }] });
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-afriland-black">{t('adminEncadreurs.title')}</h1>
         <p className="text-sm text-afriland-gray-600">{t('adminEncadreurs.subtitle')}</p>
+      </div>
+
+      <div className="card space-y-3">
+        <p className="text-sm font-semibold text-afriland-black">{t('adminEncadreurs.importTitle')}</p>
+        <p className="text-xs text-afriland-gray-600">{t('adminEncadreurs.importHelp')}</p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-secondary" onClick={handleDownloadTemplate}>
+            {t('adminEncadreurs.downloadTemplate')}
+          </button>
+          <button type="button" className="btn-primary" onClick={handleImportClick} disabled={importing}>
+            {importing ? t('common.loading') : t('adminEncadreurs.importFile')}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </div>
+
+        {importSummary && (
+          <div className="rounded-md bg-afriland-gray-50 p-3 text-sm">
+            <p className="font-medium text-visa-granted">
+              {t('adminEncadreurs.importCreated', { count: importSummary.created.length })}
+            </p>
+            {importSummary.skipped.length > 0 && (
+              <p className="text-afriland-gray-600">
+                {t('adminEncadreurs.importSkipped', { count: importSummary.skipped.length })}
+              </p>
+            )}
+            {importSummary.errors.length > 0 && (
+              <ul className="mt-1 list-disc pl-5 text-visa-refused">
+                {importSummary.errors.map((err, index) => (
+                  <li key={index}>{t('adminEncadreurs.importErrorRow', { row: err.row, reason: err.reason })}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleCreate} className="card grid grid-cols-1 gap-3 sm:grid-cols-3">

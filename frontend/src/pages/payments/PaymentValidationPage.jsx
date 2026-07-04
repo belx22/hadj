@@ -10,6 +10,7 @@ export default function PaymentValidationPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+  const [error, setError] = useState(null);
 
   function reload() {
     setLoading(true);
@@ -25,9 +26,16 @@ export default function PaymentValidationPage() {
 
   async function handleValidate(row) {
     setBusyId(row.id);
+    setError(null);
     try {
       await validateVersement(row.bordereauId, row.id, user);
       reload();
+    } catch (err) {
+      if (err.code === 'REFERENCE_ALREADY_USED') {
+        setError(t('paymentValidation.errors.referenceAlreadyUsed', { reference: row.reference }));
+      } else {
+        setError(t('common.error'));
+      }
     } finally {
       setBusyId(null);
     }
@@ -51,6 +59,12 @@ export default function PaymentValidationPage() {
         <h1 className="text-xl font-bold text-afriland-black">{t('paymentValidation.title')}</h1>
         <p className="text-sm text-afriland-gray-600">{t('paymentValidation.subtitle')}</p>
       </div>
+
+      {error && (
+        <div className="card border-visa-refused/30 bg-visa-refused/5">
+          <p className="text-sm font-semibold text-visa-refused">{error}</p>
+        </div>
+      )}
 
       <div className="card overflow-x-auto p-0">
         <table className="w-full min-w-[760px] text-left text-sm">

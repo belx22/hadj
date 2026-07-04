@@ -35,6 +35,7 @@
     "error": "خطأ",
     "warning": "تنبيه",
     "noData": "لا توجد بيانات متاحة",
+    "select": "اختر...",
     "total": "المجموع",
     "seeMore": "عرض المزيد",
     "print": "طباعة",
@@ -51,7 +52,8 @@
     "payments": "التحقق من الدفعات",
     "seasons": "مواسم الحج",
     "encadreurs": "المؤطرون",
-    "users": "المستخدمون"
+    "users": "المستخدمون",
+    "powerbi": "موصل Power BI"
   },
   "roles": {
     "SUPERVISEUR": "مشرف",
@@ -264,7 +266,10 @@
     "subtitle": "تحقق من المرجع والمبلغ قبل التصديق على أي دفعة",
     "validate": "تصديق",
     "reject": "رفض",
-    "rejectPrompt": "سبب الرفض (اختياري)"
+    "rejectPrompt": "سبب الرفض (اختياري)",
+    "errors": {
+      "referenceAlreadyUsed": "المرجع «{{reference}}» تم التصديق عليه مسبقاً في دفعة أخرى. لا يمكن استخدام نفس المرجع إلا مرة واحدة."
+    }
   },
   "adminEncadreurs": {
     "title": "إدارة المؤطرين",
@@ -276,7 +281,14 @@
     "active": "نشط",
     "inactive": "غير نشط",
     "activate": "تفعيل",
-    "deactivate": "تعطيل"
+    "deactivate": "تعطيل",
+    "importTitle": "استيراد جماعي (Excel / CSV)",
+    "importHelp": "الأعمدة المطلوبة: \"name\" (اسم المؤطر) و \"region\". يتم تجاهل الأسطر المكررة (نفس الاسم).",
+    "downloadTemplate": "تحميل النموذج",
+    "importFile": "استيراد ملف",
+    "importCreated": "تم استيراد {{count}} مؤطر(ين) بنجاح",
+    "importSkipped": "تم تجاهل {{count}} سطر (موجود مسبقاً)",
+    "importErrorRow": "السطر {{row}}: {{reason}}"
   },
   "adminUsers": {
     "title": "إدارة المستخدمين",
@@ -287,6 +299,22 @@
     "errors": {
       "usernameTaken": "اسم المستخدم هذا مستعمل بالفعل"
     }
+  },
+  "powerBi": {
+    "title": "موصل Power BI",
+    "subtitle": "تحقق من حالة التصديق على العمليات وصدّر البيانات لاستخدامها في Power BI",
+    "totalOperations": "إجمالي العمليات",
+    "validated": "مصادَق عليها",
+    "pending": "قيد التحقق",
+    "rejected": "مرفوضة",
+    "exportTitle": "تصدير البيانات",
+    "exportHelp": "ينشئ ملف Excel يفصّل كل دفعة (المرجع، الوسيلة، المبلغ، حالة التصديق) جاهزاً للاستيراد في Power BI Desktop.",
+    "exportButton": "تصدير البيانات (.xlsx)",
+    "howToTitle": "كيفية تحميل هذه البيانات في Power BI",
+    "step1": "في Power BI Desktop: الصفحة الرئيسية ← الحصول على البيانات ← مصنف Excel.",
+    "step2": "اختر الملف المصدَّر أعلاه وورقة «Versements».",
+    "step3": "أنشئ الرسوم البيانية الخاصة بك (المبالغ المصادَق عليها/قيد الانتظار، حسب المؤطر، حسب المنطقة...) ثم حدّث المصنف بعد كل تصدير جديد.",
+    "futureNote": "بمجرد ربط الخلفية Spring Boot، سيحل تدفق مباشر (واجهة OData/REST) محل هذا التصدير اليدوي للتحديث التلقائي في Power BI."
   },
   "adminSeasons": {
     "title": "إدارة مواسم الحج",

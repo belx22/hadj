@@ -28,6 +28,7 @@ export function validateBordereau(values, t, { requireAgency = true, requireEmai
 
   if (!values.region) errors.region = t('bordereau.errors.genericRequired');
   if (requireAgency && !values.agency) errors.agency = t('bordereau.errors.genericRequired');
+  if (!values.pilgrimType) errors.pilgrimType = t('bordereau.errors.genericRequired');
   if (!values.pilgrimCount || Number(values.pilgrimCount) < 1) {
     errors.pilgrimCount = t('bordereau.errors.genericRequired');
   }

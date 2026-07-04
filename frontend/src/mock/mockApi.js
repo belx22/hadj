@@ -5,7 +5,7 @@ import {
   SEED_AUDIT_LOGS,
   SEED_ENCADREURS,
 } from './seedData';
-import { DEFAULT_OFFICIAL_PRICE } from '../utils/constants';
+import { DEFAULT_OFFICIAL_PRICE, REGIONS } from '../utils/constants';
 
 const STORAGE_KEY = 'copilote-hadj-mock-db-v2';
 const NETWORK_DELAY = 350;
@@ -389,10 +389,26 @@ export async function mockGetPendingVersements() {
   return rows.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
+// Une référence de versement (Mobile Money ou bordereau agence) ne peut être
+// validée et comptabilisée qu'une seule fois, tous bordereaux confondus.
+function isReferenceAlreadyValidated(reference, excludeVersementId) {
+  if (!reference?.trim()) return false;
+  return db.bordereaux.some((b) =>
+    b.versements.some((v) => v.id !== excludeVersementId && v.status === 'VALIDE' && v.reference === reference)
+  );
+}
+
 export async function mockValidateVersement(bordereauId, versementId, actor) {
   await delay(400);
   const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
   if (!bordereau) throw new Error('NOT_FOUND');
+  const versement = bordereau.versements.find((v) => v.id === versementId);
+  if (!versement) throw new Error('NOT_FOUND');
+  if (isReferenceAlreadyValidated(versement.reference, versementId)) {
+    const error = new Error('REFERENCE_ALREADY_USED');
+    error.code = 'REFERENCE_ALREADY_USED';
+    throw error;
+  }
   const now = new Date().toISOString().slice(0, 10);
   bordereau.versements = bordereau.versements.map((v) =>
     v.id === versementId ? { ...v, status: 'VALIDE', validatedAt: now, validatedBy: actor?.username } : v
@@ -464,6 +480,47 @@ export async function mockUpdateEncadreur(id, updates, actor) {
   addAudit('MODIFICATION_ENCADREUR', id, actor?.username || 'system');
   persist();
   return db.encadreurs.find((e) => e.id === id);
+}
+
+// Import en masse depuis un fichier Excel/CSV (colonnes attendues : name, region).
+// Les lignes dont le nom existe déjà (insensible à la casse) sont ignorées ;
+// les lignes dont la région ne fait pas partie du référentiel sont en erreur.
+export async function mockImportEncadreurs(rows, actor) {
+  await delay(500);
+  const created = [];
+  const skipped = [];
+  const errors = [];
+
+  rows.forEach((row, index) => {
+    const name = String(row.name || '').trim();
+    const region = String(row.region || '').trim();
+
+    if (!name || !region) {
+      errors.push({ row: index + 1, reason: 'MISSING_FIELD' });
+      return;
+    }
+    if (!REGIONS.includes(region)) {
+      errors.push({ row: index + 1, reason: 'INVALID_REGION', region });
+      return;
+    }
+    const alreadyExists = db.encadreurs.some((e) => e.name.toLowerCase() === name.toLowerCase());
+    if (alreadyExists) {
+      skipped.push({ row: index + 1, name });
+      return;
+    }
+
+    const id = `ENC-${String(db.encadreurs.length + created.length + 1).padStart(3, '0')}`;
+    const record = { id, name, region, active: true };
+    db.encadreurs = [...db.encadreurs, record];
+    created.push(record);
+  });
+
+  if (created.length > 0) {
+    addAudit('IMPORT_ENCADREURS', `${created.length} encadreur(s)`, actor?.username || 'system');
+    persist();
+  }
+
+  return { created, skipped, errors };
 }
 
 // ---------------------------------------------------------------------------

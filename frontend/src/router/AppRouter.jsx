@@ -22,6 +22,7 @@ import PaymentValidationPage from '../pages/payments/PaymentValidationPage';
 import UsersAdminPage from '../pages/admin/UsersAdminPage';
 import EncadreursAdminPage from '../pages/admin/EncadreursAdminPage';
 import SeasonsAdminPage from '../pages/admin/SeasonsAdminPage';
+import PowerBiConnectorPage from '../pages/admin/PowerBiConnectorPage';
 
 import NotFoundPage from '../pages/NotFoundPage';
 
@@ -63,6 +64,7 @@ export default function AppRouter() {
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/paiements" element={<PaymentValidationPage />} />
+          <Route path="/parametrage/powerbi" element={<PowerBiConnectorPage />} />
         </Route>
       </Route>
 

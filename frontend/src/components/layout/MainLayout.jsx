@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { to: '/bordereaux', key: 'nav.bordereauList', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ', 'ADMIN_DSI'] },
   { to: '/bordereaux/nouveau', key: 'nav.bordereauNew', roles: ['OPERATEUR_HADJ', 'GESTIONNAIRE_HADJ'] },
   { to: '/paiements', key: 'nav.payments', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
+  { to: '/parametrage/powerbi', key: 'nav.powerbi', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
   { to: '/visa/encadreur', key: 'nav.visaPortal', roles: ['ENCADREUR'] },
   { to: '/parametrage/saisons', key: 'nav.seasons', roles: ['GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
   { to: '/parametrage/encadreurs', key: 'nav.encadreurs', roles: ['GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
