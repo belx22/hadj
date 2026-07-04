@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { getSeasons, createSeason, updateSeason } from '../../api/referenceDataApi';
 import { formatCurrency } from '../../utils/formatters';
 import { CURRENT_SEASON, DEFAULT_OFFICIAL_PRICE, MONTHS, PILGRIM_TYPES } from '../../utils/constants';
@@ -11,6 +12,7 @@ const EMPTY_FORM = { season: CURRENT_SEASON + 1, month: 6, prices: { ...EMPTY_PR
 export default function SeasonsAdminPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const toast = useToast();
   const [seasons, setSeasons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -40,6 +42,7 @@ export default function SeasonsAdminPage() {
         { season: Number(form.season), month: Number(form.month), year: Number(form.season), isOpen: true, prices: form.prices },
         user
       );
+      toast.success(t('toasts.seasonCreated'));
       setForm(EMPTY_FORM);
       reload();
     } catch (err) {
@@ -57,6 +60,7 @@ export default function SeasonsAdminPage() {
 
   async function saveEdit(season) {
     await updateSeason(season, editValues, user);
+    toast.success(t('toasts.seasonUpdated'));
     setEditingSeason(null);
     reload();
   }

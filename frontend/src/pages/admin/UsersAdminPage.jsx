@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { getUsers, createUser, updateUser, getEncadreurs } from '../../api/referenceDataApi';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
@@ -21,6 +22,7 @@ function emptyEditValues(u) {
 export default function UsersAdminPage() {
   const { t } = useTranslation();
   const { user: actor } = useAuth();
+  const toast = useToast();
   const [users, setUsers] = useState([]);
   const [encadreurs, setEncadreurs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +64,7 @@ export default function UsersAdminPage() {
         payload.agency = form.agency;
       }
       await createUser(payload, actor);
+      toast.success(t('toasts.userCreated'));
       setForm(EMPTY_FORM);
       reload();
     } catch (err) {
@@ -74,6 +77,7 @@ export default function UsersAdminPage() {
 
   async function toggleActive(u) {
     await updateUser(u.id, { active: !u.active }, actor);
+    toast.info(t('toasts.userStatusUpdated'));
     reload();
   }
 
@@ -113,6 +117,7 @@ export default function UsersAdminPage() {
       updates.password = editValues.newPassword.trim();
     }
     await updateUser(id, updates, actor);
+    toast.success(t('toasts.userUpdated'));
     setEditingId(null);
     reload();
   }

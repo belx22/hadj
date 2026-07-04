@@ -4,6 +4,7 @@ import {
   mockCreateEncadreur,
   mockUpdateEncadreur,
   mockImportEncadreurs,
+  resetMockDb,
   mockGetSeasons,
   mockGetOfficialPrice,
   mockCreateSeason,
@@ -80,4 +81,9 @@ export async function updateUser(id, updates, actor) {
   if (USE_MOCK) return mockUpdateUser(id, updates, actor);
   const { data } = await axiosClient.put(`/utilisateurs/${id}`, updates);
   return data;
+}
+
+// --- Données de démonstration (mode mock uniquement) ---
+export function resetDemoData() {
+  if (USE_MOCK) resetMockDb();
 }

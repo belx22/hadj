@@ -39,7 +39,23 @@
     "total": "Total",
     "seeMore": "Voir plus",
     "print": "Imprimer",
-    "mockBanner": "Mode démonstration — données simulées (backend non connecté)"
+    "mockBanner": "Mode démonstration — données simulées (backend non connecté)",
+    "resetDemoData": "Réinitialiser les données de démonstration",
+    "resetConfirm": "Cela va effacer toutes les données de démonstration créées localement (bordereaux, versements, utilisateurs, encadreurs...) et revenir au jeu de données initial. Continuer ?"
+  },
+  "toasts": {
+    "paymentValidated": "Versement validé et comptabilisé",
+    "paymentRejected": "Versement rejeté",
+    "statusUpdated": "Statut du visa mis à jour",
+    "encadreurCreated": "Encadreur ajouté avec succès",
+    "encadreurUpdated": "Encadreur mis à jour",
+    "encadreurStatusUpdated": "Statut de l'encadreur mis à jour",
+    "userCreated": "Utilisateur créé avec succès",
+    "userUpdated": "Utilisateur mis à jour",
+    "userStatusUpdated": "Statut de l'utilisateur mis à jour",
+    "seasonCreated": "Saison créée avec succès",
+    "seasonUpdated": "Saison mise à jour",
+    "resetDone": "Les données de démonstration ont été réinitialisées"
   },
   "pagination": {
     "previous": "Précédent",

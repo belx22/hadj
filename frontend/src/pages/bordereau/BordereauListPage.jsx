@@ -12,12 +12,14 @@ import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 const STATUS_EDITOR_ROLES = ['GESTIONNAIRE_HADJ', 'SUPERVISEUR', 'ADMIN_DSI'];
 
 export default function BordereauListPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const toast = useToast();
   const [items, setItems] = useState([]);
   const [encadreurs, setEncadreurs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +47,7 @@ export default function BordereauListPage() {
 
   async function handleStatusChange(bordereauId, newStatus) {
     await changeVisaStatus(bordereauId, newStatus, null, user);
+    toast.success(t('toasts.statusUpdated'));
     reload();
   }
 

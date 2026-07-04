@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { getPendingVersements, getVersementsHistory, validateVersement, rejectVersement } from '../../api/paymentsApi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { VERSEMENT_STATUS_COLORS } from '../../utils/constants';
@@ -44,6 +45,7 @@ export default function PaymentValidationPage() {
 function PendingTab() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const toast = useToast();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
@@ -67,6 +69,7 @@ function PendingTab() {
     setError(null);
     try {
       await validateVersement(row.bordereauId, row.id, user);
+      toast.success(t('toasts.paymentValidated'));
       reload();
     } catch (err) {
       if (err.code === 'REFERENCE_ALREADY_USED') {
@@ -85,6 +88,7 @@ function PendingTab() {
     setBusyId(row.id);
     try {
       await rejectVersement(row.bordereauId, row.id, reason, user);
+      toast.info(t('toasts.paymentRejected'));
       reload();
     } finally {
       setBusyId(null);

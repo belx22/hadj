@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { getEncadreurs, createEncadreur, updateEncadreur, importEncadreurs } from '../../api/referenceDataApi';
 import { exportToExcel } from '../../utils/excel';
 import Pagination from '../../components/ui/Pagination';
@@ -27,6 +28,7 @@ function normalizeRow(rawRow) {
 export default function EncadreursAdminPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const toast = useToast();
   const [encadreurs, setEncadreurs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -56,6 +58,7 @@ export default function EncadreursAdminPage() {
     setSubmitting(true);
     try {
       await createEncadreur(form, user);
+      toast.success(t('toasts.encadreurCreated'));
       setForm(EMPTY_FORM);
       reload();
     } finally {
@@ -70,12 +73,14 @@ export default function EncadreursAdminPage() {
 
   async function saveEdit(id) {
     await updateEncadreur(id, editValues, user);
+    toast.success(t('toasts.encadreurUpdated'));
     setEditingId(null);
     reload();
   }
 
   async function toggleActive(enc) {
     await updateEncadreur(enc.id, { active: !enc.active }, user);
+    toast.info(t('toasts.encadreurStatusUpdated'));
     reload();
   }
 

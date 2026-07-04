@@ -21,6 +21,7 @@ axiosClient.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('copilote-hadj-token');
       localStorage.removeItem('copilote-hadj-user');
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
     return Promise.reject(error);
   }
