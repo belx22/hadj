@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" width="220" height="60" role="img" aria-label="Afriland First Bank">
+  <!--
+    PLACEHOLDER LOGO — à remplacer par le vrai logo Afriland First Bank.
+    Remplacez ce fichier (frontend/src/assets/logo-afriland.svg) en conservant
+    le même nom de fichier, ou mettez à jour l'import dans
+    src/components/layout/Header.jsx si vous utilisez un autre format (PNG/SVG).
+  -->
+  <rect x="0" y="0" width="60" height="60" rx="10" fill="#111111" />
+  <rect x="6" y="6" width="48" height="48" rx="6" fill="#C8102E" />
+  <text x="30" y="39" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#FFFFFF" text-anchor="middle">AFB</text>
+  <text x="72" y="27" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="#111111">Afriland</text>
+  <text x="72" y="46" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="500" fill="#595959">First Bank</text>
+</svg>
