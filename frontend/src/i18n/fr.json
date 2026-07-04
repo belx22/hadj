@@ -311,6 +311,8 @@
     "name": "Nom complet",
     "role": "Rôle",
     "add": "Créer l'utilisateur",
+    "newPassword": "Nouveau mot de passe",
+    "newPasswordPlaceholder": "Laisser vide pour ne pas modifier",
     "errors": {
       "usernameTaken": "Cet identifiant est déjà utilisé"
     }

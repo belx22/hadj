@@ -8,6 +8,16 @@ import { AGENCIES, ROLES } from '../../utils/constants';
 
 const EMPTY_FORM = { username: '', password: '', name: '', role: ROLES.OPERATEUR_HADJ, agency: AGENCIES[0], encadreurId: '' };
 
+function emptyEditValues(u) {
+  return {
+    name: u.name,
+    role: u.role,
+    agency: u.agency || AGENCIES[0],
+    encadreurId: u.encadreurId || '',
+    newPassword: '',
+  };
+}
+
 export default function UsersAdminPage() {
   const { t } = useTranslation();
   const { user: actor } = useAuth();
@@ -17,6 +27,9 @@ export default function UsersAdminPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editValues, setEditValues] = useState({});
+  const [editError, setEditError] = useState(null);
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(users);
 
   function reload() {
@@ -61,6 +74,46 @@ export default function UsersAdminPage() {
 
   async function toggleActive(u) {
     await updateUser(u.id, { active: !u.active }, actor);
+    reload();
+  }
+
+  function startEdit(u) {
+    setEditingId(u.id);
+    setEditValues(emptyEditValues(u));
+    setEditError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setEditError(null);
+  }
+
+  function updateEditField(field, value) {
+    setEditValues((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function saveEdit(id) {
+    if (!editValues.name.trim()) {
+      setEditError(t('bordereau.errors.genericRequired'));
+      return;
+    }
+    if (editValues.role === ROLES.ENCADREUR && !editValues.encadreurId) {
+      setEditError(t('bordereau.errors.encadreurRequired'));
+      return;
+    }
+    const updates = { name: editValues.name.trim(), role: editValues.role };
+    if (editValues.role === ROLES.ENCADREUR) {
+      updates.encadreurId = editValues.encadreurId;
+      updates.agency = undefined;
+    } else {
+      updates.agency = editValues.agency;
+      updates.encadreurId = undefined;
+    }
+    if (editValues.newPassword.trim()) {
+      updates.password = editValues.newPassword.trim();
+    }
+    await updateUser(id, updates, actor);
+    setEditingId(null);
     reload();
   }
 
@@ -112,21 +165,96 @@ export default function UsersAdminPage() {
           <tbody className="divide-y divide-afriland-gray-200">
             {loading && <tr><td colSpan={5} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>}
             {!loading && pageItems.map((u) => (
-              <tr key={u.id}>
-                <td className="px-4 py-3 font-mono text-xs">{u.username}</td>
-                <td className="px-4 py-3">{u.name}</td>
-                <td className="px-4 py-3">{t(`roles.${u.role}`)}</td>
-                <td className="px-4 py-3">
-                  <span className={u.active === false ? 'text-visa-refused font-semibold' : 'text-visa-granted font-semibold'}>
-                    {u.active === false ? t('adminEncadreurs.inactive') : t('adminEncadreurs.active')}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <button type="button" className="text-xs font-semibold text-afriland-red hover:underline" onClick={() => toggleActive(u)}>
-                    {u.active === false ? t('adminEncadreurs.activate') : t('adminEncadreurs.deactivate')}
-                  </button>
-                </td>
-              </tr>
+              editingId === u.id ? (
+                <tr key={u.id}>
+                  <td colSpan={5} className="px-4 py-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      <div>
+                        <label className="form-label">{t('auth.username')}</label>
+                        <input className="form-input bg-afriland-gray-50" value={u.username} disabled />
+                      </div>
+                      <div>
+                        <label className="form-label">{t('adminUsers.name')}</label>
+                        <input
+                          className="form-input"
+                          value={editValues.name}
+                          onChange={(e) => updateEditField('name', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label">{t('adminUsers.role')}</label>
+                        <select
+                          className="form-input"
+                          value={editValues.role}
+                          onChange={(e) => updateEditField('role', e.target.value)}
+                        >
+                          {Object.values(ROLES).map((role) => <option key={role} value={role}>{t(`roles.${role}`)}</option>)}
+                        </select>
+                      </div>
+                      {editValues.role === ROLES.ENCADREUR ? (
+                        <div>
+                          <label className="form-label">{t('bordereau.encadreur')}</label>
+                          <select
+                            className="form-input"
+                            value={editValues.encadreurId}
+                            onChange={(e) => updateEditField('encadreurId', e.target.value)}
+                          >
+                            <option value="">{t('common.select')}</option>
+                            {encadreurs.map((enc) => <option key={enc.id} value={enc.id}>{enc.name}</option>)}
+                          </select>
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="form-label">{t('bordereau.agency')}</label>
+                          <select
+                            className="form-input"
+                            value={editValues.agency}
+                            onChange={(e) => updateEditField('agency', e.target.value)}
+                          >
+                            {AGENCIES.map((agency) => <option key={agency} value={agency}>{agency}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      <div>
+                        <label className="form-label">{t('adminUsers.newPassword')}</label>
+                        <input
+                          type="password"
+                          className="form-input"
+                          placeholder={t('adminUsers.newPasswordPlaceholder')}
+                          value={editValues.newPassword}
+                          onChange={(e) => updateEditField('newPassword', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    {editError && <p className="form-error mt-2">{editError}</p>}
+                    <div className="mt-3 flex gap-2">
+                      <button type="button" className="btn-primary !px-3 !py-1.5 text-xs" onClick={() => saveEdit(u.id)}>{t('common.save')}</button>
+                      <button type="button" className="btn-secondary !px-3 !py-1.5 text-xs" onClick={cancelEdit}>{t('common.cancel')}</button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <tr key={u.id}>
+                  <td className="px-4 py-3 font-mono text-xs">{u.username}</td>
+                  <td className="px-4 py-3">{u.name}</td>
+                  <td className="px-4 py-3">{t(`roles.${u.role}`)}</td>
+                  <td className="px-4 py-3">
+                    <span className={u.active === false ? 'text-visa-refused font-semibold' : 'text-visa-granted font-semibold'}>
+                      {u.active === false ? t('adminEncadreurs.inactive') : t('adminEncadreurs.active')}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-2">
+                      <button type="button" className="text-xs font-semibold text-afriland-red hover:underline" onClick={() => startEdit(u)}>
+                        {t('adminEncadreurs.edit')}
+                      </button>
+                      <button type="button" className="text-xs font-semibold text-afriland-gray-600 hover:underline" onClick={() => toggleActive(u)}>
+                        {u.active === false ? t('adminEncadreurs.activate') : t('adminEncadreurs.deactivate')}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )
             ))}
           </tbody>
         </table>
