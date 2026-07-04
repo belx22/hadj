@@ -5,7 +5,9 @@ import {
   SEED_AUDIT_LOGS,
   SEED_ENCADREURS,
 } from './seedData';
-import { DEFAULT_OFFICIAL_PRICE, REGIONS } from '../utils/constants';
+import { DEFAULT_OFFICIAL_PRICE, REGIONS, VISA_STATUSES } from '../utils/constants';
+
+const VISA_STATUSES_SET = new Set(VISA_STATUSES);
 
 const STORAGE_KEY = 'copilote-hadj-mock-db-v2';
 const NETWORK_DELAY = 350;
@@ -438,19 +440,89 @@ export async function mockRejectVersement(bordereauId, versementId, reason, acto
 // ---------------------------------------------------------------------------
 // Statut visa + notifications
 // ---------------------------------------------------------------------------
-export async function mockChangeVisaStatus(bordereauId, newStatus, note, actor) {
-  await delay(400);
-  const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
-  if (!bordereau) throw new Error('NOT_FOUND');
+function applyVisaStatusChange(bordereau, newStatus, note, actorName) {
   bordereau.visaStatus = newStatus;
   const message = note?.trim() ? note.trim() : VISA_STATUS_MESSAGES[newStatus];
   const date = new Date().toISOString().slice(0, 10);
   bordereau.notifications = [...bordereau.notifications, { date, message }];
-  addAudit('CHANGEMENT_STATUT_VISA', bordereauId, actor?.username || 'system');
-  persist();
+  addAudit('CHANGEMENT_STATUT_VISA', bordereau.id, actorName || 'system');
   sendMockSms(bordereau.phone, `Copilote Hadj: ${message}`);
   sendMockEmail(bordereau.email, 'Mise à jour de votre dossier Hadj', message);
+}
+
+export async function mockChangeVisaStatus(bordereauId, newStatus, note, actor) {
+  await delay(400);
+  const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
+  if (!bordereau) throw new Error('NOT_FOUND');
+  applyVisaStatusChange(bordereau, newStatus, note, actor?.username);
+  persist();
   return decorateBordereau(bordereau);
+}
+
+// Import en masse des statuts de visa depuis un fichier Excel/CSV externe
+// (colonnes attendues : idNumber, status, note facultative). Réutilise la même
+// logique de notification/audit que le changement de statut unitaire.
+export async function mockImportVisaStatuses(rows, actor) {
+  await delay(600);
+  const updated = [];
+  const notFound = [];
+  const invalidStatus = [];
+
+  rows.forEach((row, index) => {
+    const idNumber = String(row.idNumber || '').trim();
+    const status = String(row.status || '').trim().toUpperCase();
+
+    if (!VISA_STATUSES_SET.has(status)) {
+      invalidStatus.push({ row: index + 1, idNumber, status });
+      return;
+    }
+    const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber);
+    if (!bordereau) {
+      notFound.push({ row: index + 1, idNumber });
+      return;
+    }
+    applyVisaStatusChange(bordereau, status, row.note, actor?.username);
+    updated.push({ bordereauId: bordereau.id, idNumber, status });
+  });
+
+  if (updated.length > 0) {
+    addAudit('IMPORT_STATUTS_VISA', `${updated.length} dossier(s)`, actor?.username || 'system');
+    persist();
+  }
+
+  return { updated, notFound, invalidStatus };
+}
+
+// Vérification automatique des anomalies (équivalent d'un contrôle via le jeu de
+// données Power BI) : dossiers entièrement payés mais toujours en attente, et
+// versements déclarés en attente de validation depuis plus de 3 jours.
+export async function mockCheckStatusAnomalies() {
+  await delay(700);
+  const now = Date.now();
+  const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+  const anomalies = [];
+
+  db.bordereaux.map(decorateBordereau).forEach((b) => {
+    if (b.isComplete && b.visaStatus === 'EN_ATTENTE') {
+      anomalies.push({
+        bordereauId: b.id,
+        pilgrimName: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
+        reason: 'FULLY_PAID_STILL_PENDING',
+      });
+    }
+    b.versements
+      .filter((v) => v.status === 'PENDING' && now - new Date(v.createdAt).getTime() > THREE_DAYS_MS)
+      .forEach((v) => {
+        anomalies.push({
+          bordereauId: b.id,
+          pilgrimName: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
+          reason: 'PAYMENT_PENDING_TOO_LONG',
+          reference: v.reference,
+        });
+      });
+  });
+
+  return { checkedAt: new Date().toISOString(), anomalies };
 }
 
 // ---------------------------------------------------------------------------

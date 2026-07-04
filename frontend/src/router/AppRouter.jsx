@@ -18,6 +18,7 @@ import VisaPelerinDossierPage from '../pages/visa/VisaPelerinDossierPage';
 import VisaPelerinPaymentPage from '../pages/visa/VisaPelerinPaymentPage';
 import VisaEncadreurPortalPage from '../pages/visa/VisaEncadreurPortalPage';
 
+import ClientsPage from '../pages/clients/ClientsPage';
 import PaymentValidationPage from '../pages/payments/PaymentValidationPage';
 import UsersAdminPage from '../pages/admin/UsersAdminPage';
 import EncadreursAdminPage from '../pages/admin/EncadreursAdminPage';
@@ -63,6 +64,7 @@ export default function AppRouter() {
       <Route element={<ProtectedRoute roles={['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI']} />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/clients" element={<ClientsPage />} />
           <Route path="/paiements" element={<PaymentValidationPage />} />
           <Route path="/parametrage/powerbi" element={<PowerBiConnectorPage />} />
         </Route>

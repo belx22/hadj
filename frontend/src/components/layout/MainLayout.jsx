@@ -8,6 +8,7 @@ import { USE_MOCK } from '../../api/axiosClient';
 
 const NAV_ITEMS = [
   { to: '/dashboard', key: 'nav.dashboard', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
+  { to: '/clients', key: 'nav.clients', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
   { to: '/bordereaux', key: 'nav.bordereauList', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ', 'ADMIN_DSI'] },
   { to: '/bordereaux/nouveau', key: 'nav.bordereauNew', roles: ['OPERATEUR_HADJ', 'GESTIONNAIRE_HADJ'] },
   { to: '/paiements', key: 'nav.payments', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },

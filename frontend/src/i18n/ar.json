@@ -53,7 +53,8 @@
     "seasons": "مواسم الحج",
     "encadreurs": "المؤطرون",
     "users": "المستخدمون",
-    "powerbi": "موصل Power BI"
+    "powerbi": "موصل Power BI",
+    "clients": "العملاء"
   },
   "roles": {
     "SUPERVISEUR": "مشرف",
@@ -299,6 +300,24 @@
     "errors": {
       "usernameTaken": "اسم المستخدم هذا مستعمل بالفعل"
     }
+  },
+  "clients": {
+    "title": "العملاء",
+    "subtitle": "قائمة الحجاج وحالة ملفاتهم",
+    "search": "بحث (الاسم، رقم البطاقة، الهاتف)",
+    "biCheckTitle": "التحقق التلقائي عبر Power BI",
+    "biCheckHelp": "يكتشف الملفات المدفوعة بالكامل لكن لا تزال قيد الانتظار، والدفعات قيد التحقق منذ أكثر من 3 أيام.",
+    "biCheckButton": "التحقق عبر Power BI",
+    "biCheckedAt": "آخر تحقق: {{date}}",
+    "biNoAnomaly": "لم يتم اكتشاف أي شذوذ.",
+    "anomalyReasons": {
+      "FULLY_PAID_STILL_PENDING": "ملف مدفوع بالكامل لكنه لا يزال قيد الانتظار",
+      "PAYMENT_PENDING_TOO_LONG": "دفعة قيد التحقق منذ أكثر من 3 أيام"
+    },
+    "importTitle": "استيراد الحالات (Excel / CSV)",
+    "importHelp": "الأعمدة المطلوبة: \"idNumber\" (البطاقة/الجواز)، \"status\" و \"note\" (اختياري). مفيد لمزامنة الحالات الواردة من نظام خارجي.",
+    "importUpdated": "تم تحديث {{count}} ملف(ات) بنجاح",
+    "importNotFound": "{{count}} سطر بدون ملف مطابق"
   },
   "powerBi": {
     "title": "موصل Power BI",

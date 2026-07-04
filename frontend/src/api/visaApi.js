@@ -5,6 +5,8 @@ import {
   mockRegisterPilgrimOnline,
   mockCreateVersementOnline,
   mockChangeVisaStatus,
+  mockImportVisaStatuses,
+  mockCheckStatusAnomalies,
 } from '../mock/mockApi';
 
 export async function pilgrimLogin(idNumber, phone) {
@@ -34,5 +36,17 @@ export async function createVersementOnline(idNumber, phone, versementPayload) {
 export async function changeVisaStatus(bordereauId, newStatus, note, actor) {
   if (USE_MOCK) return mockChangeVisaStatus(bordereauId, newStatus, note, actor);
   const { data } = await axiosClient.put(`/visa/${bordereauId}/statut`, { status: newStatus, note });
+  return data;
+}
+
+export async function importVisaStatuses(rows, actor) {
+  if (USE_MOCK) return mockImportVisaStatuses(rows, actor);
+  const { data } = await axiosClient.post('/visa/import-statuts', { rows });
+  return data;
+}
+
+export async function checkStatusAnomalies() {
+  if (USE_MOCK) return mockCheckStatusAnomalies();
+  const { data } = await axiosClient.get('/visa/verification-bi');
   return data;
 }
