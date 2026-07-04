@@ -21,6 +21,7 @@ export default function ClientsPage() {
   const [search, setSearch] = useState('');
   const [region, setRegion] = useState('');
   const [visaStatus, setVisaStatus] = useState('');
+  const [encadreurId, setEncadreurId] = useState('');
 
   const [checking, setChecking] = useState(false);
   const [anomalies, setAnomalies] = useState(null);
@@ -52,13 +53,14 @@ export default function ClientsPage() {
     return bordereaux.filter((b) => {
       if (region && b.region !== region) return false;
       if (visaStatus && b.visaStatus !== visaStatus) return false;
+      if (encadreurId && b.encadreurId !== encadreurId) return false;
       if (term) {
         const haystack = `${b.pilgrimFirstName} ${b.pilgrimLastName} ${b.idNumber} ${b.phone}`.toLowerCase();
         if (!haystack.includes(term)) return false;
       }
       return true;
     });
-  }, [bordereaux, region, visaStatus, search]);
+  }, [bordereaux, region, visaStatus, encadreurId, search]);
 
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(filtered);
 
@@ -212,7 +214,7 @@ export default function ClientsPage() {
         )}
       </div>
 
-      <div className="card grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="card grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <input
           className="form-input"
           placeholder={t('clients.search')}
@@ -222,6 +224,10 @@ export default function ClientsPage() {
         <select className="form-input" value={region} onChange={(e) => setRegion(e.target.value)}>
           <option value="">{t('dashboard.filters.region')}</option>
           {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <select className="form-input" value={encadreurId} onChange={(e) => setEncadreurId(e.target.value)}>
+          <option value="">{t('dashboard.filters.encadreur')}</option>
+          {encadreurs.map((enc) => <option key={enc.id} value={enc.id}>{enc.name}</option>)}
         </select>
         <select className="form-input" value={visaStatus} onChange={(e) => setVisaStatus(e.target.value)}>
           <option value="">{t('visa.visaStatus')}</option>
