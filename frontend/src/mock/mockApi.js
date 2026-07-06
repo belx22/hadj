@@ -71,6 +71,18 @@ function sendMockEmail(email, subject, message) {
   console.info(`[NotificationService:mock:EMAIL] -> ${email} | ${subject} : ${message}`);
 }
 
+function sendMockWhatsApp(phone, message) {
+  if (!phone) return;
+  // eslint-disable-next-line no-console
+  console.info(`[NotificationService:mock:WHATSAPP] -> ${phone} : ${message}`);
+}
+
+function notifyPilgrim(bordereau, message, subject = 'Copilote Hadj') {
+  sendMockSms(bordereau.phone, message);
+  sendMockWhatsApp(bordereau.phone, message);
+  sendMockEmail(bordereau.email, subject, message);
+}
+
 const VISA_STATUS_MESSAGES = {
   EN_ATTENTE: 'Votre dossier a été reçu et est en attente de traitement.',
   EN_COURS: 'Votre dossier est en cours de traitement.',
@@ -207,14 +219,14 @@ export async function mockCreateBordereau(payload, actor) {
       },
     ],
     notifications: [{ date: createdAt, message: VISA_STATUS_MESSAGES.EN_ATTENTE }],
+    statusHistory: [{ status: 'EN_ATTENTE', date: createdAt }],
   };
 
   db.bordereaux = [record, ...db.bordereaux];
   addAudit('CREATION_BORDEREAU', id, actor?.username || 'system');
   persist();
 
-  sendMockSms(payload.phone, `Copilote Hadj: votre souscription ${id} a été enregistrée. Merci.`);
-  sendMockEmail(payload.email, 'Souscription enregistrée', `Votre souscription ${id} a été enregistrée avec succès.`);
+  notifyPilgrim(record, `Copilote Hadj: votre souscription ${id} a été enregistrée. Merci.`, 'Souscription enregistrée');
 
   return decorateBordereau(record);
 }
@@ -314,14 +326,18 @@ export async function mockRegisterPilgrimOnline(payload) {
     createdAt,
     versements: [],
     notifications: [{ date: createdAt, message: VISA_STATUS_MESSAGES.EN_ATTENTE }],
+    statusHistory: [{ status: 'EN_ATTENTE', date: createdAt }],
   };
 
   db.bordereaux = [record, ...db.bordereaux];
   addAudit('INSCRIPTION_EN_LIGNE', id, payload.idNumber);
   persist();
 
-  sendMockSms(payload.phone, `Copilote Hadj: votre inscription ${id} est enregistrée. Connectez-vous pour effectuer votre versement.`);
-  sendMockEmail(payload.email, 'Inscription Hadj enregistrée', `Votre inscription ${id} est enregistrée. Vous pouvez maintenant effectuer votre versement.`);
+  notifyPilgrim(
+    record,
+    `Copilote Hadj: votre inscription ${id} est enregistrée. Votre code de paiement est ${id}. Connectez-vous pour effectuer votre versement.`,
+    'Inscription Hadj enregistrée'
+  );
 
   return decorateBordereau(record);
 }
@@ -329,7 +345,7 @@ export async function mockRegisterPilgrimOnline(payload) {
 // ---------------------------------------------------------------------------
 // Versements en ligne (Mobile Money / référence agence) — au compte-goutte
 // ---------------------------------------------------------------------------
-export async function mockCreateVersementOnline(idNumber, phone, { method, amount, reference, agency }) {
+export async function mockCreateVersementOnline(idNumber, phone, { method, amount, reference, agency, receiptImage }) {
   await delay(700);
   const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber && b.phone === phone);
   if (!bordereau) {
@@ -354,6 +370,7 @@ export async function mockCreateVersementOnline(idNumber, phone, { method, amoun
     method,
     reference,
     agency: method === 'AGENCE' ? agency : null,
+    receiptImage: method === 'AGENCE' ? receiptImage || null : null,
     status: 'PENDING',
     createdAt,
     validatedAt: null,
@@ -449,8 +466,7 @@ export async function mockValidateVersement(bordereauId, versementId, actor) {
   );
   addAudit('VALIDATION_PAIEMENT', `${bordereauId} / ${versementId}`, actor?.username || 'system');
   persist();
-  sendMockSms(bordereau.phone, `Copilote Hadj: votre versement a été validé et comptabilisé.`);
-  sendMockEmail(bordereau.email, 'Versement validé', 'Votre versement a été vérifié et comptabilisé.');
+  notifyPilgrim(bordereau, 'Copilote Hadj: votre versement a été validé et comptabilisé.', 'Versement validé');
   return decorateBordereau(bordereau);
 }
 
@@ -464,8 +480,7 @@ export async function mockRejectVersement(bordereauId, versementId, reason, acto
   );
   addAudit('REJET_PAIEMENT', `${bordereauId} / ${versementId}`, actor?.username || 'system');
   persist();
-  sendMockSms(bordereau.phone, `Copilote Hadj: votre versement a été rejeté (${reason || 'référence invalide'}).`);
-  sendMockEmail(bordereau.email, 'Versement rejeté', `Votre versement a été rejeté : ${reason || 'référence invalide'}.`);
+  notifyPilgrim(bordereau, `Copilote Hadj: votre versement a été rejeté (${reason || 'référence invalide'}).`, 'Versement rejeté');
   return decorateBordereau(bordereau);
 }
 
@@ -477,9 +492,9 @@ function applyVisaStatusChange(bordereau, newStatus, note, actorName) {
   const message = note?.trim() ? note.trim() : VISA_STATUS_MESSAGES[newStatus];
   const date = new Date().toISOString().slice(0, 10);
   bordereau.notifications = [...bordereau.notifications, { date, message }];
+  bordereau.statusHistory = [...(bordereau.statusHistory || []), { status: newStatus, date }];
   addAudit('CHANGEMENT_STATUT_VISA', bordereau.id, actorName || 'system');
-  sendMockSms(bordereau.phone, `Copilote Hadj: ${message}`);
-  sendMockEmail(bordereau.email, 'Mise à jour de votre dossier Hadj', message);
+  notifyPilgrim(bordereau, `Copilote Hadj: ${message}`, 'Mise à jour de votre dossier Hadj');
 }
 
 export async function mockChangeVisaStatus(bordereauId, newStatus, note, actor) {

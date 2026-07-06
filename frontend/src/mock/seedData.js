@@ -75,6 +75,11 @@ export const SEED_BORDEREAUX = [
     visaStatus: 'ACCORDE',
     versements: [versement({ amount: 3_500_000, method: 'AGENCE', agency: 'Garoua - Centre', createdAt: '2027-01-12' })],
     notifications: [{ date: '2027-02-01', message: 'Votre visa a été accordé.' }],
+    statusHistory: [
+      { status: 'EN_ATTENTE', date: '2027-01-12' },
+      { status: 'EN_COURS', date: '2027-01-20' },
+      { status: 'ACCORDE', date: '2027-02-01' },
+    ],
   },
   {
     id: 'BOR-0002', reference: 'CPT-100001', source: 'AGENT',
@@ -84,6 +89,10 @@ export const SEED_BORDEREAUX = [
     visaStatus: 'EN_COURS',
     versements: [versement({ amount: 1_750_000, method: 'AGENCE', agency: 'Maroua - Centre', createdAt: '2027-01-15' })],
     notifications: [{ date: '2027-01-20', message: 'Votre dossier est en cours de traitement.' }],
+    statusHistory: [
+      { status: 'EN_ATTENTE', date: '2027-01-15' },
+      { status: 'EN_COURS', date: '2027-01-20' },
+    ],
   },
   {
     id: 'BOR-0003', reference: 'CPT-100002', source: 'AGENT',
@@ -93,6 +102,7 @@ export const SEED_BORDEREAUX = [
     visaStatus: 'EN_ATTENTE',
     versements: [versement({ amount: 3_500_000, method: 'AGENCE', agency: 'Bafoussam - Centre', createdAt: '2027-01-18' })],
     notifications: [],
+    statusHistory: [{ status: 'EN_ATTENTE', date: '2027-01-18' }],
   },
   {
     id: 'BOR-0004', reference: 'CPT-100003', source: 'AGENT',
@@ -102,6 +112,11 @@ export const SEED_BORDEREAUX = [
     visaStatus: 'COMPLEMENT_REQUIS',
     versements: [versement({ amount: 7_000_000, method: 'AGENCE', agency: 'Yaoundé - Bastos', createdAt: '2027-01-20' })],
     notifications: [{ date: '2027-02-03', message: 'Complément requis : merci de fournir une copie de passeport lisible.' }],
+    statusHistory: [
+      { status: 'EN_ATTENTE', date: '2027-01-20' },
+      { status: 'EN_COURS', date: '2027-01-27' },
+      { status: 'COMPLEMENT_REQUIS', date: '2027-02-03' },
+    ],
   },
   {
     id: 'BOR-0005', reference: 'CPT-100004', source: 'AGENT',
@@ -111,6 +126,11 @@ export const SEED_BORDEREAUX = [
     visaStatus: 'REFUSE',
     versements: [versement({ amount: 900_000, method: 'AGENCE', agency: 'Douala - Akwa', createdAt: '2027-01-22' })],
     notifications: [{ date: '2027-02-05', message: 'Votre demande de visa a été refusée.' }],
+    statusHistory: [
+      { status: 'EN_ATTENTE', date: '2027-01-22' },
+      { status: 'EN_COURS', date: '2027-01-29' },
+      { status: 'REFUSE', date: '2027-02-05' },
+    ],
   },
   {
     id: 'BOR-0006', reference: 'CPT-100005', source: 'AGENT',
@@ -120,6 +140,11 @@ export const SEED_BORDEREAUX = [
     visaStatus: 'ACCORDE',
     versements: [versement({ amount: 3_500_000, method: 'AGENCE', agency: 'Douala - Bonanjo', createdAt: '2027-01-25' })],
     notifications: [{ date: '2027-02-01', message: 'Votre visa a été accordé.' }],
+    statusHistory: [
+      { status: 'EN_ATTENTE', date: '2027-01-25' },
+      { status: 'EN_COURS', date: '2027-01-28' },
+      { status: 'ACCORDE', date: '2027-02-01' },
+    ],
   },
   {
     id: 'BOR-0007', reference: null, source: 'ONLINE',
@@ -132,6 +157,10 @@ export const SEED_BORDEREAUX = [
       versement({ amount: 600_000, method: 'MOBILE_MONEY_MTN', reference: 'MTN-77012456', status: 'PENDING', createdAt: '2027-02-14' }),
     ],
     notifications: [{ date: '2027-02-02', message: 'Votre dossier est en cours de traitement.' }],
+    statusHistory: [
+      { status: 'EN_ATTENTE', date: '2027-02-02' },
+      { status: 'EN_COURS', date: '2027-02-02' },
+    ],
   },
   {
     id: 'BOR-0008', reference: 'CPT-100007', source: 'AGENT',
@@ -141,6 +170,11 @@ export const SEED_BORDEREAUX = [
     visaStatus: 'ACCORDE',
     versements: [versement({ amount: 3_500_000, method: 'AGENCE', agency: 'Ngaoundéré - Centre', createdAt: '2027-02-05' })],
     notifications: [{ date: '2027-02-20', message: 'Votre visa a été accordé.' }],
+    statusHistory: [
+      { status: 'EN_ATTENTE', date: '2027-02-05' },
+      { status: 'EN_COURS', date: '2027-02-12' },
+      { status: 'ACCORDE', date: '2027-02-20' },
+    ],
   },
   {
     id: 'BOR-0009', reference: null, source: 'ONLINE',
@@ -153,6 +187,7 @@ export const SEED_BORDEREAUX = [
       versement({ amount: 300_000, method: 'AGENCE', reference: 'BOR-AG-55219', agency: 'Garoua - Centre', status: 'PENDING', createdAt: '2027-02-18' }),
     ],
     notifications: [],
+    statusHistory: [{ status: 'EN_ATTENTE', date: '2027-02-10' }],
   },
   {
     id: 'BOR-0010', reference: 'CPT-100009', source: 'AGENT',
@@ -162,6 +197,11 @@ export const SEED_BORDEREAUX = [
     visaStatus: 'ACCORDE',
     versements: [versement({ amount: 3_500_000, method: 'AGENCE', agency: 'Yaoundé - Bastos', createdAt: '2027-02-14' })],
     notifications: [{ date: '2027-02-25', message: 'Votre visa a été accordé.' }],
+    statusHistory: [
+      { status: 'EN_ATTENTE', date: '2027-02-14' },
+      { status: 'EN_COURS', date: '2027-02-19' },
+      { status: 'ACCORDE', date: '2027-02-25' },
+    ],
   },
 ];
 

@@ -113,15 +113,16 @@ function PendingTab() {
               <th className="px-4 py-3">{t('bordereau.agency')}</th>
               <th className="px-4 py-3 text-right">{t('bordereau.amountPaid')}</th>
               <th className="px-4 py-3">{t('bordereau.date')}</th>
+              <th className="px-4 py-3">{t('paymentPage.receipt')}</th>
               <th className="px-4 py-3">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
             {loading && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
             )}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
             {!loading && pageItems.map((row) => (
               <tr key={row.id}>
@@ -134,6 +135,13 @@ function PendingTab() {
                 <td className="px-4 py-3">{row.agency || '—'}</td>
                 <td className="px-4 py-3 text-right">{formatCurrency(row.amount)}</td>
                 <td className="px-4 py-3">{formatDate(row.createdAt)}</td>
+                <td className="px-4 py-3">
+                  {row.receiptImage ? (
+                    <a href={row.receiptImage} target="_blank" rel="noreferrer" className="text-xs font-semibold text-afriland-red hover:underline">
+                      {t('paymentPage.viewReceipt')}
+                    </a>
+                  ) : '—'}
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
                     <button
@@ -229,15 +237,16 @@ function HistoryTab() {
               <th className="px-4 py-3 text-right">{t('bordereau.amountPaid')}</th>
               <th className="px-4 py-3">{t('paymentValidation.processedOn')}</th>
               <th className="px-4 py-3">{t('paymentValidation.processedBy')}</th>
+              <th className="px-4 py-3">{t('paymentPage.receipt')}</th>
               <th className="px-4 py-3">{t('paymentPage.status')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
             {loading && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
             )}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
             {!loading && pageItems.map((row) => {
               const colors = VERSEMENT_STATUS_COLORS[row.status];
@@ -252,6 +261,13 @@ function HistoryTab() {
                   <td className="px-4 py-3 text-right">{formatCurrency(row.amount)}</td>
                   <td className="px-4 py-3">{formatDate(row.validatedAt)}</td>
                   <td className="px-4 py-3">{row.validatedBy || '—'}</td>
+                  <td className="px-4 py-3">
+                    {row.receiptImage ? (
+                      <a href={row.receiptImage} target="_blank" rel="noreferrer" className="text-xs font-semibold text-afriland-red hover:underline">
+                        {t('paymentPage.viewReceipt')}
+                      </a>
+                    ) : '—'}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={clsx('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold', colors.bg, colors.text)}>
                       <span className={clsx('h-1.5 w-1.5 rounded-full', colors.dot)} />

@@ -233,6 +233,7 @@
     "seasonHistory": "Historique des saisons",
     "target": "Cible",
     "collected": "Collecté",
+    "journeyTitle": "Suivi du parcours visa",
     "notifications": "Notifications reçues",
     "notRegisteredYet": "Pas encore inscrit ?",
     "registerOnline": "Inscrivez-vous en ligne"
@@ -250,6 +251,15 @@
   "paymentPage": {
     "title": "Effectuer un versement",
     "backToDossier": "Retour à mon dossier",
+    "paymentCode": "Code de paiement",
+    "paymentCodeHelp": "Présentez ce code à votre agence pour effectuer un versement en caisse.",
+    "copyCode": "Copier le code",
+    "codeCopied": "Code copié !",
+    "receiptUpload": "Photo ou scan du reçu (optionnel)",
+    "receiptUploadHelp": "Format image ou PDF, 1,5 Mo maximum. Facilite la vérification par l'agence.",
+    "receiptAttached": "Fichier joint : {{name}}",
+    "receipt": "Reçu",
+    "viewReceipt": "Voir le reçu",
     "target": "Montant cible",
     "validated": "Montant validé",
     "pending": "En attente de validation",
@@ -281,7 +291,8 @@
       "amountRequired": "Veuillez indiquer un montant valide",
       "amountTooHigh": "Le montant dépasse le solde restant",
       "agencyRefRequired": "Veuillez sélectionner l'agence et indiquer la référence du bordereau",
-      "mobileRefRequired": "Veuillez indiquer la référence de la transaction Mobile Money"
+      "mobileRefRequired": "Veuillez indiquer la référence de la transaction Mobile Money",
+      "receiptTooLarge": "Le fichier dépasse 1,5 Mo. Merci de choisir un fichier plus léger."
     }
   },
   "paymentValidation": {

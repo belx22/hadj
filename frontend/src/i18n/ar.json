@@ -233,6 +233,7 @@
     "seasonHistory": "تاريخ المواسم",
     "target": "الهدف",
     "collected": "المحصَّل",
+    "journeyTitle": "متابعة مسار التأشيرة",
     "notifications": "الإشعارات المستلمة",
     "notRegisteredYet": "لم تسجل بعد؟",
     "registerOnline": "سجّل عبر الإنترنت"
@@ -250,6 +251,15 @@
   "paymentPage": {
     "title": "إجراء دفعة",
     "backToDossier": "العودة إلى ملفي",
+    "paymentCode": "رمز الدفع",
+    "paymentCodeHelp": "قدّم هذا الرمز في وكالتك لإجراء دفعة في الصندوق.",
+    "copyCode": "نسخ الرمز",
+    "codeCopied": "تم نسخ الرمز!",
+    "receiptUpload": "صورة أو مسح ضوئي للإيصال (اختياري)",
+    "receiptUploadHelp": "صيغة صورة أو PDF، بحد أقصى 1.5 ميغابايت. يسهّل التحقق من طرف الوكالة.",
+    "receiptAttached": "الملف المرفق: {{name}}",
+    "receipt": "الإيصال",
+    "viewReceipt": "عرض الإيصال",
     "target": "المبلغ المستهدف",
     "validated": "المبلغ المصادَق عليه",
     "pending": "قيد التحقق",
@@ -281,7 +291,8 @@
       "amountRequired": "يرجى إدخال مبلغ صحيح",
       "amountTooHigh": "المبلغ يتجاوز الرصيد المتبقي",
       "agencyRefRequired": "يرجى اختيار الوكالة وإدخال مرجع قسيمة الدفع",
-      "mobileRefRequired": "يرجى إدخال مرجع معاملة الدفع عبر الهاتف"
+      "mobileRefRequired": "يرجى إدخال مرجع معاملة الدفع عبر الهاتف",
+      "receiptTooLarge": "الملف يتجاوز 1.5 ميغابايت. يرجى اختيار ملف أصغر حجماً."
     }
   },
   "paymentValidation": {

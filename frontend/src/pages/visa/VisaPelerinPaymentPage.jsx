@@ -7,12 +7,14 @@ import { createVersementOnline } from '../../api/visaApi';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import StatCard from '../../components/ui/StatCard';
+import PaymentCodeCard from '../../components/ui/PaymentCodeCard';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { AGENCIES, VERSEMENT_METHODS, VERSEMENT_STATUS_COLORS } from '../../utils/constants';
 
-const EMPTY_FORM = { method: 'MOBILE_MONEY_ORANGE', amount: '', reference: '', agency: '' };
+const EMPTY_FORM = { method: 'MOBILE_MONEY_ORANGE', amount: '', reference: '', agency: '', receiptImage: null, receiptImageName: '' };
+const MAX_RECEIPT_SIZE = 1_500_000; // ~1.5 Mo avant encodage base64
 
 export default function VisaPelerinPaymentPage() {
   const { t } = useTranslation();
@@ -34,6 +36,21 @@ export default function VisaPelerinPaymentPage() {
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setError(null);
+  }
+
+  function handleReceiptChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_RECEIPT_SIZE) {
+      setError(t('paymentPage.errors.receiptTooLarge'));
+      e.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setForm((prev) => ({ ...prev, receiptImage: reader.result, receiptImageName: file.name }));
+    };
+    reader.readAsDataURL(file);
   }
 
   function handleLogout() {
@@ -71,6 +88,7 @@ export default function VisaPelerinPaymentPage() {
         amount,
         reference: form.reference.trim(),
         agency: form.method === 'AGENCE' ? form.agency : null,
+        receiptImage: form.method === 'AGENCE' ? form.receiptImage : null,
       });
       await login(dossier.idNumber, dossier.phone);
       setForm(EMPTY_FORM);
@@ -102,6 +120,8 @@ export default function VisaPelerinPaymentPage() {
             {t('paymentPage.backToDossier')}
           </Link>
         </div>
+
+        <PaymentCodeCard code={dossier.id} />
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard label={t('paymentPage.target')} value={formatCurrency(dossier.targetAmount)} />
@@ -154,6 +174,17 @@ export default function VisaPelerinPaymentPage() {
                     <option key={agency} value={agency}>{agency}</option>
                   ))}
                 </select>
+              </div>
+            )}
+
+            {form.method === 'AGENCE' && (
+              <div>
+                <label className="form-label">{t('paymentPage.receiptUpload')}</label>
+                <input type="file" accept="image/*,.pdf" className="form-input" onChange={handleReceiptChange} />
+                {form.receiptImageName && (
+                  <p className="mt-1 text-xs text-visa-granted">{t('paymentPage.receiptAttached', { name: form.receiptImageName })}</p>
+                )}
+                <p className="mt-1 text-xs text-afriland-gray-600">{t('paymentPage.receiptUploadHelp')}</p>
               </div>
             )}
 

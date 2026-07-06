@@ -6,7 +6,9 @@ import { usePilgrim } from '../../context/PilgrimContext';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
+import VisaJourneyStepper from '../../components/ui/VisaJourneyStepper';
 import StatCard from '../../components/ui/StatCard';
+import PaymentCodeCard from '../../components/ui/PaymentCodeCard';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { generatePilgrimAttestation } from '../../utils/pdf';
 import { VERSEMENT_STATUS_COLORS } from '../../utils/constants';
@@ -50,6 +52,13 @@ export default function VisaPelerinDossierPage() {
           </div>
           <VisaStatusBadge status={dossier.visaStatus} />
         </div>
+
+        <div className="card">
+          <p className="mb-4 text-sm font-semibold text-afriland-black">{t('visa.journeyTitle')}</p>
+          <VisaJourneyStepper status={dossier.visaStatus} statusHistory={dossier.statusHistory} />
+        </div>
+
+        <PaymentCodeCard code={dossier.id} />
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard label={t('paymentPage.target')} value={formatCurrency(dossier.targetAmount)} />
