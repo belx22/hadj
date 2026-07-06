@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import ProtectedRoute from '../components/ui/ProtectedRoute';
 import MainLayout from '../components/layout/MainLayout';
 import PageLoader from '../components/ui/PageLoader';
+import { ROLE_HOME } from '../utils/constants';
 
 import LoginChoicePage from '../pages/auth/LoginChoicePage';
 import StaffLoginPage from '../pages/auth/StaffLoginPage';
@@ -29,14 +30,6 @@ const UsersAdminPage = lazy(() => import('../pages/admin/UsersAdminPage'));
 const EncadreursAdminPage = lazy(() => import('../pages/admin/EncadreursAdminPage'));
 const SeasonsAdminPage = lazy(() => import('../pages/admin/SeasonsAdminPage'));
 const PowerBiConnectorPage = lazy(() => import('../pages/admin/PowerBiConnectorPage'));
-
-const ROLE_HOME = {
-  SUPERVISEUR: '/dashboard',
-  GESTIONNAIRE_HADJ: '/dashboard',
-  ADMIN_DSI: '/dashboard',
-  OPERATEUR_HADJ: '/bordereaux',
-  ENCADREUR: '/visa/encadreur',
-};
 
 function HomeRoute() {
   const { user, isAuthenticated } = useAuth();

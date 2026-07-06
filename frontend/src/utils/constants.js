@@ -34,6 +34,16 @@ export const ROLES = {
   ADMIN_DSI: 'ADMIN_DSI',
 };
 
+// Page d'accueil par rôle une fois connecté (utilisé par le routeur et par le
+// clic sur le logo dans le header).
+export const ROLE_HOME = {
+  SUPERVISEUR: '/dashboard',
+  GESTIONNAIRE_HADJ: '/dashboard',
+  ADMIN_DSI: '/dashboard',
+  OPERATEUR_HADJ: '/bordereaux',
+  ENCADREUR: '/visa/encadreur',
+};
+
 export const CURRENT_SEASON = 2027;
 
 export const DEFAULT_OFFICIAL_PRICE = 3_500_000; // FCFA — valeur par défaut, modifiable par type par le Gestionnaire Hadj
