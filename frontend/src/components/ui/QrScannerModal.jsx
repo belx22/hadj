@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import clsx from 'clsx';
 import jsQR from 'jsqr';
 
 // Modale d'activation caméra + scan continu de QR code (via jsQR). La saisie
 // manuelle reste toujours disponible en parallèle — ce composant ne fait
 // qu'accélérer le remplissage du formulaire quand un bordereau papier est
-// disponible.
+// disponible. Un indicateur rouge (pastille + cadre de visée) montre en
+// temps réel que le scan est actif, puis se fige au moment de la détection.
 export default function QrScannerModal({ onScan, onClose }) {
   const { t } = useTranslation();
   const videoRef = useRef(null);
@@ -13,6 +15,7 @@ export default function QrScannerModal({ onScan, onClose }) {
   const streamRef = useRef(null);
   const frameRef = useRef(null);
   const [error, setError] = useState(null);
+  const [detected, setDetected] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,7 +51,8 @@ export default function QrScannerModal({ onScan, onClose }) {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const result = jsQR(imageData.data, imageData.width, imageData.height);
         if (result?.data) {
-          onScan(result.data);
+          setDetected(true);
+          window.setTimeout(() => onScan(result.data), 300);
           return;
         }
       }
@@ -79,7 +83,33 @@ export default function QrScannerModal({ onScan, onClose }) {
           <p className="form-error">{error}</p>
         ) : (
           <>
-            <video ref={videoRef} className="w-full rounded-lg bg-black" muted playsInline />
+            <div className="relative overflow-hidden rounded-lg bg-black">
+              <video ref={videoRef} className="w-full rounded-lg" muted playsInline />
+
+              {/* Pastille rouge : indique que le scan est actif en temps réel */}
+              <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-black/60 px-2 py-1">
+                <span
+                  className={clsx(
+                    'h-2 w-2 rounded-full bg-afriland-red',
+                    !detected && 'animate-pulse'
+                  )}
+                />
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-white">
+                  {detected ? t('paymentPage.scanDetected') : t('paymentPage.scanLive')}
+                </span>
+              </div>
+
+              {/* Cadre de visée rouge : montre où positionner le QR code */}
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div
+                  className={clsx(
+                    'aspect-square w-2/3 rounded-lg border-4 transition-all duration-200',
+                    detected ? 'border-afriland-red' : 'border-afriland-red/70'
+                  )}
+                  style={detected ? { boxShadow: '0 0 0 4px rgba(200,16,46,0.35)' } : undefined}
+                />
+              </div>
+            </div>
             <p className="mt-2 text-xs text-afriland-gray-600">{t('paymentPage.scanHelp')}</p>
           </>
         )}

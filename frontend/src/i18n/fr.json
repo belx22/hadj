@@ -262,6 +262,8 @@
     "scanButton": "Scanner le QR code",
     "scanTitle": "Scanner le bordereau",
     "scanHelp": "Cadrez le QR code du bordereau dans la caméra.",
+    "scanLive": "Scan en cours",
+    "scanDetected": "QR code détecté",
     "scanSuccess": "QR code lu avec succès — champs remplis automatiquement.",
     "qrAccountNumber": "N° compte + clé",
     "qrOperationDate": "Date de l'opération",

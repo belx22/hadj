@@ -262,6 +262,8 @@
     "scanButton": "مسح رمز QR",
     "scanTitle": "مسح القسيمة",
     "scanHelp": "وجّه الكاميرا نحو رمز QR الموجود على القسيمة.",
+    "scanLive": "المسح جارٍ",
+    "scanDetected": "تم اكتشاف رمز QR",
     "scanSuccess": "تمت قراءة رمز QR بنجاح — تم ملء الحقول تلقائياً.",
     "qrAccountNumber": "رقم الحساب + المفتاح",
     "qrOperationDate": "تاريخ العملية",
