@@ -31,15 +31,37 @@ L'application démarre sur http://localhost:5173.
 
 ## Démarrer avec Docker
 
+### Option 1 — Docker Compose (recommandé pour un serveur)
+
+Depuis la racine du dépôt (pas depuis `frontend/`) :
+
+```bash
+cp .env.example .env   # ajuster FRONTEND_PORT / VITE_* si besoin
+docker compose up --build -d
+```
+
+L'application est servie par Nginx sur `http://<votre-serveur>:${FRONTEND_PORT}`
+(port `8081` par défaut). Le fichier `docker-compose.yml` ne déclare pour l'instant
+que le service `frontend`, sur un réseau bridge dédié (`copilote-hadj-network`) prêt à
+accueillir les services `backend` et `postgres` lorsqu'ils seront développés.
+
+Commandes utiles :
+
+```bash
+docker compose logs -f frontend   # suivre les logs
+docker compose down               # arrêter et supprimer le conteneur
+```
+
+### Option 2 — `docker build` / `docker run` directs
+
 ```bash
 cd frontend
 docker build -t copilote-hadj-frontend .
 docker run -p 8081:80 copilote-hadj-frontend
 ```
 
-L'application est alors servie par Nginx sur http://localhost:8081. Le fichier
-`nginx.conf` proxifie déjà `/api/` vers un service `backend:8080` — ce proxy sera actif
-dès que le service backend sera ajouté au `docker-compose.yml` (à venir).
+Dans les deux cas, `nginx.conf` proxifie déjà `/api/` vers un service `backend:8080` —
+ce proxy sera actif dès que le service backend sera ajouté au `docker-compose.yml`.
 
 ## Mode mock (backend non branché)
 
