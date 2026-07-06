@@ -9,13 +9,13 @@ pèlerins au Hadj/Oumra pour la Fenêtre Islamique d'Afriland First Bank Camerou
 
 ## Stack
 
-- React 18 + Vite (JavaScript)
+- React 18 + Vite (JavaScript), routes chargées à la demande (`React.lazy`/`Suspense`)
 - React Router 6, Axios
 - TailwindCSS (design tokens Afriland : rouge `#C8102E`, noir `#111111`, gris)
 - i18next / react-i18next — **Français / Arabe (RTL)**
 - Recharts (graphiques du reporting)
 - jsPDF / jspdf-autotable (reçus, attestations, rapports PDF côté client)
-- SheetJS `xlsx` (export Excel côté client)
+- SheetJS `xlsx` (import/export Excel et CSV côté client)
 - Nginx (image de production)
 
 ## Démarrer en local
@@ -45,9 +45,11 @@ dès que le service backend sera ajouté au `docker-compose.yml` (à venir).
 
 Tant que `VITE_USE_MOCK=true` (valeur par défaut, voir `.env.example`), toutes les
 fonctions de `src/api/*.js` répondent avec des données simulées définies dans
-`src/mock/seedData.js` et `src/mock/mockApi.js` (délai réseau simulé, persistance des
-bordereaux créés dans `localStorage`). Cela permet de démontrer les 3 modules sans
-backend.
+`src/mock/seedData.js` et `src/mock/mockApi.js` (délai réseau simulé, persistance dans
+`localStorage`). Cela permet de démontrer l'ensemble des modules sans backend.
+
+Un lien **« Réinitialiser les données de démonstration »** est disponible en pied de
+page (mode mock uniquement) pour revenir au jeu de données initial à tout moment.
 
 **Pour brancher le vrai backend Spring Boot plus tard** :
 1. Mettre `VITE_USE_MOCK=false` dans `.env`.
@@ -68,7 +70,7 @@ backend.
 | Encadreur | `encadreur1` | `encadreur123` |
 | Admin DSI | `admin` | `admin123` |
 
-### Espace pèlerin (`/visa/pelerin`)
+### Espace pèlerin (`/visa/pelerin`, ou auto-inscription via `/inscription`)
 
 Connexion sans mot de passe, par **CNI/Passeport + téléphone**. Exemple de dossier
 de démonstration :
@@ -77,35 +79,78 @@ de démonstration :
 
 (Voir `src/mock/seedData.js` pour la liste complète des dossiers simulés.)
 
+## Fonctionnalités
+
+- **Module 1 — Bordereau agence** : saisie par l'opérateur, calcul automatique du
+  montant (prix officiel × nombre de pèlerins, paramétrable par type de pèlerin et par
+  saison), anti-doublon CNI/Passeport, reçu PDF.
+- **Module 1 bis — Auto-inscription en ligne** (`/inscription`) : le pèlerin s'inscrit
+  lui-même, choisit son encadreur, puis reçoit un **code de paiement** (l'identifiant
+  du bordereau) à présenter en agence ou pour son suivi.
+- **Paiement au compte-goutte** (`/visa/pelerin/paiement`) : versements successifs par
+  Mobile Money (Orange/MTN) ou par déclaration d'un paiement en agence (avec upload
+  facultatif d'une photo/scan du reçu). Chaque versement reste **en attente** tant
+  qu'un agent habilité n'a pas vérifié la référence et le montant ; une même référence
+  ne peut être validée qu'une seule fois, tous bordereaux confondus.
+- **Suivi du parcours visa** : un stepper (`VisaJourneyStepper`) affiche au pèlerin
+  chaque étape (En attente → En cours → Accordé, avec Refusé/Complément requis comme
+  embranchements) et la date à laquelle elle a été atteinte.
+- **Notifications** : SMS, email et **WhatsApp** (mock, loggés en console) à chaque
+  inscription, versement validé/rejeté ou changement de statut visa.
+- **Module 2 — Reporting** (`/dashboard`) : KPIs, graphiques (Recharts), filtres,
+  export Excel/PDF, alertes de solde insuffisant.
+- **Clients** (`/clients`) : liste de tous les pèlerins et leur statut, filtres
+  (région, encadreur, statut), vérification d'anomalies façon Power BI (dossiers payés
+  mais toujours en attente, versements en attente depuis trop longtemps), import en
+  masse de statuts par fichier Excel/CSV.
+- **Validation des paiements** (`/paiements`) : file des versements en attente
+  (valider/rejeter) + historique filtrable par statut et par période/jour précis.
+- **Connecteur Power BI** (`/parametrage/powerbi`) : export du jeu de données détaillé
+  par versement, prêt à charger dans Power BI Desktop.
+- **Paramétrage** : gestion des encadreurs (CRUD + import Excel/CSV), des utilisateurs
+  (CRUD, tous rôles), des saisons Hadj (mois/année + prix par type de pèlerin).
+- **Journal d'audit** (`/audit`) : traçabilité des actions sensibles.
+- Toutes les listes sont **paginées** (`usePagination` + `Pagination`), les actions
+  silencieuses affichent une **notification toast**, et une session expirée (401)
+  redirige proprement vers la connexion.
+
 ## Structure du projet
 
 ```
 frontend/
 ├── src/
-│   ├── api/            # Couche d'accès API (bascule mock ↔ backend réel)
-│   ├── mock/            # Données de démo + implémentation mock des endpoints
-│   ├── i18n/            # fr.json, ar.json, initialisation i18next + RTL
-│   ├── assets/           # Logo (placeholder) et illustrations
+│   ├── api/              # Couche d'accès API (bascule mock ↔ backend réel)
+│   ├── mock/              # Données de démo + implémentation mock des endpoints
+│   ├── i18n/              # fr.json, ar.json, initialisation i18next + RTL
+│   ├── assets/             # Logo Afriland (PNG) + icône (SVG) + illustrations
 │   ├── components/
-│   │   ├── layout/       # Header, Footer, MainLayout, AuthLayout
-│   │   ├── ui/            # Composants UI réutilisables (badges, cartes, etc.)
-│   │   └── illustrations/ # SVG arabesques / Kaaba stylisée / arches
-│   ├── context/          # AuthContext (agents/encadreurs), PilgrimContext
+│   │   ├── layout/         # Header, Footer, MainLayout, AuthLayout
+│   │   ├── ui/              # Composants réutilisables (badges, pagination, toasts,
+│   │   │                      stepper de parcours visa, error boundary, etc.)
+│   │   └── illustrations/   # SVG arabesques / Kaaba stylisée / arches
+│   ├── context/            # Auth, Pilgrim, Toast (contextes React)
+│   ├── hooks/               # usePagination, etc.
 │   ├── pages/
-│   │   ├── auth/          # Choix d'espace, connexion agent
-│   │   ├── bordereau/     # Module 1 — saisie et liste des bordereaux
-│   │   ├── dashboard/      # Module 2 — reporting temps réel
-│   │   ├── visa/           # Module 3 — portail pèlerin & encadreur
-│   │   └── audit/          # Journal d'audit (Admin DSI / Superviseur)
-│   ├── router/            # Déclaration des routes + garde par rôle
-│   └── utils/              # Constantes métier, formatters, validateurs, PDF, Excel
+│   │   ├── auth/            # Choix d'espace, connexion agent
+│   │   ├── bordereau/       # Module 1 — saisie et liste des bordereaux
+│   │   ├── pilgrim/          # Auto-inscription en ligne
+│   │   ├── visa/             # Portail pèlerin (dossier, paiement) & encadreur
+│   │   ├── dashboard/         # Module 2 — reporting temps réel
+│   │   ├── clients/           # Liste des clients, vérification BI, import statuts
+│   │   ├── payments/          # Validation des paiements + historique
+│   │   ├── admin/              # Encadreurs, utilisateurs, saisons, Power BI
+│   │   └── audit/              # Journal d'audit
+│   ├── router/              # Déclaration des routes (lazy) + garde par rôle
+│   └── utils/                # Constantes métier, formatters, validateurs, PDF, Excel
 ```
 
 ## Remplacer le logo
 
-Remplacez `src/assets/logo-afriland.svg` par le logo officiel (même nom de fichier,
-ou mettez à jour l'import dans `src/components/layout/Header.jsx` et
-`src/components/layout/AuthLayout.jsx` si vous changez de format/nom).
+Remplacez `src/assets/logo-afriland.png` (logo complet, header/écrans de connexion)
+et `src/assets/logo-afriland-icon.svg` (favicon) par les fichiers officiels, en
+conservant les mêmes noms, ou mettez à jour les imports dans
+`src/components/layout/Header.jsx`, `src/components/layout/AuthLayout.jsx` et
+`index.html` si vous changez de nom/format.
 
 ## Ajouter ou modifier des traductions
 
@@ -116,11 +161,13 @@ police arabe (`font-arabic`, cf. `tailwind.config.js`).
 
 ## Rôles applicatifs
 
-- `SUPERVISEUR` — lecture, export, tableau de bord, audit
-- `GESTIONNAIRE_HADJ` — bordereaux, tableau de bord, paramétrage prix officiel
+- `SUPERVISEUR` — tableau de bord, clients, validation des paiements, Power BI, audit
+- `GESTIONNAIRE_HADJ` — bordereaux, tableau de bord, clients, validation des paiements,
+  Power BI, paramétrage (encadreurs, utilisateurs, saisons/prix officiels)
 - `OPERATEUR_HADJ` — saisie et liste des bordereaux de son agence
 - `ENCADREUR` — portail de suivi de son groupe de pèlerins
-- `ADMIN_DSI` — tableau de bord, journal d'audit
+- `ADMIN_DSI` — tableau de bord, clients, validation des paiements, Power BI,
+  paramétrage (encadreurs, utilisateurs), audit
 
 Le routage protège chaque page via `src/components/ui/ProtectedRoute.jsx` selon le
 rôle de l'utilisateur connecté (`src/router/AppRouter.jsx`).
@@ -129,4 +176,6 @@ rôle de l'utilisateur connecté (`src/router/AppRouter.jsx`).
 
 Ce frontend est conçu pour consommer une API REST `/api/v1/...` (Spring Boot) sans
 modification de composants : il suffit de désactiver le mode mock (voir plus haut).
-Les contrats attendus par page se déduisent des fonctions de `src/api/*.js`.
+Les contrats attendus par page se déduisent des fonctions de `src/api/*.js`. Le
+connecteur Power BI (export manuel) sera remplacé par un flux live (API OData/REST)
+une fois le backend disponible.
