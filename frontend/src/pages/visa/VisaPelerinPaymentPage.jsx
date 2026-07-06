@@ -8,10 +8,12 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import StatCard from '../../components/ui/StatCard';
 import PaymentCodeCard from '../../components/ui/PaymentCodeCard';
+import QrScannerModal from '../../components/ui/QrScannerModal';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { AGENCIES, VERSEMENT_METHODS, VERSEMENT_STATUS_COLORS } from '../../utils/constants';
+import { AGENCIES, VERSEMENT_METHODS, VERSEMENT_STATUS_COLORS, getAgencyByCode } from '../../utils/constants';
+import { parseVersementQrCode } from '../../utils/qrcode';
 
 const EMPTY_FORM = { method: 'MOBILE_MONEY_ORANGE', amount: '', reference: '', agency: '', receiptImage: null, receiptImageName: '' };
 const MAX_RECEIPT_SIZE = 1_500_000; // ~1.5 Mo avant encodage base64
@@ -25,6 +27,8 @@ export default function VisaPelerinPaymentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [qrData, setQrData] = useState(null);
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(dossier?.versements || []);
 
   if (!dossier) {
@@ -58,6 +62,23 @@ export default function VisaPelerinPaymentPage() {
     navigate('/visa/pelerin');
   }
 
+  function handleQrScanned(rawText) {
+    setScannerOpen(false);
+    const parsed = parseVersementQrCode(rawText);
+    if (!parsed.valid) {
+      setError(t('paymentPage.errors.qrInvalid'));
+      return;
+    }
+    setQrData(parsed);
+    setError(null);
+    setForm((prev) => ({
+      ...prev,
+      reference: parsed.reference,
+      agency: getAgencyByCode(parsed.agencyCode) || prev.agency,
+      amount: parsed.montant != null ? String(parsed.montant) : prev.amount,
+    }));
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
@@ -89,9 +110,11 @@ export default function VisaPelerinPaymentPage() {
         reference: form.reference.trim(),
         agency: form.method === 'AGENCE' ? form.agency : null,
         receiptImage: form.method === 'AGENCE' ? form.receiptImage : null,
+        qrData: form.method === 'AGENCE' ? qrData : null,
       });
       await login(dossier.idNumber, dossier.phone);
       setForm(EMPTY_FORM);
+      setQrData(null);
       setSuccess(true);
     } catch {
       setError(t('common.error'));
@@ -164,6 +187,25 @@ export default function VisaPelerinPaymentPage() {
                 ))}
               </div>
             </div>
+
+            {form.method === 'AGENCE' && (
+              <div className="rounded-md border border-dashed border-afriland-gray-400 p-3">
+                <p className="text-sm font-medium text-afriland-black">{t('paymentPage.scanCta')}</p>
+                <p className="mt-1 text-xs text-afriland-gray-600">{t('paymentPage.scanCtaHelp')}</p>
+                <button type="button" className="btn-secondary mt-2" onClick={() => setScannerOpen(true)}>
+                  {t('paymentPage.scanButton')}
+                </button>
+                {qrData && (
+                  <div className="mt-3 rounded-md bg-afriland-gray-50 p-3 text-xs text-afriland-gray-600">
+                    <p className="mb-1 font-semibold text-visa-granted">{t('paymentPage.scanSuccess')}</p>
+                    <p>{t('paymentPage.qrAccountNumber')} : <span className="font-mono">{qrData.accountNumber}</span></p>
+                    <p>{t('paymentPage.qrOperationDate')} : {qrData.operationDate ? formatDate(qrData.operationDate) : '—'}</p>
+                    <p>{t('paymentPage.qrCodeCaisse')} : <span className="font-mono">{qrData.codeCaisse}</span></p>
+                    <p>{t('paymentPage.qrTypeOperation')} : {qrData.typeOperation || '—'}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {form.method === 'AGENCE' && (
               <div>
@@ -258,6 +300,10 @@ export default function VisaPelerinPaymentPage() {
       </main>
 
       <Footer />
+
+      {scannerOpen && (
+        <QrScannerModal onScan={handleQrScanned} onClose={() => setScannerOpen(false)} />
+      )}
     </div>
   );
 }

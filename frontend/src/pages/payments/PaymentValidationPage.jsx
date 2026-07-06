@@ -131,7 +131,22 @@ function PendingTab() {
                   <p className="text-xs text-afriland-gray-600">{row.idNumber}</p>
                 </td>
                 <td className="px-4 py-3">{t(`paymentPage.methods.${row.method}`)}</td>
-                <td className="px-4 py-3 font-mono text-xs">{row.reference}</td>
+                <td className="px-4 py-3 font-mono text-xs">
+                  {row.reference}
+                  {row.qrData && (
+                    <span
+                      className="ml-1.5 inline-flex items-center rounded bg-afriland-red/10 px-1.5 py-0.5 text-[10px] font-semibold text-afriland-red"
+                      title={t('paymentPage.qrTooltip', {
+                        account: row.qrData.accountNumber,
+                        date: formatDate(row.qrData.operationDate),
+                        caisse: row.qrData.codeCaisse,
+                        type: row.qrData.typeOperation || '—',
+                      })}
+                    >
+                      {t('paymentPage.qrBadge')}
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3">{row.agency || '—'}</td>
                 <td className="px-4 py-3 text-right">{formatCurrency(row.amount)}</td>
                 <td className="px-4 py-3">{formatDate(row.createdAt)}</td>
@@ -257,7 +272,22 @@ function HistoryTab() {
                     <p className="text-xs text-afriland-gray-600">{row.idNumber}</p>
                   </td>
                   <td className="px-4 py-3">{t(`paymentPage.methods.${row.method}`)}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{row.reference}</td>
+                  <td className="px-4 py-3 font-mono text-xs">
+                    {row.reference}
+                    {row.qrData && (
+                      <span
+                        className="ml-1.5 inline-flex items-center rounded bg-afriland-red/10 px-1.5 py-0.5 text-[10px] font-semibold text-afriland-red"
+                        title={t('paymentPage.qrTooltip', {
+                          account: row.qrData.accountNumber,
+                          date: formatDate(row.qrData.operationDate),
+                          caisse: row.qrData.codeCaisse,
+                          type: row.qrData.typeOperation || '—',
+                        })}
+                      >
+                        {t('paymentPage.qrBadge')}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right">{formatCurrency(row.amount)}</td>
                   <td className="px-4 py-3">{formatDate(row.validatedAt)}</td>
                   <td className="px-4 py-3">{row.validatedBy || '—'}</td>

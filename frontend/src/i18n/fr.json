@@ -257,6 +257,18 @@
     "codeCopied": "Code copié !",
     "receiptUpload": "Photo ou scan du reçu (optionnel)",
     "receiptUploadHelp": "Format image ou PDF, 1,5 Mo maximum. Facilite la vérification par l'agence.",
+    "scanCta": "Bordereau papier avec QR code ?",
+    "scanCtaHelp": "Scannez le QR code imprimé sur votre bordereau de versement pour remplir automatiquement l'agence, la référence et le montant. La saisie manuelle reste toujours possible.",
+    "scanButton": "Scanner le QR code",
+    "scanTitle": "Scanner le bordereau",
+    "scanHelp": "Cadrez le QR code du bordereau dans la caméra.",
+    "scanSuccess": "QR code lu avec succès — champs remplis automatiquement.",
+    "qrAccountNumber": "N° compte + clé",
+    "qrOperationDate": "Date de l'opération",
+    "qrCodeCaisse": "Code caisse",
+    "qrTypeOperation": "Type d'opération",
+    "qrBadge": "QR",
+    "qrTooltip": "Compte : {{account}} • Date : {{date}} • Caisse : {{caisse}} • Type : {{type}}",
     "receiptAttached": "Fichier joint : {{name}}",
     "receipt": "Reçu",
     "viewReceipt": "Voir le reçu",
@@ -292,7 +304,9 @@
       "amountTooHigh": "Le montant dépasse le solde restant",
       "agencyRefRequired": "Veuillez sélectionner l'agence et indiquer la référence du bordereau",
       "mobileRefRequired": "Veuillez indiquer la référence de la transaction Mobile Money",
-      "receiptTooLarge": "Le fichier dépasse 1,5 Mo. Merci de choisir un fichier plus léger."
+      "receiptTooLarge": "Le fichier dépasse 1,5 Mo. Merci de choisir un fichier plus léger.",
+      "qrInvalid": "Ce QR code ne correspond pas au format attendu d'un bordereau de versement.",
+      "cameraUnavailable": "Impossible d'accéder à la caméra. Vérifiez les autorisations ou saisissez les informations manuellement."
     }
   },
   "paymentValidation": {

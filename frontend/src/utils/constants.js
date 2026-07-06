@@ -73,3 +73,22 @@ export const AGENCIES = [
   'Bafoussam - Centre',
   'Ngaoundéré - Centre',
 ];
+
+// Code agence (5 caractères) tel qu'imprimé sur le QR code du bordereau de
+// versement papier — permet de retrouver automatiquement l'agence à partir
+// d'un code scanné.
+export const AGENCY_CODES = {
+  'Yaoundé - Siège': '00001',
+  'Yaoundé - Bastos': '00002',
+  'Douala - Akwa': '00003',
+  'Douala - Bonanjo': '00004',
+  'Garoua - Centre': '00005',
+  'Maroua - Centre': '00006',
+  'Bafoussam - Centre': '00007',
+  'Ngaoundéré - Centre': '00008',
+};
+
+export function getAgencyByCode(code) {
+  const entry = Object.entries(AGENCY_CODES).find(([, value]) => value === code);
+  return entry ? entry[0] : null;
+}

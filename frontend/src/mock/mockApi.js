@@ -345,7 +345,7 @@ export async function mockRegisterPilgrimOnline(payload) {
 // ---------------------------------------------------------------------------
 // Versements en ligne (Mobile Money / référence agence) — au compte-goutte
 // ---------------------------------------------------------------------------
-export async function mockCreateVersementOnline(idNumber, phone, { method, amount, reference, agency, receiptImage }) {
+export async function mockCreateVersementOnline(idNumber, phone, { method, amount, reference, agency, receiptImage, qrData }) {
   await delay(700);
   const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber && b.phone === phone);
   if (!bordereau) {
@@ -371,6 +371,7 @@ export async function mockCreateVersementOnline(idNumber, phone, { method, amoun
     reference,
     agency: method === 'AGENCE' ? agency : null,
     receiptImage: method === 'AGENCE' ? receiptImage || null : null,
+    qrData: method === 'AGENCE' ? qrData || null : null,
     status: 'PENDING',
     createdAt,
     validatedAt: null,
