@@ -41,9 +41,10 @@ docker compose up --build -d
 ```
 
 L'application est servie par Nginx sur `http://<votre-serveur>:${FRONTEND_PORT}`
-(port `8081` par défaut). Le fichier `docker-compose.yml` ne déclare pour l'instant
-que le service `frontend`, sur un réseau bridge dédié (`copilote-hadj-network`) prêt à
-accueillir les services `backend` et `postgres` lorsqu'ils seront développés.
+(port `33847` par défaut — ex. serveur de démo : http://62.169.26.178:33847). Le
+fichier `docker-compose.yml` ne déclare pour l'instant que le service `frontend`, sur
+un réseau bridge dédié (`copilote-hadj-network`) prêt à accueillir les services
+`backend` et `postgres` lorsqu'ils seront développés.
 
 Commandes utiles :
 

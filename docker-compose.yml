@@ -11,7 +11,7 @@ services:
     container_name: copilote-hadj-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-4444}:80"
+      - "${FRONTEND_PORT:-33847}:80"
     networks:
       - copilote-hadj-network
 
