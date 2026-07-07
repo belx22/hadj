@@ -144,7 +144,7 @@ export default function VisaPelerinPaymentPage() {
           </Link>
         </div>
 
-        <PaymentCodeCard code={dossier.id} />
+        <PaymentCodeCard code={dossier.paymentCode} />
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard label={t('paymentPage.target')} value={formatCurrency(dossier.targetAmount)} />

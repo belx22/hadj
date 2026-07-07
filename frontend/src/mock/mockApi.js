@@ -9,7 +9,7 @@ import { DEFAULT_OFFICIAL_PRICE, REGIONS, VISA_STATUSES } from '../utils/constan
 
 const VISA_STATUSES_SET = new Set(VISA_STATUSES);
 
-const STORAGE_KEY = 'copilote-hadj-mock-db-v2';
+const STORAGE_KEY = 'copilote-hadj-mock-db-v3';
 const NETWORK_DELAY = 350;
 
 function seedDb() {
@@ -121,6 +121,7 @@ function decorateBordereau(bordereau) {
   const targetAmount = computeTargetAmount(bordereau);
   const price = getPrice(bordereau.season, bordereau.pilgrimType);
   const eligiblePilgrims = Math.floor(amountPaid / (price || 1));
+  const encadreur = db.encadreurs.find((e) => e.id === bordereau.encadreurId);
   return {
     ...bordereau,
     amountPaid,
@@ -131,6 +132,10 @@ function decorateBordereau(bordereau) {
     eligiblePilgrims,
     isEligible: eligiblePilgrims >= bordereau.pilgrimCount,
     isComplete: amountPaid >= targetAmount,
+    encadreurCode: encadreur?.code || null,
+    // Code de paiement remis au pèlerin : identifiant du bordereau + code
+    // encadreur, pour identifier sans ambiguïté qui l'accompagne.
+    paymentCode: encadreur?.code ? `${bordereau.id}-${encadreur.code}` : bordereau.id,
   };
 }
 
@@ -333,13 +338,14 @@ export async function mockRegisterPilgrimOnline(payload) {
   addAudit('INSCRIPTION_EN_LIGNE', id, payload.idNumber);
   persist();
 
+  const decorated = decorateBordereau(record);
   notifyPilgrim(
     record,
-    `Copilote Hadj: votre inscription ${id} est enregistrée. Votre code de paiement est ${id}. Connectez-vous pour effectuer votre versement.`,
+    `Copilote Hadj: votre inscription ${id} est enregistrée. Votre code de paiement est ${decorated.paymentCode}. Connectez-vous pour effectuer votre versement.`,
     'Inscription Hadj enregistrée'
   );
 
-  return decorateBordereau(record);
+  return decorated;
 }
 
 // ---------------------------------------------------------------------------
@@ -584,10 +590,47 @@ export async function mockGetEncadreurs({ onlyActive = true, region } = {}) {
   return items;
 }
 
+const ENCADREUR_CODE_RE = /^[A-Z0-9]{3}$/;
+
+function isCodeTaken(code, excludeId) {
+  return db.encadreurs.some((e) => e.id !== excludeId && e.code?.toUpperCase() === code);
+}
+
+// Génère un code alphanumérique à 3 caractères garanti unique (référentiel
+// encadreurs), utilisé quand aucun code n'est fourni explicitement.
+function generateEncadreurCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  for (let attempt = 0; attempt < 1000; attempt += 1) {
+    let code = '';
+    for (let i = 0; i < 3; i += 1) code += chars[Math.floor(Math.random() * chars.length)];
+    if (!isCodeTaken(code)) return code;
+  }
+  throw new Error('CODE_GENERATION_FAILED');
+}
+
+// Valide (ou génère) le code encadreur à 3 caractères alphanumériques qui
+// identifie de façon unique l'encadreur dans le code de paiement du pèlerin.
+function resolveEncadreurCode(rawCode, excludeId) {
+  if (!rawCode?.trim()) return generateEncadreurCode();
+  const code = rawCode.trim().toUpperCase();
+  if (!ENCADREUR_CODE_RE.test(code)) {
+    const error = new Error('INVALID_CODE');
+    error.code = 'INVALID_CODE';
+    throw error;
+  }
+  if (isCodeTaken(code, excludeId)) {
+    const error = new Error('CODE_TAKEN');
+    error.code = 'CODE_TAKEN';
+    throw error;
+  }
+  return code;
+}
+
 export async function mockCreateEncadreur(payload, actor) {
   await delay(300);
   const id = `ENC-${String(db.encadreurs.length + 1).padStart(3, '0')}`;
-  const record = { id, active: true, ...payload };
+  const code = resolveEncadreurCode(payload.code);
+  const record = { id, active: true, ...payload, code };
   db.encadreurs = [...db.encadreurs, record];
   addAudit('CREATION_ENCADREUR', id, actor?.username || 'system');
   persist();
@@ -596,15 +639,20 @@ export async function mockCreateEncadreur(payload, actor) {
 
 export async function mockUpdateEncadreur(id, updates, actor) {
   await delay(300);
-  db.encadreurs = db.encadreurs.map((e) => (e.id === id ? { ...e, ...updates } : e));
+  const nextUpdates = { ...updates };
+  if (updates.code !== undefined) {
+    nextUpdates.code = resolveEncadreurCode(updates.code, id);
+  }
+  db.encadreurs = db.encadreurs.map((e) => (e.id === id ? { ...e, ...nextUpdates } : e));
   addAudit('MODIFICATION_ENCADREUR', id, actor?.username || 'system');
   persist();
   return db.encadreurs.find((e) => e.id === id);
 }
 
-// Import en masse depuis un fichier Excel/CSV (colonnes attendues : name, region).
-// Les lignes dont le nom existe déjà (insensible à la casse) sont ignorées ;
-// les lignes dont la région ne fait pas partie du référentiel sont en erreur.
+// Import en masse depuis un fichier Excel/CSV (colonnes attendues : name, region,
+// et éventuellement code). Les lignes dont le nom existe déjà (insensible à la
+// casse) sont ignorées ; celles dont la région ou le code sont invalides sont en
+// erreur ; un code manquant est généré automatiquement.
 export async function mockImportEncadreurs(rows, actor) {
   await delay(500);
   const created = [];
@@ -614,6 +662,7 @@ export async function mockImportEncadreurs(rows, actor) {
   rows.forEach((row, index) => {
     const name = String(row.name || '').trim();
     const region = String(row.region || '').trim();
+    const rawCode = String(row.code || '').trim();
 
     if (!name || !region) {
       errors.push({ row: index + 1, reason: 'MISSING_FIELD' });
@@ -628,9 +677,18 @@ export async function mockImportEncadreurs(rows, actor) {
       skipped.push({ row: index + 1, name });
       return;
     }
+    if (rawCode && !ENCADREUR_CODE_RE.test(rawCode.toUpperCase())) {
+      errors.push({ row: index + 1, reason: 'INVALID_CODE' });
+      return;
+    }
+    if (rawCode && isCodeTaken(rawCode.toUpperCase())) {
+      errors.push({ row: index + 1, reason: 'CODE_TAKEN' });
+      return;
+    }
 
     const id = `ENC-${String(db.encadreurs.length + created.length + 1).padStart(3, '0')}`;
-    const record = { id, name, region, active: true };
+    const code = rawCode ? rawCode.toUpperCase() : generateEncadreurCode();
+    const record = { id, name, region, code, active: true };
     db.encadreurs = [...db.encadreurs, record];
     created.push(record);
   });

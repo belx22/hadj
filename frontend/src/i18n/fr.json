@@ -340,13 +340,20 @@
     "inactive": "Inactif",
     "activate": "Activer",
     "deactivate": "Désactiver",
+    "code": "Code",
+    "codePlaceholder": "Code (auto)",
+    "codeHelp": "Code alphanumérique à 3 caractères identifiant l'encadreur — laissez vide pour une génération automatique. Il apparaît dans le code de paiement remis au pèlerin.",
     "importTitle": "Import en masse (Excel / CSV)",
-    "importHelp": "Colonnes attendues : \"name\" (nom de l'encadreur) et \"region\". Les doublons (même nom) sont ignorés.",
+    "importHelp": "Colonnes attendues : \"name\" (nom de l'encadreur), \"region\" et \"code\" (facultatif, 3 caractères). Les doublons (même nom) sont ignorés.",
     "downloadTemplate": "Télécharger le modèle",
     "importFile": "Importer un fichier",
     "importCreated": "{{count}} encadreur(s) importé(s) avec succès",
     "importSkipped": "{{count}} ligne(s) ignorée(s) (déjà existantes)",
-    "importErrorRow": "Ligne {{row}} : {{reason}}"
+    "importErrorRow": "Ligne {{row}} : {{reason}}",
+    "errors": {
+      "invalidCode": "Le code doit comporter exactement 3 caractères alphanumériques.",
+      "codeTaken": "Ce code est déjà utilisé par un autre encadreur."
+    }
   },
   "adminUsers": {
     "title": "Gestion des utilisateurs",

@@ -109,6 +109,7 @@ export function generatePilgrimAttestation(dossier) {
     headStyles: { fillColor: [200, 16, 46] },
     body: [
       ['Identifiant de souscription', dossier.id],
+      ['Code de paiement', dossier.paymentCode || dossier.id],
       ['Montant total versé', formatCurrency(dossier.amountPaid)],
       ['Statut du visa', dossier.visaStatus],
       ['Éligibilité', dossier.isEligible ? 'Éligible' : 'Non éligible'],

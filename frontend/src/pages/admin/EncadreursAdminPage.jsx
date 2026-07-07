@@ -9,11 +9,12 @@ import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { REGIONS } from '../../utils/constants';
 
-const EMPTY_FORM = { name: '', region: REGIONS[0] };
+const EMPTY_FORM = { name: '', region: REGIONS[0], code: '' };
 
 const HEADER_ALIASES = {
   name: ['name', 'nom', 'nom de l\'encadreur', 'اسم المؤطر'],
   region: ['region', 'région', 'منطقة'],
+  code: ['code', 'code encadreur', 'رمز المؤطر'],
 };
 
 function normalizeRow(rawRow) {
@@ -22,7 +23,7 @@ function normalizeRow(rawRow) {
     const match = lowerEntries.find(([key]) => HEADER_ALIASES[field].includes(key));
     return match ? String(match[1] ?? '').trim() : '';
   };
-  return { name: pick('name'), region: pick('region') };
+  return { name: pick('name'), region: pick('region'), code: pick('code') };
 }
 
 export default function EncadreursAdminPage() {
@@ -33,8 +34,10 @@ export default function EncadreursAdminPage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
+  const [createError, setCreateError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
+  const [editError, setEditError] = useState(null);
   const [importSummary, setImportSummary] = useState(null);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
@@ -52,8 +55,15 @@ export default function EncadreursAdminPage() {
     reload();
   }, []);
 
+  function codeErrorMessage(err) {
+    if (err.code === 'INVALID_CODE') return t('adminEncadreurs.errors.invalidCode');
+    if (err.code === 'CODE_TAKEN') return t('adminEncadreurs.errors.codeTaken');
+    return t('common.error');
+  }
+
   async function handleCreate(e) {
     e.preventDefault();
+    setCreateError(null);
     if (!form.name.trim()) return;
     setSubmitting(true);
     try {
@@ -61,6 +71,8 @@ export default function EncadreursAdminPage() {
       toast.success(t('toasts.encadreurCreated'));
       setForm(EMPTY_FORM);
       reload();
+    } catch (err) {
+      setCreateError(codeErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -68,14 +80,20 @@ export default function EncadreursAdminPage() {
 
   function startEdit(enc) {
     setEditingId(enc.id);
-    setEditValues({ name: enc.name, region: enc.region });
+    setEditValues({ name: enc.name, region: enc.region, code: enc.code || '' });
+    setEditError(null);
   }
 
   async function saveEdit(id) {
-    await updateEncadreur(id, editValues, user);
-    toast.success(t('toasts.encadreurUpdated'));
-    setEditingId(null);
-    reload();
+    setEditError(null);
+    try {
+      await updateEncadreur(id, editValues, user);
+      toast.success(t('toasts.encadreurUpdated'));
+      setEditingId(null);
+      reload();
+    } catch (err) {
+      setEditError(codeErrorMessage(err));
+    }
   }
 
   async function toggleActive(enc) {
@@ -86,7 +104,7 @@ export default function EncadreursAdminPage() {
 
   function handleDownloadTemplate() {
     exportToExcel(
-      [{ name: 'El Hadj Exemple Nom', region: REGIONS[0] }],
+      [{ name: 'El Hadj Exemple Nom', region: REGIONS[0], code: '' }],
       'modele-encadreurs.xlsx',
       'Encadreurs'
     );
@@ -166,7 +184,7 @@ export default function EncadreursAdminPage() {
         )}
       </div>
 
-      <form onSubmit={handleCreate} className="card grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <form onSubmit={handleCreate} className="card grid grid-cols-1 gap-3 sm:grid-cols-4">
         <input
           className="form-input"
           placeholder={t('adminEncadreurs.name')}
@@ -180,23 +198,33 @@ export default function EncadreursAdminPage() {
         >
           {REGIONS.map((region) => <option key={region} value={region}>{region}</option>)}
         </select>
+        <input
+          className="form-input font-mono uppercase"
+          placeholder={t('adminEncadreurs.codePlaceholder')}
+          maxLength={3}
+          value={form.code}
+          onChange={(e) => setForm((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
+        />
         <button type="submit" className="btn-primary" disabled={submitting}>
           {submitting ? t('common.loading') : t('adminEncadreurs.add')}
         </button>
+        {createError && <p className="form-error sm:col-span-4">{createError}</p>}
+        <p className="text-xs text-afriland-gray-600 sm:col-span-4">{t('adminEncadreurs.codeHelp')}</p>
       </form>
 
       <div className="card overflow-x-auto p-0">
-        <table className="w-full min-w-[520px] text-left text-sm">
+        <table className="w-full min-w-[560px] text-left text-sm">
           <thead className="bg-afriland-gray-50 text-xs uppercase text-afriland-gray-600">
             <tr>
               <th className="px-4 py-3">{t('adminEncadreurs.name')}</th>
               <th className="px-4 py-3">{t('bordereau.region')}</th>
+              <th className="px-4 py-3">{t('adminEncadreurs.code')}</th>
               <th className="px-4 py-3">{t('adminEncadreurs.status')}</th>
               <th className="px-4 py-3">{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
-            {loading && <tr><td colSpan={4} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>}
+            {loading && <tr><td colSpan={5} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>}
             {!loading && pageItems.map((enc) => (
               <tr key={enc.id}>
                 {editingId === enc.id ? (
@@ -217,18 +245,28 @@ export default function EncadreursAdminPage() {
                         {REGIONS.map((region) => <option key={region} value={region}>{region}</option>)}
                       </select>
                     </td>
+                    <td className="px-4 py-2">
+                      <input
+                        className="form-input font-mono uppercase"
+                        maxLength={3}
+                        value={editValues.code}
+                        onChange={(e) => setEditValues((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                      />
+                    </td>
                     <td className="px-4 py-2">{enc.active ? t('adminEncadreurs.active') : t('adminEncadreurs.inactive')}</td>
                     <td className="px-4 py-2">
                       <div className="flex gap-2">
                         <button type="button" className="btn-primary !px-3 !py-1.5 text-xs" onClick={() => saveEdit(enc.id)}>{t('common.save')}</button>
                         <button type="button" className="btn-secondary !px-3 !py-1.5 text-xs" onClick={() => setEditingId(null)}>{t('common.cancel')}</button>
                       </div>
+                      {editError && <p className="form-error mt-1">{editError}</p>}
                     </td>
                   </>
                 ) : (
                   <>
                     <td className="px-4 py-3">{enc.name}</td>
                     <td className="px-4 py-3">{enc.region}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{enc.code || '—'}</td>
                     <td className="px-4 py-3">
                       <span className={enc.active ? 'text-visa-granted font-semibold' : 'text-visa-refused font-semibold'}>
                         {enc.active ? t('adminEncadreurs.active') : t('adminEncadreurs.inactive')}
