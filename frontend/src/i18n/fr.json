@@ -349,12 +349,26 @@
     "rejectPrompt": "Motif du rejet (optionnel)",
     "tabs": {
       "pending": "En attente",
-      "history": "Historique (validés / rejetés)"
+      "history": "Historique (validés / rejetés)",
+      "refunds": "Remboursements"
     },
     "singleDay": "Filtrer sur un jour précis",
     "singleDayHelp": "Utilisez le 4e champ pour filtrer sur un seul jour (du = au = date choisie), ou les deux premiers champs pour une période.",
     "processedOn": "Traité le",
     "processedBy": "Traité par",
+    "refunds": {
+      "help": "Un visa refusé place automatiquement les versements déjà validés en attente de remboursement. Choisissez le moyen de restitution (par défaut celui du versement d'origine) et une référence.",
+      "originalMethod": "Moyen de paiement d'origine",
+      "status": "Statut du remboursement",
+      "pending": "À rembourser",
+      "refunded": "Remboursé le {{date}}",
+      "process": "Traiter le remboursement",
+      "formTitle": "Remboursement — {{name}}",
+      "method": "Moyen de remboursement",
+      "reference": "Référence du remboursement",
+      "confirm": "Confirmer le remboursement",
+      "done": "Remboursement enregistré"
+    },
     "errors": {
       "referenceAlreadyUsed": "La référence « {{reference}} » a déjà été validée sur un autre versement. Une même référence ne peut être utilisée qu'une seule fois."
     }

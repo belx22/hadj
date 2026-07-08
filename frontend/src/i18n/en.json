@@ -349,12 +349,26 @@
     "rejectPrompt": "Rejection reason (optional)",
     "tabs": {
       "pending": "Pending",
-      "history": "History (validated / rejected)"
+      "history": "History (validated / rejected)",
+      "refunds": "Refunds"
     },
     "singleDay": "Filter on a specific day",
     "singleDayHelp": "Use the 4th field to filter on a single day (from = to = chosen date), or the first two fields for a period.",
     "processedOn": "Processed on",
     "processedBy": "Processed by",
+    "refunds": {
+      "help": "A rejected visa automatically places already-validated payments in a refund-pending state. Choose the refund method (defaults to the original payment method) and a reference.",
+      "originalMethod": "Original payment method",
+      "status": "Refund status",
+      "pending": "To be refunded",
+      "refunded": "Refunded on {{date}}",
+      "process": "Process refund",
+      "formTitle": "Refund — {{name}}",
+      "method": "Refund method",
+      "reference": "Refund reference",
+      "confirm": "Confirm refund",
+      "done": "Refund recorded"
+    },
     "errors": {
       "referenceAlreadyUsed": "The reference \"{{reference}}\" has already been validated on another payment. A reference can only be used once."
     }

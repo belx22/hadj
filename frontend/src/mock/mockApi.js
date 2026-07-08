@@ -779,6 +779,52 @@ export async function mockRejectVersement(bordereauId, versementId, reason, acto
 }
 
 // ---------------------------------------------------------------------------
+// Remboursements (Module Superviseur) — un visa refusé marque automatiquement
+// les versements déjà validés comme "à rembourser" ; le Superviseur choisit
+// ensuite le moyen de restitution (par défaut celui du versement d'origine :
+// Orange Money, Mobile Money, virement, agence...) et une référence.
+// ---------------------------------------------------------------------------
+export async function mockGetRefunds() {
+  await delay(350);
+  const rows = [];
+  db.bordereaux.forEach((bordereau) => {
+    bordereau.versements
+      .filter((v) => v.refundStatus)
+      .forEach((v) => {
+        rows.push({
+          ...v,
+          bordereauId: bordereau.id,
+          pilgrimName: `${bordereau.pilgrimFirstName} ${bordereau.pilgrimLastName}`,
+          idNumber: bordereau.idNumber,
+          phone: bordereau.phone,
+          visaStatus: bordereau.visaStatus,
+        });
+      });
+  });
+  return rows.sort((a, b) => (a.refundStatus === b.refundStatus ? 0 : a.refundStatus === 'A_REMBOURSER' ? -1 : 1));
+}
+
+export async function mockProcessRefund(bordereauId, versementId, { refundMethod, refundReference }, actor) {
+  await delay(400);
+  const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
+  if (!bordereau) throw new Error('NOT_FOUND');
+  const now = new Date().toISOString().slice(0, 10);
+  bordereau.versements = bordereau.versements.map((v) =>
+    v.id === versementId
+      ? { ...v, refundStatus: 'REMBOURSE', refundedAt: now, refundMethod, refundReference, refundedBy: actor?.username }
+      : v
+  );
+  addAudit('REMBOURSEMENT_VERSEMENT', `${bordereauId} / ${versementId}`, actor?.username || 'system');
+  persist();
+  notifyPilgrim(
+    bordereau,
+    `Copilote Hadj: un remboursement de votre versement a été effectué (${refundMethod || '—'}).`,
+    'Remboursement effectué'
+  );
+  return decorateBordereau(bordereau);
+}
+
+// ---------------------------------------------------------------------------
 // Statut visa + notifications
 // ---------------------------------------------------------------------------
 function applyVisaStatusChange(bordereau, newStatus, note, actorName) {
@@ -789,6 +835,15 @@ function applyVisaStatusChange(bordereau, newStatus, note, actorName) {
   bordereau.statusHistory = [...(bordereau.statusHistory || []), { status: newStatus, date }];
   addAudit('CHANGEMENT_STATUT_VISA', bordereau.id, actorName || 'system');
   notifyPilgrim(bordereau, `Copilote Hadj: ${message}`, 'Mise à jour de votre dossier Hadj');
+
+  // Un visa refusé déclenche automatiquement le besoin de remboursement des
+  // versements déjà validés, à traiter par le Superviseur selon le moyen de
+  // paiement d'origine (Orange Money, Mobile Money, virement, agence...).
+  if (newStatus === 'REFUSE') {
+    bordereau.versements = bordereau.versements.map((v) =>
+      v.status === 'VALIDE' && !v.refundStatus ? { ...v, refundStatus: 'A_REMBOURSER' } : v
+    );
+  }
 }
 
 export async function mockChangeVisaStatus(bordereauId, newStatus, note, actor) {

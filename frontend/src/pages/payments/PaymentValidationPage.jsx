@@ -3,13 +3,20 @@ import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getPendingVersements, getVersementsHistory, validateVersement, rejectVersement } from '../../api/paymentsApi';
+import {
+  getPendingVersements,
+  getVersementsHistory,
+  validateVersement,
+  rejectVersement,
+  getRefunds,
+  processRefund,
+} from '../../api/paymentsApi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { VERSEMENT_STATUS_COLORS } from '../../utils/constants';
+import { VERSEMENT_STATUS_COLORS, VERSEMENT_METHODS } from '../../utils/constants';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 
-const TABS = ['pending', 'history'];
+const TABS = ['pending', 'history', 'refunds'];
 
 export default function PaymentValidationPage() {
   const { t } = useTranslation();
@@ -37,7 +44,9 @@ export default function PaymentValidationPage() {
         ))}
       </div>
 
-      {tab === 'pending' ? <PendingTab /> : <HistoryTab />}
+      {tab === 'pending' && <PendingTab />}
+      {tab === 'history' && <HistoryTab />}
+      {tab === 'refunds' && <RefundsTab />}
     </div>
   );
 }
@@ -311,6 +320,145 @@ function HistoryTab() {
         </table>
         <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
       </div>
+    </div>
+  );
+}
+
+function RefundsTab() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const toast = useToast();
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeRow, setActiveRow] = useState(null);
+  const [refundMethod, setRefundMethod] = useState('');
+  const [refundReference, setRefundReference] = useState('');
+  const [busy, setBusy] = useState(false);
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(rows);
+
+  function reload() {
+    setLoading(true);
+    getRefunds().then((data) => {
+      setRows(data);
+      setLoading(false);
+    });
+  }
+
+  useEffect(() => {
+    reload();
+  }, []);
+
+  function openRefundForm(row) {
+    setActiveRow(row);
+    setRefundMethod(row.method);
+    setRefundReference('');
+  }
+
+  async function handleConfirmRefund() {
+    if (!activeRow) return;
+    setBusy(true);
+    try {
+      await processRefund(activeRow.bordereauId, activeRow.id, { refundMethod, refundReference }, user);
+      toast.success(t('paymentValidation.refunds.done'));
+      setActiveRow(null);
+      reload();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-afriland-gray-600">{t('paymentValidation.refunds.help')}</p>
+
+      <div className="card overflow-x-auto p-0">
+        <table className="w-full min-w-[820px] text-left text-sm">
+          <thead className="bg-afriland-gray-50 text-xs uppercase text-afriland-gray-600">
+            <tr>
+              <th className="px-4 py-3">{t('bordereau.table.pilgrim')}</th>
+              <th className="px-4 py-3">{t('paymentValidation.refunds.originalMethod')}</th>
+              <th className="px-4 py-3 text-right">{t('bordereau.amountPaid')}</th>
+              <th className="px-4 py-3">{t('visa.visaStatus')}</th>
+              <th className="px-4 py-3">{t('paymentValidation.refunds.status')}</th>
+              <th className="px-4 py-3">{t('common.actions')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-afriland-gray-200">
+            {loading && (
+              <tr><td colSpan={6} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
+            )}
+            {!loading && rows.length === 0 && (
+              <tr><td colSpan={6} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
+            )}
+            {!loading && pageItems.map((row) => (
+              <tr key={row.id}>
+                <td className="px-4 py-3">
+                  <p className="font-medium">{row.pilgrimName}</p>
+                  <p className="text-xs text-afriland-gray-600">{row.idNumber}</p>
+                </td>
+                <td className="px-4 py-3">{t(`paymentPage.methods.${row.method}`)}</td>
+                <td className="px-4 py-3 text-right">{formatCurrency(row.amount)}</td>
+                <td className="px-4 py-3">{t(`visa.statuses.${row.visaStatus}`)}</td>
+                <td className="px-4 py-3">
+                  {row.refundStatus === 'REMBOURSE' ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-visa-granted/15 px-2.5 py-1 text-xs font-semibold text-green-800">
+                      <span className="h-1.5 w-1.5 rounded-full bg-visa-granted" />
+                      {t('paymentValidation.refunds.refunded', { date: formatDate(row.refundedAt) })}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-visa-complement/15 px-2.5 py-1 text-xs font-semibold text-orange-800">
+                      <span className="h-1.5 w-1.5 rounded-full bg-visa-complement" />
+                      {t('paymentValidation.refunds.pending')}
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {row.refundStatus === 'A_REMBOURSER' && (
+                    <button type="button" className="btn-primary !px-3 !py-1.5 text-xs" onClick={() => openRefundForm(row)}>
+                      {t('paymentValidation.refunds.process')}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
+      </div>
+
+      {activeRow && (
+        <div className="card space-y-3">
+          <p className="text-sm font-semibold text-afriland-black">
+            {t('paymentValidation.refunds.formTitle', { name: activeRow.pilgrimName })}
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="form-label">{t('paymentValidation.refunds.method')}</label>
+              <select className="form-input" value={refundMethod} onChange={(e) => setRefundMethod(e.target.value)}>
+                {VERSEMENT_METHODS.map((method) => (
+                  <option key={method} value={method}>{t(`paymentPage.methods.${method}`)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="form-label">{t('paymentValidation.refunds.reference')}</label>
+              <input
+                className="form-input"
+                value={refundReference}
+                onChange={(e) => setRefundReference(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" className="btn-primary" disabled={busy} onClick={handleConfirmRefund}>
+              {busy ? t('common.loading') : t('paymentValidation.refunds.confirm')}
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => setActiveRow(null)}>
+              {t('common.cancel')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
