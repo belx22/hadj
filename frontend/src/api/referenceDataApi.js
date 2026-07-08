@@ -12,6 +12,7 @@ import {
   mockGetUsers,
   mockCreateUser,
   mockUpdateUser,
+  mockGetEncadreurCommissions,
 } from '../mock/mockApi';
 
 // --- Encadreurs ---
@@ -61,6 +62,12 @@ export async function createSeason(payload, actor) {
 export async function updateSeason(season, updates, actor) {
   if (USE_MOCK) return mockUpdateSeason(season, updates, actor);
   const { data } = await axiosClient.put(`/saisons/${season}`, updates);
+  return data;
+}
+
+export async function getEncadreurCommissions(season) {
+  if (USE_MOCK) return mockGetEncadreurCommissions(season);
+  const { data } = await axiosClient.get('/encadreurs/commissions', { params: { season } });
   return data;
 }
 

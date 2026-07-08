@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { to: '/visa/encadreur', key: 'nav.visaPortal', roles: ['ENCADREUR'] },
   { to: '/parametrage/saisons', key: 'nav.seasons', roles: ['GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
   { to: '/parametrage/encadreurs', key: 'nav.encadreurs', roles: ['GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
+  { to: '/parametrage/commissions', key: 'nav.commissions', roles: ['GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
   { to: '/parametrage/utilisateurs', key: 'nav.users', roles: ['ADMIN_DSI', 'GESTIONNAIRE_HADJ'] },
   { to: '/audit', key: 'nav.audit', roles: ['ADMIN_DSI', 'SUPERVISEUR'] },
 ];

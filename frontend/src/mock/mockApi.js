@@ -1052,6 +1052,44 @@ export async function mockUpdateUser(id, updates, actor) {
 }
 
 // ---------------------------------------------------------------------------
+// Commissions encadreurs (Module Gestionnaire du Hadj) — un encadreur de type
+// ENCADREUR_AVEC_COMMISSION verse un montant global pour acquérir des places
+// pour son groupe. Formule : total versé ÷ prix officiel hors commission =
+// nombre de places acquises ; le reste est soit un reliquat disponible, soit
+// (si nul) l'encadreur doit compléter pour obtenir une place supplémentaire.
+// ---------------------------------------------------------------------------
+export async function mockGetEncadreurCommissions(season) {
+  await delay(350);
+  const seasonData = getSeason(season);
+  const officialPrice = seasonData?.officialPriceExcludingCommission || DEFAULT_OFFICIAL_PRICE;
+  const commissionPerPilgrim = seasonData?.commissionPerPilgrim || 0;
+
+  return db.encadreurs.map((enc) => {
+    const bordereaux = db.bordereaux
+      .filter((b) => b.encadreurId === enc.id && b.pilgrimType === 'ENCADREUR_AVEC_COMMISSION' && b.season === seasonData.season)
+      .map(decorateBordereau);
+    const totalPaid = bordereaux.reduce((sum, b) => sum + b.amountPaid, 0);
+    const placesAcquired = officialPrice > 0 ? Math.floor(totalPaid / officialPrice) : 0;
+    const remainder = totalPaid - placesAcquired * officialPrice;
+    const amountNeededForNextPlace = remainder > 0 ? officialPrice - remainder : 0;
+
+    return {
+      encadreurId: enc.id,
+      encadreurName: enc.name,
+      encadreurCode: enc.code,
+      bordereauxCount: bordereaux.length,
+      totalPaid,
+      officialPrice,
+      commissionPerPilgrim,
+      placesAcquired,
+      reliquat: remainder,
+      amountNeededForNextPlace,
+      totalCommissionDue: placesAcquired * commissionPerPilgrim,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Paramétrage des saisons Hadj (mois/année + montant par type de pèlerin)
 // ---------------------------------------------------------------------------
 export async function mockGetSeasons() {

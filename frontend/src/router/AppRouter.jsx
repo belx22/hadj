@@ -28,6 +28,7 @@ const ClientsPage = lazy(() => import('../pages/clients/ClientsPage'));
 const PaymentValidationPage = lazy(() => import('../pages/payments/PaymentValidationPage'));
 const UsersAdminPage = lazy(() => import('../pages/admin/UsersAdminPage'));
 const EncadreursAdminPage = lazy(() => import('../pages/admin/EncadreursAdminPage'));
+const EncadreurCommissionsPage = lazy(() => import('../pages/admin/EncadreurCommissionsPage'));
 const SeasonsAdminPage = lazy(() => import('../pages/admin/SeasonsAdminPage'));
 const PowerBiConnectorPage = lazy(() => import('../pages/admin/PowerBiConnectorPage'));
 
@@ -88,6 +89,7 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute roles={['GESTIONNAIRE_HADJ', 'ADMIN_DSI']} />}>
           <Route element={<MainLayout />}>
             <Route path="/parametrage/saisons" element={<SeasonsAdminPage />} />
+            <Route path="/parametrage/commissions" element={<EncadreurCommissionsPage />} />
           </Route>
         </Route>
 

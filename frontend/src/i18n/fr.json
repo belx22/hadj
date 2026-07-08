@@ -75,6 +75,7 @@
     "payments": "Validation des paiements",
     "seasons": "Saisons Hadj",
     "encadreurs": "Encadreurs",
+    "commissions": "Commissions encadreurs",
     "users": "Utilisateurs",
     "powerbi": "Connecteur Power BI",
     "clients": "Clients"
@@ -467,5 +468,19 @@
     "errors": {
       "exists": "Cette saison existe déjà"
     }
+  },
+  "adminCommissions": {
+    "title": "Commissions encadreurs",
+    "subtitle": "Suivi des versements des encadreurs avec commission et des places acquises par saison",
+    "tableTitle": "Détail par encadreur",
+    "formula": "Places acquises = montant versé ÷ prix officiel d'une place (hors commission). Le reste est un reliquat disponible, ou le montant restant à verser pour obtenir une place supplémentaire.",
+    "totalPaid": "Total versé (encadreurs)",
+    "totalPlaces": "Total places acquises",
+    "totalCommissionDue": "Total commissions dues",
+    "totalPaidCol": "Montant versé",
+    "placesAcquired": "Places acquises",
+    "reliquat": "Reliquat disponible",
+    "amountNeeded": "Montant pour place supplémentaire",
+    "commissionDue": "Commission due"
   }
 }

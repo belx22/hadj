@@ -75,6 +75,7 @@
     "payments": "Payment validation",
     "seasons": "Hadj seasons",
     "encadreurs": "Guides",
+    "commissions": "Guide commissions",
     "users": "Users",
     "powerbi": "Power BI connector",
     "clients": "Clients"
@@ -467,5 +468,19 @@
     "errors": {
       "exists": "This season already exists"
     }
+  },
+  "adminCommissions": {
+    "title": "Guide commissions",
+    "subtitle": "Track guide-with-commission payments and places acquired per season",
+    "tableTitle": "Detail by guide",
+    "formula": "Places acquired = amount paid ÷ official price per place (excluding commission). The remainder is either an available leftover, or the amount still needed for one more place.",
+    "totalPaid": "Total paid (guides)",
+    "totalPlaces": "Total places acquired",
+    "totalCommissionDue": "Total commission due",
+    "totalPaidCol": "Amount paid",
+    "placesAcquired": "Places acquired",
+    "reliquat": "Available leftover",
+    "amountNeeded": "Amount for one more place",
+    "commissionDue": "Commission due"
   }
 }
