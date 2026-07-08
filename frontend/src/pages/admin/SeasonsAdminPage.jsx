@@ -7,7 +7,13 @@ import { formatCurrency } from '../../utils/formatters';
 import { CURRENT_SEASON, DEFAULT_OFFICIAL_PRICE, MONTHS, PILGRIM_TYPES } from '../../utils/constants';
 
 const EMPTY_PRICES = PILGRIM_TYPES.reduce((acc, type) => ({ ...acc, [type]: DEFAULT_OFFICIAL_PRICE }), {});
-const EMPTY_FORM = { season: CURRENT_SEASON + 1, month: 6, prices: { ...EMPTY_PRICES } };
+const EMPTY_FORM = {
+  season: CURRENT_SEASON + 1,
+  month: 6,
+  prices: { ...EMPTY_PRICES },
+  officialPriceExcludingCommission: DEFAULT_OFFICIAL_PRICE,
+  commissionPerPilgrim: 0,
+};
 
 export default function SeasonsAdminPage() {
   const { t } = useTranslation();
@@ -39,7 +45,15 @@ export default function SeasonsAdminPage() {
     setSubmitting(true);
     try {
       await createSeason(
-        { season: Number(form.season), month: Number(form.month), year: Number(form.season), isOpen: true, prices: form.prices },
+        {
+          season: Number(form.season),
+          month: Number(form.month),
+          year: Number(form.season),
+          isOpen: true,
+          prices: form.prices,
+          officialPriceExcludingCommission: Number(form.officialPriceExcludingCommission),
+          commissionPerPilgrim: Number(form.commissionPerPilgrim),
+        },
         user
       );
       toast.success(t('toasts.seasonCreated'));
@@ -55,7 +69,12 @@ export default function SeasonsAdminPage() {
 
   function startEdit(season) {
     setEditingSeason(season.season);
-    setEditValues({ isOpen: season.isOpen, prices: { ...season.prices } });
+    setEditValues({
+      isOpen: season.isOpen,
+      prices: { ...season.prices },
+      officialPriceExcludingCommission: season.officialPriceExcludingCommission || 0,
+      commissionPerPilgrim: season.commissionPerPilgrim || 0,
+    });
   }
 
   async function saveEdit(season) {
@@ -112,6 +131,32 @@ export default function SeasonsAdminPage() {
               />
             </div>
           ))}
+        </div>
+
+        <div className="space-y-2 rounded-md bg-afriland-gray-50 p-3">
+          <p className="text-xs font-semibold text-afriland-black">{t('adminSeasons.commissionSettings')}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="form-label">{t('adminSeasons.officialPriceExcludingCommission')}</label>
+              <input
+                type="number"
+                className="form-input"
+                value={form.officialPriceExcludingCommission}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, officialPriceExcludingCommission: Number(e.target.value) }))
+                }
+              />
+            </div>
+            <div>
+              <label className="form-label">{t('adminSeasons.commissionPerPilgrim')}</label>
+              <input
+                type="number"
+                className="form-input"
+                value={form.commissionPerPilgrim}
+                onChange={(e) => setForm((prev) => ({ ...prev, commissionPerPilgrim: Number(e.target.value) }))}
+              />
+            </div>
+          </div>
         </div>
 
         {error && <p className="form-error">{error}</p>}
@@ -171,15 +216,58 @@ export default function SeasonsAdminPage() {
                     </div>
                   ))}
                 </div>
+                <div className="space-y-2 rounded-md bg-afriland-gray-50 p-3">
+                  <p className="text-xs font-semibold text-afriland-black">{t('adminSeasons.commissionSettings')}</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="form-label">{t('adminSeasons.officialPriceExcludingCommission')}</label>
+                      <input
+                        type="number"
+                        className="form-input"
+                        value={editValues.officialPriceExcludingCommission}
+                        onChange={(e) =>
+                          setEditValues((prev) => ({ ...prev, officialPriceExcludingCommission: Number(e.target.value) }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label">{t('adminSeasons.commissionPerPilgrim')}</label>
+                      <input
+                        type="number"
+                        className="form-input"
+                        value={editValues.commissionPerPilgrim}
+                        onChange={(e) =>
+                          setEditValues((prev) => ({ ...prev, commissionPerPilgrim: Number(e.target.value) }))
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {PILGRIM_TYPES.map((type) => (
-                  <div key={type} className="rounded-md bg-afriland-gray-50 px-3 py-2">
-                    <p className="text-xs text-afriland-gray-600">{t(`bordereau.pilgrimTypes.${type}`)}</p>
-                    <p className="text-sm font-semibold text-afriland-black">{formatCurrency(season.prices[type])}</p>
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {PILGRIM_TYPES.map((type) => (
+                    <div key={type} className="rounded-md bg-afriland-gray-50 px-3 py-2">
+                      <p className="text-xs text-afriland-gray-600">{t(`bordereau.pilgrimTypes.${type}`)}</p>
+                      <p className="text-sm font-semibold text-afriland-black">{formatCurrency(season.prices[type])}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-md bg-afriland-gray-50 px-3 py-2">
+                    <p className="text-xs text-afriland-gray-600">{t('adminSeasons.officialPriceExcludingCommission')}</p>
+                    <p className="text-sm font-semibold text-afriland-black">
+                      {formatCurrency(season.officialPriceExcludingCommission)}
+                    </p>
                   </div>
-                ))}
+                  <div className="rounded-md bg-afriland-gray-50 px-3 py-2">
+                    <p className="text-xs text-afriland-gray-600">{t('adminSeasons.commissionPerPilgrim')}</p>
+                    <p className="text-sm font-semibold text-afriland-black">
+                      {formatCurrency(season.commissionPerPilgrim)}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

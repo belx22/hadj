@@ -489,7 +489,7 @@ export async function mockImportPilgrims(rows, encadreurId, actor) {
 // ---------------------------------------------------------------------------
 // Versements en ligne (Mobile Money / référence agence) — au compte-goutte
 // ---------------------------------------------------------------------------
-export async function mockCreateVersementOnline(idNumber, phone, { method, amount, reference, agency, receiptImage, qrData }) {
+export async function mockCreateVersementOnline(idNumber, phone, { method, amount, reference, agency, receiptImage, qrData, otherDetails }) {
   await delay(700);
   const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber && b.phone === phone);
   if (!bordereau) {
@@ -516,11 +516,14 @@ export async function mockCreateVersementOnline(idNumber, phone, { method, amoun
     agency: method === 'AGENCE' ? agency : null,
     receiptImage: method === 'AGENCE' ? receiptImage || null : null,
     qrData: method === 'AGENCE' ? qrData || null : null,
+    otherDetails: method === 'AUTRE' ? otherDetails || null : null,
     status: 'PENDING',
     createdAt,
     validatedAt: null,
     validatedBy: null,
     note: null,
+    refundStatus: null,
+    refundedAt: null,
   };
 
   bordereau.versements = [...bordereau.versements, newVersement];

@@ -133,7 +133,8 @@
     "officialPrice": "Prix officiel du Hadj",
     "pilgrimTypes": {
       "PELERIN": "Pèlerin",
-      "ENCADREUR": "Encadreur",
+      "ENCADREUR_AVEC_COMMISSION": "Encadreur avec commission",
+      "ENCADREUR_SANS_COMMISSION": "Encadreur sans commission",
       "OFFICIEL": "Officiel",
       "GUH": "GUH"
     },
@@ -286,10 +287,16 @@
     "methods": {
       "MOBILE_MONEY_ORANGE": "Orange Money",
       "MOBILE_MONEY_MTN": "MTN Mobile Money",
-      "AGENCE": "Paiement en agence"
+      "SARA": "SARA",
+      "E_FIRST": "E-FIRST",
+      "VIREMENT": "Virement bancaire",
+      "AGENCE": "Paiement en agence",
+      "AUTRE": "Autre"
     },
     "agencyReference": "Référence du bordereau de versement",
-    "mobileReference": "Référence de la transaction Mobile Money",
+    "mobileReference": "Référence de la transaction",
+    "otherDetails": "Précisez le moyen de paiement",
+    "otherDetailsPlaceholder": "Ex : chèque, virement international...",
     "amount": "Montant à verser",
     "maxAmount": "Maximum : {{amount}}",
     "submit": "Envoyer mon versement",
@@ -309,6 +316,7 @@
       "amountTooHigh": "Le montant dépasse le solde restant",
       "agencyRefRequired": "Veuillez sélectionner l'agence et indiquer la référence du bordereau",
       "mobileRefRequired": "Veuillez indiquer la référence de la transaction Mobile Money",
+      "otherDetailsRequired": "Veuillez préciser le moyen de paiement utilisé",
       "receiptTooLarge": "Le fichier dépasse 1,5 Mo. Merci de choisir un fichier plus léger.",
       "qrInvalid": "Ce QR code ne correspond pas au format attendu d'un bordereau de versement.",
       "cameraUnavailable": "Impossible d'accéder à la caméra. Vérifiez les autorisations ou saisissez les informations manuellement."
@@ -435,6 +443,9 @@
     "create": "Créer la saison",
     "open": "Saison ouverte",
     "closed": "Saison clôturée",
+    "commissionSettings": "Paramètres de commission encadreur",
+    "officialPriceExcludingCommission": "Prix officiel d'une place (hors commission)",
+    "commissionPerPilgrim": "Commission par pèlerin encadré",
     "errors": {
       "exists": "Cette saison existe déjà"
     }

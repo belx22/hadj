@@ -15,7 +15,7 @@ import { formatCurrency, formatDate } from '../../utils/formatters';
 import { AGENCIES, VERSEMENT_METHODS, VERSEMENT_STATUS_COLORS, getAgencyByCode } from '../../utils/constants';
 import { parseVersementQrCode } from '../../utils/qrcode';
 
-const EMPTY_FORM = { method: 'MOBILE_MONEY_ORANGE', amount: '', reference: '', agency: '', receiptImage: null, receiptImageName: '' };
+const EMPTY_FORM = { method: 'MOBILE_MONEY_ORANGE', amount: '', reference: '', agency: '', receiptImage: null, receiptImageName: '', otherDetails: '' };
 const MAX_RECEIPT_SIZE = 1_500_000; // ~1.5 Mo avant encodage base64
 
 export default function VisaPelerinPaymentPage() {
@@ -101,6 +101,10 @@ export default function VisaPelerinPaymentPage() {
       setError(t('paymentPage.errors.mobileRefRequired'));
       return;
     }
+    if (form.method === 'AUTRE' && !form.otherDetails.trim()) {
+      setError(t('paymentPage.errors.otherDetailsRequired'));
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -111,6 +115,7 @@ export default function VisaPelerinPaymentPage() {
         agency: form.method === 'AGENCE' ? form.agency : null,
         receiptImage: form.method === 'AGENCE' ? form.receiptImage : null,
         qrData: form.method === 'AGENCE' ? qrData : null,
+        otherDetails: form.method === 'AUTRE' ? form.otherDetails.trim() : null,
       });
       await login(dossier.idNumber, dossier.phone);
       setForm(EMPTY_FORM);
@@ -236,6 +241,18 @@ export default function VisaPelerinPaymentPage() {
               </label>
               <input className="form-input" value={form.reference} onChange={(e) => update('reference', e.target.value)} />
             </div>
+
+            {form.method === 'AUTRE' && (
+              <div>
+                <label className="form-label">{t('paymentPage.otherDetails')}</label>
+                <input
+                  className="form-input"
+                  value={form.otherDetails}
+                  onChange={(e) => update('otherDetails', e.target.value)}
+                  placeholder={t('paymentPage.otherDetailsPlaceholder')}
+                />
+              </div>
+            )}
 
             <div>
               <label className="form-label">{t('paymentPage.amount')}</label>

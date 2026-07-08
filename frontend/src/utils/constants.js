@@ -12,7 +12,7 @@ export const REGIONS = [
   'Sud-Ouest',
 ];
 
-export const PILGRIM_TYPES = ['PELERIN', 'ENCADREUR', 'OFFICIEL', 'GUH'];
+export const PILGRIM_TYPES = ['PELERIN', 'ENCADREUR_AVEC_COMMISSION', 'ENCADREUR_SANS_COMMISSION', 'OFFICIEL', 'GUH'];
 
 export const PILGRIM_STATUSES = ['NOUVEAU', 'RECURRENT'];
 
@@ -53,7 +53,15 @@ export const MONTHS = [
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ];
 
-export const VERSEMENT_METHODS = ['MOBILE_MONEY_ORANGE', 'MOBILE_MONEY_MTN', 'AGENCE'];
+export const VERSEMENT_METHODS = [
+  'MOBILE_MONEY_ORANGE',
+  'MOBILE_MONEY_MTN',
+  'SARA',
+  'E_FIRST',
+  'VIREMENT',
+  'AGENCE',
+  'AUTRE',
+];
 
 export const VERSEMENT_STATUSES = ['PENDING', 'VALIDE', 'REJETE'];
 

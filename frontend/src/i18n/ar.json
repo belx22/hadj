@@ -133,7 +133,8 @@
     "officialPrice": "السعر الرسمي للحج",
     "pilgrimTypes": {
       "PELERIN": "حاج",
-      "ENCADREUR": "مؤطر",
+      "ENCADREUR_AVEC_COMMISSION": "مؤطر بعمولة",
+      "ENCADREUR_SANS_COMMISSION": "مؤطر بدون عمولة",
       "OFFICIEL": "رسمي",
       "GUH": "GUH"
     },
@@ -286,10 +287,16 @@
     "methods": {
       "MOBILE_MONEY_ORANGE": "أورنج موني",
       "MOBILE_MONEY_MTN": "إم تي إن موبايل موني",
-      "AGENCE": "الدفع في الوكالة"
+      "SARA": "SARA",
+      "E_FIRST": "E-FIRST",
+      "VIREMENT": "تحويل بنكي",
+      "AGENCE": "الدفع في الوكالة",
+      "AUTRE": "أخرى"
     },
     "agencyReference": "مرجع قسيمة الدفع",
-    "mobileReference": "مرجع معاملة الدفع عبر الهاتف",
+    "mobileReference": "مرجع المعاملة",
+    "otherDetails": "حدد وسيلة الدفع",
+    "otherDetailsPlaceholder": "مثال: شيك، تحويل دولي...",
     "amount": "المبلغ المراد دفعه",
     "maxAmount": "الحد الأقصى: {{amount}}",
     "submit": "إرسال دفعتي",
@@ -309,6 +316,7 @@
       "amountTooHigh": "المبلغ يتجاوز الرصيد المتبقي",
       "agencyRefRequired": "يرجى اختيار الوكالة وإدخال مرجع قسيمة الدفع",
       "mobileRefRequired": "يرجى إدخال مرجع معاملة الدفع عبر الهاتف",
+      "otherDetailsRequired": "يرجى تحديد وسيلة الدفع المستخدمة",
       "receiptTooLarge": "الملف يتجاوز 1.5 ميغابايت. يرجى اختيار ملف أصغر حجماً.",
       "qrInvalid": "لا يتوافق رمز QR هذا مع الصيغة المتوقعة لقسيمة الدفع.",
       "cameraUnavailable": "تعذّر الوصول إلى الكاميرا. تحقق من الأذونات أو أدخل المعلومات يدوياً."
@@ -435,6 +443,9 @@
     "create": "إنشاء الموسم",
     "open": "الموسم مفتوح",
     "closed": "الموسم مغلق",
+    "commissionSettings": "إعدادات عمولة المؤطر",
+    "officialPriceExcludingCommission": "السعر الرسمي للمكان (بدون العمولة)",
+    "commissionPerPilgrim": "العمولة لكل حاج مؤطَّر",
     "errors": {
       "exists": "هذا الموسم موجود بالفعل"
     }

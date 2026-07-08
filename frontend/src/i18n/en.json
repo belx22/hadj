@@ -133,7 +133,8 @@
     "officialPrice": "Official Hadj price",
     "pilgrimTypes": {
       "PELERIN": "Pilgrim",
-      "ENCADREUR": "Guide",
+      "ENCADREUR_AVEC_COMMISSION": "Guide with commission",
+      "ENCADREUR_SANS_COMMISSION": "Guide without commission",
       "OFFICIEL": "Official",
       "GUH": "GUH"
     },
@@ -286,10 +287,16 @@
     "methods": {
       "MOBILE_MONEY_ORANGE": "Orange Money",
       "MOBILE_MONEY_MTN": "MTN Mobile Money",
-      "AGENCE": "Branch payment"
+      "SARA": "SARA",
+      "E_FIRST": "E-FIRST",
+      "VIREMENT": "Bank transfer",
+      "AGENCE": "Branch payment",
+      "AUTRE": "Other"
     },
     "agencyReference": "Payment slip reference",
-    "mobileReference": "Mobile Money transaction reference",
+    "mobileReference": "Transaction reference",
+    "otherDetails": "Specify the payment method",
+    "otherDetailsPlaceholder": "E.g.: cheque, international transfer...",
     "amount": "Amount to pay",
     "maxAmount": "Maximum: {{amount}}",
     "submit": "Submit my payment",
@@ -309,6 +316,7 @@
       "amountTooHigh": "The amount exceeds the remaining balance",
       "agencyRefRequired": "Please select the branch and enter the slip reference",
       "mobileRefRequired": "Please enter the Mobile Money transaction reference",
+      "otherDetailsRequired": "Please specify the payment method used",
       "receiptTooLarge": "The file exceeds 1.5 MB. Please choose a smaller file.",
       "qrInvalid": "This QR code does not match the expected payment slip format.",
       "cameraUnavailable": "Unable to access the camera. Check permissions or enter the information manually."
@@ -435,6 +443,9 @@
     "create": "Create season",
     "open": "Season open",
     "closed": "Season closed",
+    "commissionSettings": "Guide commission settings",
+    "officialPriceExcludingCommission": "Official price per place (excluding commission)",
+    "commissionPerPilgrim": "Commission per supervised pilgrim",
     "errors": {
       "exists": "This season already exists"
     }
