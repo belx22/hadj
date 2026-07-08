@@ -237,7 +237,9 @@
     "journeyTitle": "Visa journey tracking",
     "notifications": "Notifications received",
     "notRegisteredYet": "Not registered yet?",
-    "registerOnline": "Register online"
+    "registerOnline": "Register online",
+    "phoneOrPassword": "Phone or password",
+    "phoneOrPasswordHelp": "Use your phone number if you registered yourself, or the password given to you by your guide if they registered you."
   },
   "footer": {
     "rights": "All rights reserved",
@@ -418,7 +420,11 @@
     "applyToGroup": "Apply to whole group",
     "applyToGroupConfirm": "Apply status \"{{status}}\" to the entire group ({{count}} pilgrims)?",
     "bulkSuccess": "{{count}} file(s) updated",
-    "selectionRequired": "Select at least one pilgrim"
+    "selectionRequired": "Select at least one pilgrim",
+    "credentialTitle": "{{name}} — file created",
+    "password": "Password",
+    "credentialHelp": "Give the ID/Passport number and the password to the pilgrim: they will be able to track their file remotely from the pilgrim space.",
+    "exportCredentials": "Export credentials (Excel)"
   },
   "adminSeasons": {
     "title": "Hadj season management",

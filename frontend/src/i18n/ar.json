@@ -237,7 +237,9 @@
     "journeyTitle": "متابعة مسار التأشيرة",
     "notifications": "الإشعارات المستلمة",
     "notRegisteredYet": "لم تسجل بعد؟",
-    "registerOnline": "سجّل عبر الإنترنت"
+    "registerOnline": "سجّل عبر الإنترنت",
+    "phoneOrPassword": "الهاتف أو كلمة المرور",
+    "phoneOrPasswordHelp": "استخدم رقم هاتفك إذا سجّلت نفسك بنفسك، أو كلمة المرور التي سلّمك إياها مؤطرك إذا قام بتسجيلك."
   },
   "footer": {
     "rights": "جميع الحقوق محفوظة",
@@ -418,7 +420,11 @@
     "applyToGroup": "تطبيق على المجموعة بأكملها",
     "applyToGroupConfirm": "تطبيق الحالة «{{status}}» على المجموعة بأكملها ({{count}} حاج)؟",
     "bulkSuccess": "تم تحديث {{count}} ملف(ات)",
-    "selectionRequired": "حدد حاجاً واحداً على الأقل"
+    "selectionRequired": "حدد حاجاً واحداً على الأقل",
+    "credentialTitle": "{{name}} — تم إنشاء الملف",
+    "password": "كلمة المرور",
+    "credentialHelp": "سلّم رقم البطاقة/الجواز وكلمة المرور للحاج: سيتمكن من متابعة ملفه عن بُعد من فضاء الحاج.",
+    "exportCredentials": "تصدير بيانات الدخول (Excel)"
   },
   "adminSeasons": {
     "title": "إدارة مواسم الحج",

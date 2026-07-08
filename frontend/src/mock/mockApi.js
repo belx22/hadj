@@ -9,7 +9,7 @@ import { CURRENT_SEASON, DEFAULT_OFFICIAL_PRICE, PILGRIM_TYPES, REGIONS, VISA_ST
 
 const VISA_STATUSES_SET = new Set(VISA_STATUSES);
 
-const STORAGE_KEY = 'copilote-hadj-mock-db-v3';
+const STORAGE_KEY = 'copilote-hadj-mock-db-v4';
 const NETWORK_DELAY = 350;
 
 function seedDb() {
@@ -351,6 +351,16 @@ export async function mockRegisterPilgrimOnline(payload) {
 // ---------------------------------------------------------------------------
 // Inscription des pèlerins par l'encadreur (individuelle et en masse)
 // ---------------------------------------------------------------------------
+// Mot de passe temporaire lisible (pas de 0/O/1/I/l ambigus) — remis par
+// l'encadreur au pèlerin pour qu'il puisse suivre son dossier à distance,
+// en plus (ou à la place) de son numéro de téléphone.
+function generatePilgrimPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let password = '';
+  for (let i = 0; i < 6; i += 1) password += chars[Math.floor(Math.random() * chars.length)];
+  return password;
+}
+
 function buildEncadreurBordereau(payload, encadreurId, offset = 0) {
   const index = db.bordereaux.length + offset;
   const id = `BOR-${String(index + 1).padStart(4, '0')}`;
@@ -374,6 +384,7 @@ function buildEncadreurBordereau(payload, encadreurId, offset = 0) {
     onlinePriority: false,
     visaStatus: 'EN_ATTENTE',
     createdAt,
+    password: generatePilgrimPassword(),
     versements: [],
     notifications: [{ date: createdAt, message: VISA_STATUS_MESSAGES.EN_ATTENTE }],
     statusHistory: [{ status: 'EN_ATTENTE', date: createdAt }],
@@ -396,7 +407,7 @@ export async function mockRegisterPilgrimByEncadreur(payload, encadreurId, actor
   const decorated = decorateBordereau(record);
   notifyPilgrim(
     record,
-    `Copilote Hadj: vous avez été inscrit(e) par votre encadreur. Votre code de paiement est ${decorated.paymentCode}.`,
+    `Copilote Hadj: vous avez été inscrit(e) par votre encadreur. Votre code de paiement est ${decorated.paymentCode}. Mot de passe de suivi : ${record.password}.`,
     'Inscription Hadj enregistrée'
   );
   return decorated;
@@ -451,7 +462,20 @@ export async function mockImportPilgrims(rows, encadreurId, actor) {
     );
     record.source = 'ENCADREUR_IMPORT';
     db.bordereaux = [record, ...db.bordereaux];
-    created.push({ id: record.id, idNumber });
+    created.push({
+      id: record.id,
+      idNumber,
+      pilgrimName: `${pilgrimFirstName} ${pilgrimLastName}`,
+      phone,
+      password: record.password,
+    });
+
+    const decorated = decorateBordereau(record);
+    notifyPilgrim(
+      record,
+      `Copilote Hadj: vous avez été inscrit(e) par votre encadreur. Votre code de paiement est ${decorated.paymentCode}. Mot de passe de suivi : ${record.password}.`,
+      'Inscription Hadj enregistrée'
+    );
   });
 
   if (created.length > 0) {
@@ -916,9 +940,14 @@ export async function mockUpdateSeason(season, updates, actor) {
 // ---------------------------------------------------------------------------
 // Visa portal (Module 3)
 // ---------------------------------------------------------------------------
-export async function mockPilgrimLogin(idNumber, phone) {
+// `secret` accepte soit le numéro de téléphone (auto-inscription), soit le mot
+// de passe temporaire remis par l'encadreur (inscription individuelle ou en
+// masse par l'encadreur) — un seul champ de connexion pour les deux cas.
+export async function mockPilgrimLogin(idNumber, secret) {
   await delay(450);
-  const record = db.bordereaux.find((b) => b.idNumber === idNumber && b.phone === phone);
+  const record = db.bordereaux.find(
+    (b) => b.idNumber === idNumber && (b.phone === secret || (b.password && b.password === secret))
+  );
   if (!record) {
     const error = new Error('NOT_FOUND');
     error.code = 'NOT_FOUND';

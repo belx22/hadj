@@ -52,6 +52,7 @@ export default function VisaEncadreurPortalPage() {
   const [formError, setFormError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [registeredCredential, setRegisteredCredential] = useState(null);
 
   const [importSummary, setImportSummary] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -125,6 +126,7 @@ export default function VisaEncadreurPortalPage() {
   async function handleRegister(e) {
     e.preventDefault();
     setFormError(null);
+    setRegisteredCredential(null);
     const validationErrors = validateBordereau(
       { ...form, encadreurId: user.encadreurId },
       t,
@@ -135,8 +137,13 @@ export default function VisaEncadreurPortalPage() {
 
     setSubmitting(true);
     try {
-      await registerPilgrimByEncadreur({ ...form, pilgrimCount: Number(form.pilgrimCount) }, user.encadreurId, user);
+      const record = await registerPilgrimByEncadreur({ ...form, pilgrimCount: Number(form.pilgrimCount) }, user.encadreurId, user);
       toast.success(t('toasts.pilgrimRegisteredByEncadreur'));
+      setRegisteredCredential({
+        name: `${record.pilgrimFirstName} ${record.pilgrimLastName}`,
+        idNumber: record.idNumber,
+        password: record.password,
+      });
       setForm(EMPTY_FORM);
       reload();
     } catch (err) {
@@ -340,6 +347,19 @@ export default function VisaEncadreurPortalPage() {
           </button>
         </form>
         {formError && <p className="form-error">{formError}</p>}
+        {registeredCredential && (
+          <div className="rounded-md border border-visa-granted/30 bg-visa-granted/5 p-3 text-sm">
+            <p className="font-semibold text-visa-granted">
+              {t('encadreurPortal.credentialTitle', { name: registeredCredential.name })}
+            </p>
+            <p className="mt-1 text-afriland-gray-600">
+              {t('bordereau.idNumber')} : <span className="font-mono text-afriland-black">{registeredCredential.idNumber}</span>
+              {' — '}
+              {t('encadreurPortal.password')} : <span className="font-mono text-afriland-black">{registeredCredential.password}</span>
+            </p>
+            <p className="mt-1 text-xs text-afriland-gray-600">{t('encadreurPortal.credentialHelp')}</p>
+          </div>
+        )}
       </div>
 
       <div className="card space-y-3">
@@ -364,6 +384,29 @@ export default function VisaEncadreurPortalPage() {
                   <li key={index}>{t('adminEncadreurs.importErrorRow', { row: err.row, reason: err.reason })}</li>
                 ))}
               </ul>
+            )}
+            {importSummary.created.length > 0 && (
+              <>
+                <p className="mt-2 text-xs text-afriland-gray-600">{t('encadreurPortal.credentialHelp')}</p>
+                <button
+                  type="button"
+                  className="btn-secondary mt-2"
+                  onClick={() =>
+                    exportToExcel(
+                      importSummary.created.map((c) => ({
+                        Pelerin: c.pilgrimName,
+                        CNI_Passeport: c.idNumber,
+                        Telephone: c.phone,
+                        MotDePasse: c.password,
+                      })),
+                      'identifiants-pelerins.xlsx',
+                      'Identifiants'
+                    )
+                  }
+                >
+                  {t('encadreurPortal.exportCredentials')}
+                </button>
+              </>
             )}
           </div>
         )}

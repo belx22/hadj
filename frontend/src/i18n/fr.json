@@ -237,7 +237,9 @@
     "journeyTitle": "Suivi du parcours visa",
     "notifications": "Notifications reçues",
     "notRegisteredYet": "Pas encore inscrit ?",
-    "registerOnline": "Inscrivez-vous en ligne"
+    "registerOnline": "Inscrivez-vous en ligne",
+    "phoneOrPassword": "Téléphone ou mot de passe",
+    "phoneOrPasswordHelp": "Utilisez votre numéro de téléphone si vous vous êtes inscrit vous-même, ou le mot de passe transmis par votre encadreur s'il vous a inscrit."
   },
   "footer": {
     "rights": "Tous droits réservés",
@@ -418,7 +420,11 @@
     "applyToGroup": "Appliquer à tout le groupe",
     "applyToGroupConfirm": "Appliquer le statut « {{status}} » à l'ensemble du groupe ({{count}} pèlerins) ?",
     "bulkSuccess": "{{count}} dossier(s) mis à jour",
-    "selectionRequired": "Sélectionnez au moins un pèlerin"
+    "selectionRequired": "Sélectionnez au moins un pèlerin",
+    "credentialTitle": "{{name}} — dossier créé",
+    "password": "Mot de passe",
+    "credentialHelp": "Transmettez le CNI/Passeport et le mot de passe au pèlerin : il pourra suivre son dossier à distance sur l'espace pèlerin.",
+    "exportCredentials": "Exporter les identifiants (Excel)"
   },
   "adminSeasons": {
     "title": "Gestion des saisons Hadj",
