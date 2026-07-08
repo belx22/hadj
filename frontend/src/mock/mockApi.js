@@ -832,11 +832,16 @@ export async function mockBulkChangeVisaStatus({ bordereauIds, encadreurId, newS
 // Import en masse des statuts de visa depuis un fichier Excel/CSV externe
 // (colonnes attendues : idNumber, status, note facultative). Réutilise la même
 // logique de notification/audit que le changement de statut unitaire.
-export async function mockImportVisaStatuses(rows, actor) {
+// `encadreurId` restreint l'import aux seuls pèlerins de cet encadreur : toute
+// ligne dont le CNI/Passeport correspond à un pèlerin d'un AUTRE encadreur est
+// rejetée (wrongEncadreur) plutôt qu'appliquée, pour éviter qu'un import
+// destiné à un encadreur ne modifie par erreur le dossier d'un autre groupe.
+export async function mockImportVisaStatuses(rows, actor, encadreurId = null) {
   await delay(600);
   const updated = [];
   const notFound = [];
   const invalidStatus = [];
+  const wrongEncadreur = [];
 
   rows.forEach((row, index) => {
     const idNumber = String(row.idNumber || '').trim();
@@ -851,16 +856,23 @@ export async function mockImportVisaStatuses(rows, actor) {
       notFound.push({ row: index + 1, idNumber });
       return;
     }
+    if (encadreurId && bordereau.encadreurId !== encadreurId) {
+      wrongEncadreur.push({ row: index + 1, idNumber });
+      return;
+    }
     applyVisaStatusChange(bordereau, status, row.note, actor?.username);
     updated.push({ bordereauId: bordereau.id, idNumber, status });
   });
 
   if (updated.length > 0) {
-    addAudit('IMPORT_STATUTS_VISA', `${updated.length} dossier(s)`, actor?.username || 'system');
+    const label = encadreurId
+      ? `${updated.length} dossier(s) (encadreur ${encadreurId})`
+      : `${updated.length} dossier(s)`;
+    addAudit('IMPORT_STATUTS_VISA', label, actor?.username || 'system');
     persist();
   }
 
-  return { updated, notFound, invalidStatus };
+  return { updated, notFound, invalidStatus, wrongEncadreur };
 }
 
 // Vérification automatique des anomalies (équivalent d'un contrôle via le jeu de

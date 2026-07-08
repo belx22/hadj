@@ -412,8 +412,12 @@
     },
     "importTitle": "Import des statuts (Excel / CSV)",
     "importHelp": "Colonnes attendues : \"idNumber\" (CNI/Passeport), \"status\" et \"note\" (facultative). Utile pour synchroniser des statuts reçus d'un système externe.",
+    "importScope": "Portée de l'import",
+    "importScopeAll": "Tous les encadreurs",
+    "importScopeHelp": "En sélectionnant un encadreur, seules les lignes correspondant à ses pèlerins seront appliquées ; les autres seront rejetées.",
     "importUpdated": "{{count}} dossier(s) mis à jour avec succès",
-    "importNotFound": "{{count}} ligne(s) sans dossier correspondant"
+    "importNotFound": "{{count}} ligne(s) sans dossier correspondant",
+    "importWrongEncadreur": "{{count}} ligne(s) rejetée(s) : pèlerin rattaché à un autre encadreur"
   },
   "powerBi": {
     "title": "Connecteur Power BI",

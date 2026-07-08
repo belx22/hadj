@@ -412,8 +412,12 @@
     },
     "importTitle": "Status import (Excel / CSV)",
     "importHelp": "Expected columns: \"idNumber\" (ID/Passport), \"status\" and \"note\" (optional). Useful for syncing statuses received from an external system.",
+    "importScope": "Import scope",
+    "importScopeAll": "All guides",
+    "importScopeHelp": "If you select a guide, only rows matching their pilgrims will be applied; the rest will be rejected.",
     "importUpdated": "{{count}} file(s) updated successfully",
-    "importNotFound": "{{count}} row(s) with no matching file"
+    "importNotFound": "{{count}} row(s) with no matching file",
+    "importWrongEncadreur": "{{count}} row(s) rejected: pilgrim attached to another guide"
   },
   "powerBi": {
     "title": "Power BI connector",

@@ -412,8 +412,12 @@
     },
     "importTitle": "استيراد الحالات (Excel / CSV)",
     "importHelp": "الأعمدة المطلوبة: \"idNumber\" (البطاقة/الجواز)، \"status\" و \"note\" (اختياري). مفيد لمزامنة الحالات الواردة من نظام خارجي.",
+    "importScope": "نطاق الاستيراد",
+    "importScopeAll": "جميع المؤطرين",
+    "importScopeHelp": "عند اختيار مؤطر، سيتم تطبيق الأسطر الخاصة بحجاجه فقط؛ وسيتم رفض البقية.",
     "importUpdated": "تم تحديث {{count}} ملف(ات) بنجاح",
-    "importNotFound": "{{count}} سطر بدون ملف مطابق"
+    "importNotFound": "{{count}} سطر بدون ملف مطابق",
+    "importWrongEncadreur": "تم رفض {{count}} سطر: الحاج مرتبط بمؤطر آخر"
   },
   "powerBi": {
     "title": "موصل Power BI",

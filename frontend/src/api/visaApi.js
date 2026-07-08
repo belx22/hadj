@@ -51,9 +51,9 @@ export async function bulkChangeVisaStatus(payload, actor) {
   return data;
 }
 
-export async function importVisaStatuses(rows, actor) {
-  if (USE_MOCK) return mockImportVisaStatuses(rows, actor);
-  const { data } = await axiosClient.post('/visa/import-statuts', { rows });
+export async function importVisaStatuses(rows, actor, encadreurId = null) {
+  if (USE_MOCK) return mockImportVisaStatuses(rows, actor, encadreurId);
+  const { data } = await axiosClient.post('/visa/import-statuts', { rows, encadreurId });
   return data;
 }
 

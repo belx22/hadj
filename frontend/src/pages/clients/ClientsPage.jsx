@@ -28,6 +28,7 @@ export default function ClientsPage() {
 
   const [importing, setImporting] = useState(false);
   const [importSummary, setImportSummary] = useState(null);
+  const [importEncadreurId, setImportEncadreurId] = useState('');
   const fileInputRef = useRef(null);
 
   function reload() {
@@ -103,7 +104,7 @@ export default function ClientsPage() {
           note: pick(['note', 'commentaire', 'ملاحظة']),
         };
       });
-      const summary = await importVisaStatuses(rows, user);
+      const summary = await importVisaStatuses(rows, user, importEncadreurId || null);
       setImportSummary(summary);
       reload();
     } catch {
@@ -185,6 +186,14 @@ export default function ClientsPage() {
       <div className="card space-y-3">
         <p className="text-sm font-semibold text-afriland-black">{t('clients.importTitle')}</p>
         <p className="text-xs text-afriland-gray-600">{t('clients.importHelp')}</p>
+        <div>
+          <label className="form-label">{t('clients.importScope')}</label>
+          <select className="form-input max-w-sm" value={importEncadreurId} onChange={(e) => setImportEncadreurId(e.target.value)}>
+            <option value="">{t('clients.importScopeAll')}</option>
+            {encadreurs.map((enc) => <option key={enc.id} value={enc.id}>{enc.name}</option>)}
+          </select>
+          <p className="mt-1 text-xs text-afriland-gray-600">{t('clients.importScopeHelp')}</p>
+        </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-secondary" onClick={handleDownloadTemplate}>
             {t('adminEncadreurs.downloadTemplate')}
@@ -202,6 +211,9 @@ export default function ClientsPage() {
             </p>
             {importSummary.notFound.length > 0 && (
               <p className="text-afriland-gray-600">{t('clients.importNotFound', { count: importSummary.notFound.length })}</p>
+            )}
+            {importSummary.wrongEncadreur?.length > 0 && (
+              <p className="text-visa-complement">{t('clients.importWrongEncadreur', { count: importSummary.wrongEncadreur.length })}</p>
             )}
             {importSummary.invalidStatus.length > 0 && (
               <ul className="mt-1 list-disc pl-5 text-visa-refused">
