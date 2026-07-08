@@ -2,9 +2,11 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import fr from './fr.json';
 import ar from './ar.json';
+import en from './en.json';
 
 export const SUPPORTED_LANGUAGES = [
   { code: 'fr', label: 'Français', dir: 'ltr' },
+  { code: 'en', label: 'English', dir: 'ltr' },
   { code: 'ar', label: 'العربية', dir: 'rtl' },
 ];
 
@@ -14,6 +16,7 @@ const storedLocale = typeof window !== 'undefined' ? localStorage.getItem('copil
 i18n.use(initReactI18next).init({
   resources: {
     fr: { translation: fr },
+    en: { translation: en },
     ar: { translation: ar },
   },
   lng: storedLocale || defaultLocale,
