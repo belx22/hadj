@@ -55,7 +55,8 @@
     "userStatusUpdated": "Statut de l'utilisateur mis à jour",
     "seasonCreated": "Saison créée avec succès",
     "seasonUpdated": "Saison mise à jour",
-    "resetDone": "Les données de démonstration ont été réinitialisées"
+    "resetDone": "Les données de démonstration ont été réinitialisées",
+    "pilgrimRegisteredByEncadreur": "Pèlerin inscrit avec succès"
   },
   "pagination": {
     "previous": "Précédent",
@@ -400,6 +401,24 @@
     "step2": "Sélectionnez le fichier exporté ci-dessus et la feuille « Versements ».",
     "step3": "Construisez vos visuels (montants validés/en attente, par encadreur, par région, etc.) puis actualisez le classeur après chaque nouvel export.",
     "futureNote": "Une fois le backend Spring Boot connecté, un flux live (API OData/REST) remplacera cet export manuel pour une actualisation automatique dans Power BI."
+  },
+  "encadreurPortal": {
+    "registerTitle": "Inscrire un pèlerin",
+    "registerButton": "Inscrire",
+    "importTitle": "Import en masse de pèlerins (Excel / CSV)",
+    "importHelp": "Colonnes attendues : \"pilgrimLastName\", \"pilgrimFirstName\", \"phone\" (9 chiffres), \"idNumber\", \"region\" et \"pilgrimType\" (facultatif). Les doublons CNI/Passeport sur la saison en cours sont ignorés.",
+    "pilgrimsImportCreated": "{{count}} pèlerin(s) importé(s) avec succès",
+    "pilgrimsImportSkipped": "{{count}} ligne(s) ignorée(s) (doublon CNI/Passeport)",
+    "bulkValidationTitle": "Validation des visas en masse",
+    "bulkValidationHelp": "Cochez des pèlerins dans le tableau pour appliquer un statut à la sélection, ou appliquez-le directement à tout le groupe.",
+    "selectAll": "Tout sélectionner",
+    "selectedCount": "{{count}} sélectionné(s)",
+    "notePlaceholder": "Message aux pèlerins (optionnel)",
+    "applyToSelected": "Appliquer à la sélection",
+    "applyToGroup": "Appliquer à tout le groupe",
+    "applyToGroupConfirm": "Appliquer le statut « {{status}} » à l'ensemble du groupe ({{count}} pèlerins) ?",
+    "bulkSuccess": "{{count}} dossier(s) mis à jour",
+    "selectionRequired": "Sélectionnez au moins un pèlerin"
   },
   "adminSeasons": {
     "title": "Gestion des saisons Hadj",

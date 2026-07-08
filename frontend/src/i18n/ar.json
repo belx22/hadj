@@ -55,7 +55,8 @@
     "userStatusUpdated": "تم تحديث حالة المستخدم",
     "seasonCreated": "تم إنشاء الموسم بنجاح",
     "seasonUpdated": "تم تحديث الموسم",
-    "resetDone": "تمت إعادة تعيين بيانات العرض التجريبي"
+    "resetDone": "تمت إعادة تعيين بيانات العرض التجريبي",
+    "pilgrimRegisteredByEncadreur": "تم تسجيل الحاج بنجاح"
   },
   "pagination": {
     "previous": "السابق",
@@ -400,6 +401,24 @@
     "step2": "اختر الملف المصدَّر أعلاه وورقة «Versements».",
     "step3": "أنشئ الرسوم البيانية الخاصة بك (المبالغ المصادَق عليها/قيد الانتظار، حسب المؤطر، حسب المنطقة...) ثم حدّث المصنف بعد كل تصدير جديد.",
     "futureNote": "بمجرد ربط الخلفية Spring Boot، سيحل تدفق مباشر (واجهة OData/REST) محل هذا التصدير اليدوي للتحديث التلقائي في Power BI."
+  },
+  "encadreurPortal": {
+    "registerTitle": "تسجيل حاج",
+    "registerButton": "تسجيل",
+    "importTitle": "استيراد جماعي للحجاج (Excel / CSV)",
+    "importHelp": "الأعمدة المطلوبة: \"pilgrimLastName\"، \"pilgrimFirstName\"، \"phone\" (9 أرقام)، \"idNumber\"، \"region\" و \"pilgrimType\" (اختياري). يتم تجاهل تكرار رقم البطاقة/الجواز لنفس الموسم الحالي.",
+    "pilgrimsImportCreated": "تم استيراد {{count}} حاج(اً) بنجاح",
+    "pilgrimsImportSkipped": "تم تجاهل {{count}} سطر (تكرار رقم البطاقة/الجواز)",
+    "bulkValidationTitle": "التصديق الجماعي على التأشيرات",
+    "bulkValidationHelp": "حدد الحجاج في الجدول لتطبيق حالة على التحديد، أو طبّقها مباشرة على المجموعة بأكملها.",
+    "selectAll": "تحديد الكل",
+    "selectedCount": "{{count}} محدد",
+    "notePlaceholder": "رسالة إلى الحجاج (اختياري)",
+    "applyToSelected": "تطبيق على التحديد",
+    "applyToGroup": "تطبيق على المجموعة بأكملها",
+    "applyToGroupConfirm": "تطبيق الحالة «{{status}}» على المجموعة بأكملها ({{count}} حاج)؟",
+    "bulkSuccess": "تم تحديث {{count}} ملف(ات)",
+    "selectionRequired": "حدد حاجاً واحداً على الأقل"
   },
   "adminSeasons": {
     "title": "إدارة مواسم الحج",

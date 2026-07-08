@@ -5,8 +5,11 @@ import {
   mockRegisterPilgrimOnline,
   mockCreateVersementOnline,
   mockChangeVisaStatus,
+  mockBulkChangeVisaStatus,
   mockImportVisaStatuses,
   mockCheckStatusAnomalies,
+  mockRegisterPilgrimByEncadreur,
+  mockImportPilgrims,
 } from '../mock/mockApi';
 
 export async function pilgrimLogin(idNumber, phone) {
@@ -39,6 +42,12 @@ export async function changeVisaStatus(bordereauId, newStatus, note, actor) {
   return data;
 }
 
+export async function bulkChangeVisaStatus(payload, actor) {
+  if (USE_MOCK) return mockBulkChangeVisaStatus(payload, actor);
+  const { data } = await axiosClient.put('/visa/statut-en-masse', payload);
+  return data;
+}
+
 export async function importVisaStatuses(rows, actor) {
   if (USE_MOCK) return mockImportVisaStatuses(rows, actor);
   const { data } = await axiosClient.post('/visa/import-statuts', { rows });
@@ -48,5 +57,17 @@ export async function importVisaStatuses(rows, actor) {
 export async function checkStatusAnomalies() {
   if (USE_MOCK) return mockCheckStatusAnomalies();
   const { data } = await axiosClient.get('/visa/verification-bi');
+  return data;
+}
+
+export async function registerPilgrimByEncadreur(payload, encadreurId, actor) {
+  if (USE_MOCK) return mockRegisterPilgrimByEncadreur(payload, encadreurId, actor);
+  const { data } = await axiosClient.post('/visa/encadreur/inscription', { ...payload, encadreurId });
+  return data;
+}
+
+export async function importPilgrims(rows, encadreurId, actor) {
+  if (USE_MOCK) return mockImportPilgrims(rows, encadreurId, actor);
+  const { data } = await axiosClient.post(`/visa/encadreur/${encadreurId}/import`, { rows });
   return data;
 }

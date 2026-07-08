@@ -55,7 +55,8 @@
     "userStatusUpdated": "User status updated",
     "seasonCreated": "Season created successfully",
     "seasonUpdated": "Season updated",
-    "resetDone": "Demo data has been reset"
+    "resetDone": "Demo data has been reset",
+    "pilgrimRegisteredByEncadreur": "Pilgrim registered successfully"
   },
   "pagination": {
     "previous": "Previous",
@@ -400,6 +401,24 @@
     "step2": "Select the file exported above and the \"Versements\" sheet.",
     "step3": "Build your visuals (validated/pending amounts, by guide, by region, etc.) then refresh the workbook after each new export.",
     "futureNote": "Once the Spring Boot backend is connected, a live feed (OData/REST API) will replace this manual export for automatic refresh in Power BI."
+  },
+  "encadreurPortal": {
+    "registerTitle": "Register a pilgrim",
+    "registerButton": "Register",
+    "importTitle": "Bulk pilgrim import (Excel / CSV)",
+    "importHelp": "Expected columns: \"pilgrimLastName\", \"pilgrimFirstName\", \"phone\" (9 digits), \"idNumber\", \"region\" and \"pilgrimType\" (optional). ID/Passport duplicates for the current season are skipped.",
+    "pilgrimsImportCreated": "{{count}} pilgrim(s) imported successfully",
+    "pilgrimsImportSkipped": "{{count}} row(s) skipped (duplicate ID/Passport)",
+    "bulkValidationTitle": "Bulk visa validation",
+    "bulkValidationHelp": "Check pilgrims in the table to apply a status to the selection, or apply it directly to the whole group.",
+    "selectAll": "Select all",
+    "selectedCount": "{{count}} selected",
+    "notePlaceholder": "Message to pilgrims (optional)",
+    "applyToSelected": "Apply to selection",
+    "applyToGroup": "Apply to whole group",
+    "applyToGroupConfirm": "Apply status \"{{status}}\" to the entire group ({{count}} pilgrims)?",
+    "bulkSuccess": "{{count}} file(s) updated",
+    "selectionRequired": "Select at least one pilgrim"
   },
   "adminSeasons": {
     "title": "Hadj season management",

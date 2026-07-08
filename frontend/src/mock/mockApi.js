@@ -5,7 +5,7 @@ import {
   SEED_AUDIT_LOGS,
   SEED_ENCADREURS,
 } from './seedData';
-import { DEFAULT_OFFICIAL_PRICE, REGIONS, VISA_STATUSES } from '../utils/constants';
+import { CURRENT_SEASON, DEFAULT_OFFICIAL_PRICE, PILGRIM_TYPES, REGIONS, VISA_STATUSES } from '../utils/constants';
 
 const VISA_STATUSES_SET = new Set(VISA_STATUSES);
 
@@ -349,6 +349,120 @@ export async function mockRegisterPilgrimOnline(payload) {
 }
 
 // ---------------------------------------------------------------------------
+// Inscription des pèlerins par l'encadreur (individuelle et en masse)
+// ---------------------------------------------------------------------------
+function buildEncadreurBordereau(payload, encadreurId, offset = 0) {
+  const index = db.bordereaux.length + offset;
+  const id = `BOR-${String(index + 1).padStart(4, '0')}`;
+  const receiptNumber = `RC-${2000 + index}`;
+  const createdAt = new Date().toISOString().slice(0, 10);
+  const encadreur = db.encadreurs.find((e) => e.id === encadreurId);
+  return {
+    reference: null,
+    agency: null,
+    email: '',
+    pilgrimType: 'PELERIN',
+    pilgrimStatus: 'NOUVEAU',
+    pilgrimCount: 1,
+    season: CURRENT_SEASON,
+    ...payload,
+    encadreurId,
+    region: payload.region || encadreur?.region || '',
+    id,
+    receiptNumber,
+    source: 'ENCADREUR',
+    onlinePriority: false,
+    visaStatus: 'EN_ATTENTE',
+    createdAt,
+    versements: [],
+    notifications: [{ date: createdAt, message: VISA_STATUS_MESSAGES.EN_ATTENTE }],
+    statusHistory: [{ status: 'EN_ATTENTE', date: createdAt }],
+  };
+}
+
+export async function mockRegisterPilgrimByEncadreur(payload, encadreurId, actor) {
+  await delay(600);
+  const season = payload.season || CURRENT_SEASON;
+  const isDuplicate = db.bordereaux.some((b) => b.idNumber === payload.idNumber && b.season === season);
+  if (isDuplicate) {
+    const error = new Error('DUPLICATE_PILGRIM');
+    error.code = 'DUPLICATE_PILGRIM';
+    throw error;
+  }
+  const record = buildEncadreurBordereau({ ...payload, season }, encadreurId);
+  db.bordereaux = [record, ...db.bordereaux];
+  addAudit('INSCRIPTION_ENCADREUR', record.id, actor?.username || encadreurId);
+  persist();
+  const decorated = decorateBordereau(record);
+  notifyPilgrim(
+    record,
+    `Copilote Hadj: vous avez été inscrit(e) par votre encadreur. Votre code de paiement est ${decorated.paymentCode}.`,
+    'Inscription Hadj enregistrée'
+  );
+  return decorated;
+}
+
+// Import en masse de pèlerins pour un encadreur depuis un fichier Excel/CSV.
+// Colonnes attendues : pilgrimLastName, pilgrimFirstName, phone, idNumber,
+// region (facultatif), pilgrimType (facultatif). Les doublons CNI/Passeport sur
+// la saison courante sont ignorés.
+export async function mockImportPilgrims(rows, encadreurId, actor) {
+  await delay(700);
+  const created = [];
+  const skipped = [];
+  const errors = [];
+  const season = CURRENT_SEASON;
+  const seenInBatch = new Set();
+
+  rows.forEach((row, index) => {
+    const pilgrimLastName = String(row.pilgrimLastName || '').trim();
+    const pilgrimFirstName = String(row.pilgrimFirstName || '').trim();
+    const phone = String(row.phone || '').trim();
+    const idNumber = String(row.idNumber || '').trim();
+    const region = String(row.region || '').trim();
+    const rawType = String(row.pilgrimType || '').trim().toUpperCase();
+
+    if (!pilgrimLastName || !pilgrimFirstName || !phone || !idNumber) {
+      errors.push({ row: index + 1, reason: 'MISSING_FIELD' });
+      return;
+    }
+    if (!/^\d{9}$/.test(phone)) {
+      errors.push({ row: index + 1, reason: 'INVALID_PHONE' });
+      return;
+    }
+    if (region && !REGIONS.includes(region)) {
+      errors.push({ row: index + 1, reason: 'INVALID_REGION', region });
+      return;
+    }
+    const pilgrimType = PILGRIM_TYPES.includes(rawType) ? rawType : 'PELERIN';
+    const dup =
+      seenInBatch.has(idNumber) ||
+      db.bordereaux.some((b) => b.idNumber === idNumber && b.season === season);
+    if (dup) {
+      skipped.push({ row: index + 1, idNumber });
+      return;
+    }
+
+    seenInBatch.add(idNumber);
+    const record = buildEncadreurBordereau(
+      { pilgrimLastName, pilgrimFirstName, phone, idNumber, region, pilgrimType, season },
+      encadreurId,
+      created.length
+    );
+    record.source = 'ENCADREUR_IMPORT';
+    db.bordereaux = [record, ...db.bordereaux];
+    created.push({ id: record.id, idNumber });
+  });
+
+  if (created.length > 0) {
+    addAudit('IMPORT_PELERINS', `${created.length} pèlerin(s) — ${encadreurId}`, actor?.username || encadreurId);
+    persist();
+  }
+
+  return { created, skipped, errors };
+}
+
+// ---------------------------------------------------------------------------
 // Versements en ligne (Mobile Money / référence agence) — au compte-goutte
 // ---------------------------------------------------------------------------
 export async function mockCreateVersementOnline(idNumber, phone, { method, amount, reference, agency, receiptImage, qrData }) {
@@ -511,6 +625,35 @@ export async function mockChangeVisaStatus(bordereauId, newStatus, note, actor) 
   applyVisaStatusChange(bordereau, newStatus, note, actor?.username);
   persist();
   return decorateBordereau(bordereau);
+}
+
+// Validation en masse du statut visa pour une liste de bordereaux (sélection
+// manuelle d'un groupe de pèlerins) ou pour tous les pèlerins d'un encadreur
+// donné (passer encadreurId sans bordereauIds pour cibler tout son groupe).
+export async function mockBulkChangeVisaStatus({ bordereauIds, encadreurId, newStatus, note }, actor) {
+  await delay(700);
+  if (!VISA_STATUSES_SET.has(newStatus)) {
+    const error = new Error('INVALID_STATUS');
+    error.code = 'INVALID_STATUS';
+    throw error;
+  }
+
+  const targets = encadreurId
+    ? db.bordereaux.filter((b) => b.encadreurId === encadreurId)
+    : db.bordereaux.filter((b) => bordereauIds?.includes(b.id));
+
+  targets.forEach((bordereau) => applyVisaStatusChange(bordereau, newStatus, note, actor?.username));
+
+  if (targets.length > 0) {
+    addAudit(
+      'VALIDATION_VISA_MASSE',
+      encadreurId ? `Groupe ${encadreurId} (${targets.length})` : `${targets.length} bordereau(x)`,
+      actor?.username || 'system'
+    );
+    persist();
+  }
+
+  return { updatedCount: targets.length, bordereauIds: targets.map((b) => b.id) };
 }
 
 // Import en masse des statuts de visa depuis un fichier Excel/CSV externe
