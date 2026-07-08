@@ -73,6 +73,7 @@
     "settings": "Paramètres",
     "audit": "Journal d'audit",
     "payments": "Validation des paiements",
+    "attestations": "Attestations de dépôt",
     "seasons": "Saisons Hadj",
     "encadreurs": "Encadreurs",
     "commissions": "Commissions encadreurs",
@@ -500,5 +501,20 @@
     "reliquat": "Reliquat disponible",
     "amountNeeded": "Montant pour place supplémentaire",
     "commissionDue": "Commission due"
+  },
+  "attestations": {
+    "title": "Attestations de dépôt de passeport",
+    "subtitle": "Calculateur des passeports déposés par rapport au nombre de pèlerins inscrits pour la saison",
+    "totalPilgrims": "Pèlerins inscrits",
+    "deposited": "Passeports déposés",
+    "remaining": "Passeports restants",
+    "status": "Statut",
+    "depositedOn": "Déposé le {{date}}",
+    "notDeposited": "Non déposé",
+    "markDeposited": "Marquer comme déposé",
+    "cancelDeposit": "Annuler le dépôt",
+    "download": "Télécharger l'attestation",
+    "depositedToast": "Passeport marqué comme déposé",
+    "cancelledToast": "Dépôt annulé"
   }
 }

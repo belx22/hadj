@@ -118,3 +118,30 @@ export function generatePilgrimAttestation(dossier) {
 
   doc.save(`attestation-${dossier.id}.pdf`);
 }
+
+export function generatePassportDepositCertificate(deposit) {
+  const doc = new jsPDF();
+  addHeader(doc, 'Attestation de dépôt de passeport');
+
+  doc.setFontSize(11);
+  doc.text(
+    `Nous attestons que le passeport de ${deposit.pilgrimName} (CNI/Passeport n° ${deposit.idNumber})`,
+    14,
+    45,
+    { maxWidth: 180 }
+  );
+  doc.text('a été déposé auprès de nos services en vue du traitement de son dossier de visa.', 14, 53);
+
+  autoTable(doc, {
+    startY: 65,
+    head: [['Champ', 'Valeur']],
+    headStyles: { fillColor: [200, 16, 46] },
+    body: [
+      ['Identifiant de souscription', deposit.bordereauId],
+      ['Encadreur', deposit.encadreurName || '—'],
+      ['Date de dépôt', deposit.passportDepositedAt ? formatDate(deposit.passportDepositedAt) : '—'],
+    ],
+  });
+
+  doc.save(`attestation-depot-${deposit.bordereauId}.pdf`);
+}

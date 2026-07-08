@@ -73,6 +73,7 @@
     "settings": "Settings",
     "audit": "Audit log",
     "payments": "Payment validation",
+    "attestations": "Deposit certificates",
     "seasons": "Hadj seasons",
     "encadreurs": "Guides",
     "commissions": "Guide commissions",
@@ -500,5 +501,20 @@
     "reliquat": "Available leftover",
     "amountNeeded": "Amount for one more place",
     "commissionDue": "Commission due"
+  },
+  "attestations": {
+    "title": "Passport deposit certificates",
+    "subtitle": "Calculator of deposited passports against the number of pilgrims registered for the season",
+    "totalPilgrims": "Registered pilgrims",
+    "deposited": "Passports deposited",
+    "remaining": "Passports remaining",
+    "status": "Status",
+    "depositedOn": "Deposited on {{date}}",
+    "notDeposited": "Not deposited",
+    "markDeposited": "Mark as deposited",
+    "cancelDeposit": "Cancel deposit",
+    "download": "Download certificate",
+    "depositedToast": "Passport marked as deposited",
+    "cancelledToast": "Deposit cancelled"
   }
 }

@@ -29,6 +29,7 @@ const PaymentValidationPage = lazy(() => import('../pages/payments/PaymentValida
 const UsersAdminPage = lazy(() => import('../pages/admin/UsersAdminPage'));
 const EncadreursAdminPage = lazy(() => import('../pages/admin/EncadreursAdminPage'));
 const EncadreurCommissionsPage = lazy(() => import('../pages/admin/EncadreurCommissionsPage'));
+const PassportAttestationsPage = lazy(() => import('../pages/admin/PassportAttestationsPage'));
 const SeasonsAdminPage = lazy(() => import('../pages/admin/SeasonsAdminPage'));
 const PowerBiConnectorPage = lazy(() => import('../pages/admin/PowerBiConnectorPage'));
 
@@ -64,6 +65,7 @@ export default function AppRouter() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/paiements" element={<PaymentValidationPage />} />
+            <Route path="/attestations" element={<PassportAttestationsPage />} />
             <Route path="/parametrage/powerbi" element={<PowerBiConnectorPage />} />
           </Route>
         </Route>

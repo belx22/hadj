@@ -73,6 +73,7 @@
     "settings": "الإعدادات",
     "audit": "سجل التدقيق",
     "payments": "التحقق من الدفعات",
+    "attestations": "شهادات إيداع الجوازات",
     "seasons": "مواسم الحج",
     "encadreurs": "المؤطرون",
     "commissions": "عمولات المؤطرين",
@@ -500,5 +501,20 @@
     "reliquat": "الرصيد المتاح",
     "amountNeeded": "المبلغ اللازم لمكان إضافي",
     "commissionDue": "العمولة المستحقة"
+  },
+  "attestations": {
+    "title": "شهادات إيداع الجوازات",
+    "subtitle": "حاسبة الجوازات المودَعة مقارنة بعدد الحجاج المسجلين للموسم",
+    "totalPilgrims": "الحجاج المسجلون",
+    "deposited": "الجوازات المودَعة",
+    "remaining": "الجوازات المتبقية",
+    "status": "الحالة",
+    "depositedOn": "تم الإيداع في {{date}}",
+    "notDeposited": "لم يودَع",
+    "markDeposited": "تحديد كمودَع",
+    "cancelDeposit": "إلغاء الإيداع",
+    "download": "تحميل الشهادة",
+    "depositedToast": "تم تحديد الجواز كمودَع",
+    "cancelledToast": "تم إلغاء الإيداع"
   }
 }

@@ -1217,6 +1217,53 @@ export async function mockGetEncadreurGroup(encadreurId) {
 }
 
 // ---------------------------------------------------------------------------
+// Attestations de dépôt de passeport (Module Superviseur) — le nombre total de
+// pèlerins attendus est celui géré par le Gestionnaire du Hadj (pilgrimCount
+// cumulé des bordereaux de la saison) ; le Superviseur pointe au fur et à
+// mesure les passeports physiquement déposés et suit le nombre restant.
+// ---------------------------------------------------------------------------
+export async function mockGetPassportDeposits(season) {
+  await delay(350);
+  const items = db.bordereaux
+    .filter((b) => b.season === season)
+    .map((b) => {
+      const encadreur = db.encadreurs.find((e) => e.id === b.encadreurId);
+      return {
+        bordereauId: b.id,
+        idNumber: b.idNumber,
+        pilgrimName: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
+        pilgrimCount: b.pilgrimCount,
+        encadreurName: encadreur?.name || null,
+        encadreurCode: encadreur?.code || null,
+        passportDeposited: b.passportDeposited || false,
+        passportDepositedAt: b.passportDepositedAt || null,
+      };
+    })
+    .sort((a, b) => (a.passportDeposited === b.passportDeposited ? 0 : a.passportDeposited ? 1 : -1));
+
+  const totalPilgrims = items.reduce((sum, i) => sum + i.pilgrimCount, 0);
+  const depositedPilgrims = items.filter((i) => i.passportDeposited).reduce((sum, i) => sum + i.pilgrimCount, 0);
+
+  return {
+    items,
+    totalPilgrims,
+    depositedPilgrims,
+    remainingPilgrims: totalPilgrims - depositedPilgrims,
+  };
+}
+
+export async function mockTogglePassportDeposit(bordereauId, deposited, actor) {
+  await delay(300);
+  const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
+  if (!bordereau) throw new Error('NOT_FOUND');
+  bordereau.passportDeposited = deposited;
+  bordereau.passportDepositedAt = deposited ? new Date().toISOString().slice(0, 10) : null;
+  addAudit(deposited ? 'DEPOT_PASSEPORT' : 'ANNULATION_DEPOT_PASSEPORT', bordereauId, actor?.username || 'system');
+  persist();
+  return decorateBordereau(bordereau);
+}
+
+// ---------------------------------------------------------------------------
 // Audit
 // ---------------------------------------------------------------------------
 export async function mockGetAuditLogs() {
