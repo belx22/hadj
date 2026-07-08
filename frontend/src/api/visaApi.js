@@ -10,6 +10,9 @@ import {
   mockCheckStatusAnomalies,
   mockRegisterPilgrimByEncadreur,
   mockImportPilgrims,
+  mockLookupBeneficiary,
+  mockCreateGroupedVersementOnline,
+  mockGetGroupedPayments,
 } from '../mock/mockApi';
 
 export async function pilgrimLogin(idNumber, phone) {
@@ -69,5 +72,23 @@ export async function registerPilgrimByEncadreur(payload, encadreurId, actor) {
 export async function importPilgrims(rows, encadreurId, actor) {
   if (USE_MOCK) return mockImportPilgrims(rows, encadreurId, actor);
   const { data } = await axiosClient.post(`/visa/encadreur/${encadreurId}/import`, { rows });
+  return data;
+}
+
+export async function lookupBeneficiary(idNumber, season) {
+  if (USE_MOCK) return mockLookupBeneficiary(idNumber, season);
+  const { data } = await axiosClient.get(`/versements/beneficiaire/${idNumber}`, { params: { season } });
+  return data;
+}
+
+export async function createGroupedVersementOnline(payerIdNumber, payerPhone, payload) {
+  if (USE_MOCK) return mockCreateGroupedVersementOnline(payerIdNumber, payerPhone, payload);
+  const { data } = await axiosClient.post('/versements/groupe', { payerIdNumber, payerPhone, ...payload });
+  return data;
+}
+
+export async function getGroupedPayments() {
+  if (USE_MOCK) return mockGetGroupedPayments();
+  const { data } = await axiosClient.get('/versements/groupes');
   return data;
 }

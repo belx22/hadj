@@ -188,7 +188,14 @@
       "byEncadreur": "By guide",
       "byRegion": "By region",
       "global": "Overview",
+      "groupedPayments": "Grouped payments",
       "closure": "Closing report"
+    },
+    "groupedPayments": {
+      "title": "Grouped payments",
+      "subtitle": "Payments made by a pilgrim on behalf of several beneficiaries, with each beneficiary's guide identified",
+      "payer": "Payer",
+      "beneficiaries": "Beneficiaries"
     },
     "eligibility": "Eligibility",
     "eligibleFormula": "Amount ÷ official price = eligible pilgrims",
@@ -311,12 +318,23 @@
     "complete": "The target amount has been reached. Thank you!",
     "incompleteNotice": "Your file is not complete yet.",
     "makePayment": "Make a payment",
+    "groupedPayment": {
+      "toggle": "This payment covers several beneficiaries (possibly different guides)",
+      "help": "Enter the ID/Passport number and amount for each beneficiary. Each share will be attributed to that beneficiary's file and guide.",
+      "beneficiaries": "Payment beneficiaries",
+      "addBeneficiary": "+ Add a beneficiary",
+      "notFound": "No file found for this ID/Passport number",
+      "total": "Total payment amount: {{amount}}",
+      "confirmation": "Grouped payment {{id}} recorded, awaiting validation:",
+      "ownComplete": "Your personal file is already complete. You can still enable the grouped payment above to pay for other beneficiaries."
+    },
     "errors": {
       "amountRequired": "Please enter a valid amount",
       "amountTooHigh": "The amount exceeds the remaining balance",
       "agencyRefRequired": "Please select the branch and enter the slip reference",
       "mobileRefRequired": "Please enter the Mobile Money transaction reference",
       "otherDetailsRequired": "Please specify the payment method used",
+      "beneficiaryNotFound": "Please enter a valid, found ID/Passport number for each beneficiary",
       "receiptTooLarge": "The file exceeds 1.5 MB. Please choose a smaller file.",
       "qrInvalid": "This QR code does not match the expected payment slip format.",
       "cameraUnavailable": "Unable to access the camera. Check permissions or enter the information manually."

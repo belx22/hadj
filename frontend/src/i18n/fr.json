@@ -188,7 +188,14 @@
       "byEncadreur": "Par encadreur",
       "byRegion": "Par région",
       "global": "Vue globale",
+      "groupedPayments": "Paiements groupés",
       "closure": "Rapport de clôture"
+    },
+    "groupedPayments": {
+      "title": "Paiements groupés",
+      "subtitle": "Versements réglés par un pèlerin pour le compte de plusieurs bénéficiaires, avec identification de l'encadreur de chacun",
+      "payer": "Payeur",
+      "beneficiaries": "Bénéficiaires"
     },
     "eligibility": "Éligibilité",
     "eligibleFormula": "Montant ÷ prix officiel = pèlerins éligibles",
@@ -311,12 +318,23 @@
     "complete": "Le montant cible a été atteint. Merci !",
     "incompleteNotice": "Votre dossier n'est pas encore complet.",
     "makePayment": "Effectuer un versement",
+    "groupedPayment": {
+      "toggle": "Ce versement couvre plusieurs bénéficiaires (encadreurs différents possibles)",
+      "help": "Indiquez le CNI/Passeport et le montant de chaque bénéficiaire. Chaque part sera attribuée au bordereau et à l'encadreur du bénéficiaire concerné.",
+      "beneficiaries": "Bénéficiaires du versement",
+      "addBeneficiary": "+ Ajouter un bénéficiaire",
+      "notFound": "Aucun dossier trouvé pour ce CNI/Passeport",
+      "total": "Montant total du versement : {{amount}}",
+      "confirmation": "Versement groupé {{id}} enregistré, en attente de validation :",
+      "ownComplete": "Votre dossier personnel est déjà complet. Vous pouvez toujours activer le paiement groupé ci-dessus pour régler le versement d'autres bénéficiaires."
+    },
     "errors": {
       "amountRequired": "Veuillez indiquer un montant valide",
       "amountTooHigh": "Le montant dépasse le solde restant",
       "agencyRefRequired": "Veuillez sélectionner l'agence et indiquer la référence du bordereau",
       "mobileRefRequired": "Veuillez indiquer la référence de la transaction Mobile Money",
       "otherDetailsRequired": "Veuillez préciser le moyen de paiement utilisé",
+      "beneficiaryNotFound": "Veuillez renseigner un CNI/Passeport valide et retrouvé pour chaque bénéficiaire",
       "receiptTooLarge": "Le fichier dépasse 1,5 Mo. Merci de choisir un fichier plus léger.",
       "qrInvalid": "Ce QR code ne correspond pas au format attendu d'un bordereau de versement.",
       "cameraUnavailable": "Impossible d'accéder à la caméra. Vérifiez les autorisations ou saisissez les informations manuellement."

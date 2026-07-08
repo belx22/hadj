@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { usePilgrim } from '../../context/PilgrimContext';
-import { createVersementOnline } from '../../api/visaApi';
+import { createVersementOnline, createGroupedVersementOnline, lookupBeneficiary } from '../../api/visaApi';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import StatCard from '../../components/ui/StatCard';
@@ -16,6 +16,7 @@ import { AGENCIES, VERSEMENT_METHODS, VERSEMENT_STATUS_COLORS, getAgencyByCode }
 import { parseVersementQrCode } from '../../utils/qrcode';
 
 const EMPTY_FORM = { method: 'MOBILE_MONEY_ORANGE', amount: '', reference: '', agency: '', receiptImage: null, receiptImageName: '', otherDetails: '' };
+const EMPTY_BENEFICIARY = { idNumber: '', amount: '', lookup: null };
 const MAX_RECEIPT_SIZE = 1_500_000; // ~1.5 Mo avant encodage base64
 
 export default function VisaPelerinPaymentPage() {
@@ -29,6 +30,9 @@ export default function VisaPelerinPaymentPage() {
   const [success, setSuccess] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [qrData, setQrData] = useState(null);
+  const [isGrouped, setIsGrouped] = useState(false);
+  const [beneficiaries, setBeneficiaries] = useState([{ ...EMPTY_BENEFICIARY }]);
+  const [groupResult, setGroupResult] = useState(null);
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(dossier?.versements || []);
 
   if (!dossier) {
@@ -62,6 +66,29 @@ export default function VisaPelerinPaymentPage() {
     navigate('/visa/pelerin');
   }
 
+  function updateBeneficiary(index, field, value) {
+    setBeneficiaries((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value, lookup: field === 'idNumber' ? null : row.lookup } : row))
+    );
+    setError(null);
+  }
+
+  function addBeneficiary() {
+    setBeneficiaries((prev) => [...prev, { ...EMPTY_BENEFICIARY }]);
+  }
+
+  function removeBeneficiary(index) {
+    setBeneficiaries((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
+  }
+
+  async function handleBeneficiaryLookup(index) {
+    const idNumber = beneficiaries[index].idNumber.trim();
+    if (!idNumber) return;
+    setBeneficiaries((prev) => prev.map((row, i) => (i === index ? { ...row, lookup: { checking: true } } : row)));
+    const result = await lookupBeneficiary(idNumber, dossier.season);
+    setBeneficiaries((prev) => prev.map((row, i) => (i === index ? { ...row, lookup: result } : row)));
+  }
+
   function handleQrScanned(rawText) {
     setScannerOpen(false);
     const parsed = parseVersementQrCode(rawText);
@@ -83,16 +110,8 @@ export default function VisaPelerinPaymentPage() {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+    setGroupResult(null);
 
-    const amount = Number(form.amount);
-    if (!amount || amount <= 0) {
-      setError(t('paymentPage.errors.amountRequired'));
-      return;
-    }
-    if (amount > remaining) {
-      setError(t('paymentPage.errors.amountTooHigh'));
-      return;
-    }
     if (form.method === 'AGENCE' && (!form.agency || !form.reference.trim())) {
       setError(t('paymentPage.errors.agencyRefRequired'));
       return;
@@ -103,6 +122,51 @@ export default function VisaPelerinPaymentPage() {
     }
     if (form.method === 'AUTRE' && !form.otherDetails.trim()) {
       setError(t('paymentPage.errors.otherDetailsRequired'));
+      return;
+    }
+
+    if (isGrouped) {
+      if (beneficiaries.some((b) => !b.idNumber.trim() || !b.lookup?.found)) {
+        setError(t('paymentPage.errors.beneficiaryNotFound'));
+        return;
+      }
+      if (beneficiaries.some((b) => !Number(b.amount) || Number(b.amount) <= 0)) {
+        setError(t('paymentPage.errors.amountRequired'));
+        return;
+      }
+
+      setSubmitting(true);
+      try {
+        const result = await createGroupedVersementOnline(dossier.idNumber, dossier.phone, {
+          method: form.method,
+          reference: form.reference.trim(),
+          agency: form.method === 'AGENCE' ? form.agency : null,
+          receiptImage: form.method === 'AGENCE' ? form.receiptImage : null,
+          qrData: form.method === 'AGENCE' ? qrData : null,
+          otherDetails: form.method === 'AUTRE' ? form.otherDetails.trim() : null,
+          beneficiaries: beneficiaries.map((b) => ({ idNumber: b.idNumber.trim(), amount: Number(b.amount) })),
+        });
+        await login(dossier.idNumber, dossier.phone);
+        setForm(EMPTY_FORM);
+        setQrData(null);
+        setBeneficiaries([{ ...EMPTY_BENEFICIARY }]);
+        setGroupResult(result);
+        setSuccess(true);
+      } catch (err) {
+        setError(err.code === 'AMOUNT_TOO_HIGH' ? t('paymentPage.errors.amountTooHigh') : t('common.error'));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    const amount = Number(form.amount);
+    if (!amount || amount <= 0) {
+      setError(t('paymentPage.errors.amountRequired'));
+      return;
+    }
+    if (amount > remaining) {
+      setError(t('paymentPage.errors.amountTooHigh'));
       return;
     }
 
@@ -161,16 +225,43 @@ export default function VisaPelerinPaymentPage() {
         {success && (
           <div className="card border-visa-pending/40 bg-visa-pending/5">
             <p className="text-sm font-semibold text-yellow-800">{t('paymentPage.pendingNotice')}</p>
+            {groupResult && (
+              <div className="mt-3 space-y-1 text-xs text-afriland-gray-700">
+                <p className="font-semibold text-afriland-black">
+                  {t('paymentPage.groupedPayment.confirmation', { id: groupResult.groupPaymentId })}
+                </p>
+                {groupResult.beneficiaries.map((b) => (
+                  <p key={b.idNumber}>
+                    {b.name} ({b.idNumber}) — {formatCurrency(b.amount)}
+                    {b.encadreurCode ? ` — ${t('bordereau.encadreur')}: ${b.encadreurCode}` : ''}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {remaining <= 0 ? (
+        {remaining <= 0 && (
           <div className="card border-visa-granted/30 bg-visa-granted/5">
             <p className="text-sm font-semibold text-visa-granted">{t('paymentPage.complete')}</p>
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="card space-y-4">
+        )}
+
+        <form onSubmit={handleSubmit} className="card space-y-4">
             <p className="text-sm font-semibold text-afriland-black">{t('paymentPage.newPayment')}</p>
+
+            <label className="flex items-center gap-2 text-sm text-afriland-gray-700">
+              <input
+                type="checkbox"
+                checked={isGrouped}
+                onChange={(e) => {
+                  setIsGrouped(e.target.checked);
+                  setError(null);
+                }}
+              />
+              {t('paymentPage.groupedPayment.toggle')}
+            </label>
+            {isGrouped && <p className="text-xs text-afriland-gray-600">{t('paymentPage.groupedPayment.help')}</p>}
 
             <div>
               <label className="form-label">{t('paymentPage.method')}</label>
@@ -254,26 +345,81 @@ export default function VisaPelerinPaymentPage() {
               </div>
             )}
 
-            <div>
-              <label className="form-label">{t('paymentPage.amount')}</label>
-              <input
-                type="number"
-                min="1"
-                max={remaining}
-                className="form-input"
-                value={form.amount}
-                onChange={(e) => update('amount', e.target.value)}
-              />
-              <p className="mt-1 text-xs text-afriland-gray-600">{t('paymentPage.maxAmount', { amount: formatCurrency(remaining) })}</p>
-            </div>
+            {isGrouped ? (
+              <div className="space-y-3">
+                <label className="form-label">{t('paymentPage.groupedPayment.beneficiaries')}</label>
+                {beneficiaries.map((b, index) => (
+                  <div key={index} className="space-y-1 rounded-md border border-afriland-gray-300 p-3">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_140px_auto]">
+                      <input
+                        className="form-input"
+                        placeholder={t('bordereau.idNumber')}
+                        value={b.idNumber}
+                        onChange={(e) => updateBeneficiary(index, 'idNumber', e.target.value)}
+                        onBlur={() => handleBeneficiaryLookup(index)}
+                      />
+                      <input
+                        type="number"
+                        min="1"
+                        className="form-input"
+                        placeholder={t('paymentPage.amount')}
+                        value={b.amount}
+                        onChange={(e) => updateBeneficiary(index, 'amount', e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="btn-secondary !px-3 !py-1.5 text-xs"
+                        onClick={() => removeBeneficiary(index)}
+                        disabled={beneficiaries.length === 1}
+                      >
+                        {t('common.cancel')}
+                      </button>
+                    </div>
+                    {b.lookup?.checking && (
+                      <p className="text-xs text-afriland-gray-600">{t('common.loading')}</p>
+                    )}
+                    {b.lookup && !b.lookup.checking && b.lookup.found && (
+                      <p className="text-xs text-visa-granted">
+                        {b.lookup.name} — {t('bordereau.encadreur')}: {b.lookup.encadreurCode || '—'}
+                      </p>
+                    )}
+                    {b.lookup && !b.lookup.checking && b.lookup.found === false && (
+                      <p className="text-xs text-visa-refused">{t('paymentPage.groupedPayment.notFound')}</p>
+                    )}
+                  </div>
+                ))}
+                <button type="button" className="btn-secondary text-xs" onClick={addBeneficiary}>
+                  {t('paymentPage.groupedPayment.addBeneficiary')}
+                </button>
+                <p className="text-xs text-afriland-gray-600">
+                  {t('paymentPage.groupedPayment.total', {
+                    amount: formatCurrency(beneficiaries.reduce((sum, b) => sum + (Number(b.amount) || 0), 0)),
+                  })}
+                </p>
+              </div>
+            ) : remaining > 0 ? (
+              <div>
+                <label className="form-label">{t('paymentPage.amount')}</label>
+                <input
+                  type="number"
+                  min="1"
+                  max={remaining}
+                  className="form-input"
+                  value={form.amount}
+                  onChange={(e) => update('amount', e.target.value)}
+                />
+                <p className="mt-1 text-xs text-afriland-gray-600">{t('paymentPage.maxAmount', { amount: formatCurrency(remaining) })}</p>
+              </div>
+            ) : (
+              <p className="text-xs text-afriland-gray-600">{t('paymentPage.groupedPayment.ownComplete')}</p>
+            )}
 
             {error && <p className="form-error">{error}</p>}
 
-            <button type="submit" className="btn-primary w-full" disabled={submitting}>
+            <button type="submit" className="btn-primary w-full" disabled={submitting || (!isGrouped && remaining <= 0)}>
               {submitting ? t('common.loading') : t('paymentPage.submit')}
             </button>
-          </form>
-        )}
+        </form>
 
         <div className="card">
           <p className="mb-3 text-sm font-semibold text-afriland-black">{t('visa.paymentHistory')}</p>

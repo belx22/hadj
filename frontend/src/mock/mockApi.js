@@ -534,6 +534,152 @@ export async function mockCreateVersementOnline(idNumber, phone, { method, amoun
 }
 
 // ---------------------------------------------------------------------------
+// Paiement groupé (un pèlerin règle le versement de plusieurs bénéficiaires,
+// potentiellement rattachés à des encadreurs différents) — chaque part est
+// enregistrée sur le bordereau du bénéficiaire concerné (donc attribuée au bon
+// encadreur dans le reporting), en conservant une référence commune
+// `groupPaymentId` et l'identité du payeur pour la traçabilité.
+// ---------------------------------------------------------------------------
+export async function mockLookupBeneficiary(idNumber, season) {
+  await delay(250);
+  const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber && b.season === season);
+  if (!bordereau) {
+    return { found: false };
+  }
+  const decorated = decorateBordereau(bordereau);
+  return {
+    found: true,
+    idNumber,
+    name: `${bordereau.pilgrimFirstName} ${bordereau.pilgrimLastName}`,
+    encadreurCode: decorated.encadreurCode,
+    encadreurName: db.encadreurs.find((e) => e.id === bordereau.encadreurId)?.name || null,
+    remaining: Math.max(decorated.balance - decorated.pendingAmount, 0),
+  };
+}
+
+export async function mockCreateGroupedVersementOnline(
+  payerIdNumber,
+  payerPhone,
+  { method, reference, agency, receiptImage, qrData, otherDetails, beneficiaries }
+) {
+  await delay(800);
+  const payer = db.bordereaux.find((b) => b.idNumber === payerIdNumber && b.phone === payerPhone);
+  if (!payer) {
+    const error = new Error('NOT_FOUND');
+    error.code = 'NOT_FOUND';
+    throw error;
+  }
+  if (!Array.isArray(beneficiaries) || beneficiaries.length === 0) {
+    const error = new Error('NO_BENEFICIARIES');
+    error.code = 'NO_BENEFICIARIES';
+    throw error;
+  }
+
+  const resolved = beneficiaries.map(({ idNumber, amount }) => {
+    const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber && b.season === payer.season);
+    if (!bordereau) {
+      const error = new Error('BENEFICIARY_NOT_FOUND');
+      error.code = 'BENEFICIARY_NOT_FOUND';
+      error.idNumber = idNumber;
+      throw error;
+    }
+    const numericAmount = Number(amount);
+    if (!numericAmount || numericAmount <= 0) {
+      const error = new Error('INVALID_AMOUNT');
+      error.code = 'INVALID_AMOUNT';
+      error.idNumber = idNumber;
+      throw error;
+    }
+    const decorated = decorateBordereau(bordereau);
+    const remaining = decorated.balance - decorated.pendingAmount;
+    if (numericAmount > remaining) {
+      const error = new Error('AMOUNT_TOO_HIGH');
+      error.code = 'AMOUNT_TOO_HIGH';
+      error.idNumber = idNumber;
+      throw error;
+    }
+    return { bordereau, amount: numericAmount };
+  });
+
+  const groupPaymentId = `GRP-${Date.now()}`;
+  const payerName = `${payer.pilgrimFirstName} ${payer.pilgrimLastName}`;
+  const createdAt = new Date().toISOString().slice(0, 10);
+
+  resolved.forEach(({ bordereau, amount }, index) => {
+    const newVersement = {
+      id: `VER-${Date.now()}-${index}`,
+      amount,
+      method,
+      reference,
+      agency: method === 'AGENCE' ? agency : null,
+      receiptImage: method === 'AGENCE' ? receiptImage || null : null,
+      qrData: method === 'AGENCE' ? qrData || null : null,
+      otherDetails: method === 'AUTRE' ? otherDetails || null : null,
+      status: 'PENDING',
+      createdAt,
+      validatedAt: null,
+      validatedBy: null,
+      note: null,
+      refundStatus: null,
+      refundedAt: null,
+      groupPaymentId,
+      payerIdNumber,
+      payerName,
+    };
+    bordereau.versements = [...bordereau.versements, newVersement];
+  });
+
+  addAudit('DECLARATION_VERSEMENT_GROUPE', groupPaymentId, payerIdNumber);
+  persist();
+
+  return {
+    groupPaymentId,
+    beneficiaries: resolved.map(({ bordereau, amount }) => ({
+      idNumber: bordereau.idNumber,
+      name: `${bordereau.pilgrimFirstName} ${bordereau.pilgrimLastName}`,
+      amount,
+      encadreurCode: decorateBordereau(bordereau).encadreurCode,
+    })),
+  };
+}
+
+export async function mockGetGroupedPayments() {
+  await delay(300);
+  const groups = new Map();
+  db.bordereaux.forEach((bordereau) => {
+    bordereau.versements
+      .filter((v) => v.groupPaymentId)
+      .forEach((v) => {
+        if (!groups.has(v.groupPaymentId)) {
+          groups.set(v.groupPaymentId, {
+            groupPaymentId: v.groupPaymentId,
+            payerIdNumber: v.payerIdNumber,
+            payerName: v.payerName,
+            createdAt: v.createdAt,
+            method: v.method,
+            status: v.status,
+            totalAmount: 0,
+            beneficiaries: [],
+          });
+        }
+        const group = groups.get(v.groupPaymentId);
+        group.totalAmount += v.amount;
+        const encadreur = db.encadreurs.find((e) => e.id === bordereau.encadreurId);
+        group.beneficiaries.push({
+          idNumber: bordereau.idNumber,
+          name: `${bordereau.pilgrimFirstName} ${bordereau.pilgrimLastName}`,
+          amount: v.amount,
+          status: v.status,
+          encadreurId: bordereau.encadreurId || null,
+          encadreurName: encadreur?.name || null,
+          encadreurCode: encadreur?.code || null,
+        });
+      });
+  });
+  return [...groups.values()].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+// ---------------------------------------------------------------------------
 // Validation des paiements (Admin DSI / Gestionnaire / Superviseur)
 // ---------------------------------------------------------------------------
 export async function mockGetPendingVersements() {

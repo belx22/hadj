@@ -17,26 +17,29 @@ import {
 } from 'recharts';
 import { getReporting } from '../../api/reportingApi';
 import { getEncadreurs } from '../../api/referenceDataApi';
+import { getGroupedPayments } from '../../api/visaApi';
 import StatCard from '../../components/ui/StatCard';
-import { formatCurrency } from '../../utils/formatters';
+import { formatCurrency, formatDate } from '../../utils/formatters';
 import { exportToExcel } from '../../utils/excel';
 import { generateReportingPdf } from '../../utils/pdf';
 import { AGENCIES, PILGRIM_TYPES, REGIONS } from '../../utils/constants';
 
 const CHART_COLORS = ['#C8102E', '#111111', '#9CA3AF', '#F5C518', '#2563EB', '#16A34A'];
 
-const TABS = ['global', 'byEncadreur', 'byRegion', 'closure'];
+const TABS = ['global', 'byEncadreur', 'byRegion', 'groupedPayments', 'closure'];
 
 export default function DashboardPage() {
   const { t } = useTranslation();
   const [filters, setFilters] = useState({ region: '', encadreurId: '', agency: '', pilgrimType: '', from: '', to: '' });
   const [reporting, setReporting] = useState(null);
   const [encadreurs, setEncadreurs] = useState([]);
+  const [groupedPayments, setGroupedPayments] = useState([]);
   const [tab, setTab] = useState('global');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getEncadreurs().then(setEncadreurs);
+    getGroupedPayments().then(setGroupedPayments);
   }, []);
 
   useEffect(() => {
@@ -226,6 +229,45 @@ export default function DashboardPage() {
               <Bar dataKey="collected" fill="#111111" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      )}
+
+      {tab === 'groupedPayments' && (
+        <div className="card space-y-3">
+          <p className="text-sm font-semibold text-afriland-black">{t('dashboard.groupedPayments.title')}</p>
+          <p className="text-xs text-afriland-gray-600">{t('dashboard.groupedPayments.subtitle')}</p>
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs uppercase text-afriland-gray-600">
+              <tr>
+                <th className="py-2">{t('bordereau.date')}</th>
+                <th className="py-2">{t('dashboard.groupedPayments.payer')}</th>
+                <th className="py-2 text-right">{t('common.total')}</th>
+                <th className="py-2">{t('dashboard.groupedPayments.beneficiaries')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-afriland-gray-200">
+              {groupedPayments.map((g) => (
+                <tr key={g.groupPaymentId}>
+                  <td className="py-2 align-top">{formatDate(g.createdAt)}</td>
+                  <td className="py-2 align-top">{g.payerName} ({g.payerIdNumber})</td>
+                  <td className="py-2 text-right align-top">{formatCurrency(g.totalAmount)}</td>
+                  <td className="py-2">
+                    <ul className="space-y-1">
+                      {g.beneficiaries.map((b) => (
+                        <li key={b.idNumber} className="text-xs text-afriland-gray-700">
+                          {b.name} ({b.idNumber}) — {formatCurrency(b.amount)} — {t('bordereau.encadreur')}:{' '}
+                          {b.encadreurCode || '—'}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              ))}
+              {groupedPayments.length === 0 && (
+                <tr><td colSpan={4} className="py-4 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
