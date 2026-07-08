@@ -470,7 +470,13 @@
     "credentialTitle": "{{name}} — dossier créé",
     "password": "Mot de passe",
     "credentialHelp": "Transmettez le CNI/Passeport et le mot de passe au pèlerin : il pourra suivre son dossier à distance sur l'espace pèlerin.",
-    "exportCredentials": "Exporter les identifiants (Excel)"
+    "exportCredentials": "Exporter les identifiants (Excel)",
+    "groupedPayment": {
+      "title": "Import d'un paiement groupé",
+      "help": "Vous avez réglé un versement unique pour plusieurs pèlerins de votre groupe ? Choisissez le moyen de paiement et la référence utilisés, puis importez un fichier (nom, prénom, téléphone, montant) pour ventiler ce versement sur le dossier de chacun.",
+      "created": "{{count}} versement(s) enregistré(s), en attente de validation",
+      "notFound": "{{count}} ligne(s) sans pèlerin correspondant dans votre groupe"
+    }
   },
   "adminSeasons": {
     "title": "Gestion des saisons Hadj",

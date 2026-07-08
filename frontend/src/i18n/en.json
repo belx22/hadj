@@ -470,7 +470,13 @@
     "credentialTitle": "{{name}} — file created",
     "password": "Password",
     "credentialHelp": "Give the ID/Passport number and the password to the pilgrim: they will be able to track their file remotely from the pilgrim space.",
-    "exportCredentials": "Export credentials (Excel)"
+    "exportCredentials": "Export credentials (Excel)",
+    "groupedPayment": {
+      "title": "Grouped payment import",
+      "help": "Did you make a single payment covering several pilgrims in your group? Choose the payment method and reference used, then import a file (last name, first name, phone, amount) to split that payment across each pilgrim's file.",
+      "created": "{{count}} payment(s) recorded, awaiting validation",
+      "notFound": "{{count}} row(s) with no matching pilgrim in your group"
+    }
   },
   "adminSeasons": {
     "title": "Hadj season management",

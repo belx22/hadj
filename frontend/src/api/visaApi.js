@@ -13,6 +13,7 @@ import {
   mockLookupBeneficiary,
   mockCreateGroupedVersementOnline,
   mockGetGroupedPayments,
+  mockImportGroupedVersementsByEncadreur,
 } from '../mock/mockApi';
 
 export async function pilgrimLogin(idNumber, phone) {
@@ -90,5 +91,11 @@ export async function createGroupedVersementOnline(payerIdNumber, payerPhone, pa
 export async function getGroupedPayments() {
   if (USE_MOCK) return mockGetGroupedPayments();
   const { data } = await axiosClient.get('/versements/groupes');
+  return data;
+}
+
+export async function importGroupedVersementsByEncadreur(rows, encadreurId, payload, actor) {
+  if (USE_MOCK) return mockImportGroupedVersementsByEncadreur(rows, encadreurId, payload, actor);
+  const { data } = await axiosClient.post(`/visa/encadreur/${encadreurId}/import-versement-groupe`, { rows, ...payload });
   return data;
 }

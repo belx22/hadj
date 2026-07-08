@@ -680,6 +680,66 @@ export async function mockGetGroupedPayments() {
 }
 
 // ---------------------------------------------------------------------------
+// Import d'un paiement groupé côté encadreur (Module Encadreur) — l'encadreur
+// a réglé un versement unique couvrant plusieurs pèlerins de son groupe ; il
+// importe un fichier (nom, téléphone, montant) pour ventiler ce versement sur
+// le bordereau de chaque pèlerin concerné, chacun devant déjà être inscrit
+// dans son groupe.
+// ---------------------------------------------------------------------------
+export async function mockImportGroupedVersementsByEncadreur(rows, encadreurId, { method, reference }, actor) {
+  await delay(700);
+  const encadreur = db.encadreurs.find((e) => e.id === encadreurId);
+  const groupPaymentId = `GRP-${Date.now()}`;
+  const createdAt = new Date().toISOString().slice(0, 10);
+  const created = [];
+  const notFound = [];
+  const invalidAmount = [];
+
+  rows.forEach((row, index) => {
+    const phone = String(row.phone || '').trim();
+    const amount = Number(row.amount);
+    const bordereau = db.bordereaux.find((b) => b.encadreurId === encadreurId && b.phone === phone);
+    if (!bordereau) {
+      notFound.push({ row: index + 1, phone });
+      return;
+    }
+    if (!amount || amount <= 0) {
+      invalidAmount.push({ row: index + 1, phone });
+      return;
+    }
+    const newVersement = {
+      id: `VER-${Date.now()}-${index}`,
+      amount,
+      method,
+      reference,
+      agency: null,
+      receiptImage: null,
+      qrData: null,
+      otherDetails: null,
+      status: 'PENDING',
+      createdAt,
+      validatedAt: null,
+      validatedBy: null,
+      note: null,
+      refundStatus: null,
+      refundedAt: null,
+      groupPaymentId,
+      payerIdNumber: null,
+      payerName: encadreur?.name || null,
+    };
+    bordereau.versements = [...bordereau.versements, newVersement];
+    created.push({ bordereauId: bordereau.id, pilgrimName: `${bordereau.pilgrimFirstName} ${bordereau.pilgrimLastName}`, phone, amount });
+  });
+
+  if (created.length > 0) {
+    addAudit('IMPORT_VERSEMENT_GROUPE_ENCADREUR', groupPaymentId, actor?.username || 'system');
+    persist();
+  }
+
+  return { groupPaymentId, created, notFound, invalidAmount };
+}
+
+// ---------------------------------------------------------------------------
 // Validation des paiements (Admin DSI / Gestionnaire / Superviseur)
 // ---------------------------------------------------------------------------
 export async function mockGetPendingVersements() {

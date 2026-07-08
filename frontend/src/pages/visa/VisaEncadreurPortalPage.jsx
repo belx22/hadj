@@ -3,7 +3,13 @@ import { useTranslation } from 'react-i18next';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getEncadreurGroup, registerPilgrimByEncadreur, importPilgrims, bulkChangeVisaStatus } from '../../api/visaApi';
+import {
+  getEncadreurGroup,
+  registerPilgrimByEncadreur,
+  importPilgrims,
+  bulkChangeVisaStatus,
+  importGroupedVersementsByEncadreur,
+} from '../../api/visaApi';
 import StatCard from '../../components/ui/StatCard';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import Pagination from '../../components/ui/Pagination';
@@ -11,7 +17,7 @@ import usePagination from '../../hooks/usePagination';
 import { formatCurrency } from '../../utils/formatters';
 import { exportToExcel } from '../../utils/excel';
 import { generateReportingPdf } from '../../utils/pdf';
-import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, VISA_STATUSES } from '../../utils/constants';
+import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, VISA_STATUSES, VERSEMENT_METHODS } from '../../utils/constants';
 import { validateBordereau } from '../../utils/validators';
 
 const EMPTY_FORM = { pilgrimLastName: '', pilgrimFirstName: '', phone: '', idNumber: '', region: '', pilgrimType: 'PELERIN', pilgrimCount: 1 };
@@ -41,6 +47,27 @@ function normalizeRow(rawRow) {
   };
 }
 
+const GROUPED_HEADER_ALIASES = {
+  pilgrimLastName: ['pilgrimlastname', 'nom', 'nom du pèlerin'],
+  pilgrimFirstName: ['pilgrimfirstname', 'prenom', 'prénom', 'prénom du pèlerin'],
+  phone: ['phone', 'telephone', 'téléphone'],
+  amount: ['amount', 'montant', 'montant verse', 'montant versé'],
+};
+
+function normalizeGroupedRow(rawRow) {
+  const lower = Object.entries(rawRow).map(([k, v]) => [k.trim().toLowerCase(), v]);
+  const pick = (field) => {
+    const match = lower.find(([key]) => GROUPED_HEADER_ALIASES[field].includes(key));
+    return match ? String(match[1] ?? '').trim() : '';
+  };
+  return {
+    pilgrimLastName: pick('pilgrimLastName'),
+    pilgrimFirstName: pick('pilgrimFirstName'),
+    phone: pick('phone').replace(/\D/g, '').slice(0, 9),
+    amount: pick('amount'),
+  };
+}
+
 export default function VisaEncadreurPortalPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -57,6 +84,12 @@ export default function VisaEncadreurPortalPage() {
   const [importSummary, setImportSummary] = useState(null);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
+
+  const [groupedMethod, setGroupedMethod] = useState(VERSEMENT_METHODS[0]);
+  const [groupedReference, setGroupedReference] = useState('');
+  const [groupedSummary, setGroupedSummary] = useState(null);
+  const [groupedImporting, setGroupedImporting] = useState(false);
+  const groupedFileInputRef = useRef(null);
 
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [bulkStatus, setBulkStatus] = useState(VISA_STATUSES[0]);
@@ -190,6 +223,46 @@ export default function VisaEncadreurPortalPage() {
       'modele-pelerins.xlsx',
       'Pelerins'
     );
+  }
+
+  function handleGroupedImportClick() {
+    groupedFileInputRef.current?.click();
+  }
+
+  function handleDownloadGroupedTemplate() {
+    exportToExcel(
+      [{ pilgrimLastName: 'Nom', pilgrimFirstName: 'Prénom', phone: '699112233', amount: 500000 }],
+      'modele-paiement-groupe.xlsx',
+      'PaiementGroupe'
+    );
+  }
+
+  async function handleGroupedFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setGroupedImporting(true);
+    setGroupedSummary(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      const rows = rawRows.map(normalizeGroupedRow);
+      const summary = await importGroupedVersementsByEncadreur(
+        rows,
+        user.encadreurId,
+        { method: groupedMethod, reference: groupedReference },
+        user
+      );
+      setGroupedSummary(summary);
+      reload();
+    } catch {
+      setGroupedSummary({ created: [], notFound: [], invalidAmount: [{ row: 0, reason: 'PARSE_ERROR' }] });
+    } finally {
+      setGroupedImporting(false);
+    }
   }
 
   function toggleSelected(id) {
@@ -407,6 +480,53 @@ export default function VisaEncadreurPortalPage() {
                   {t('encadreurPortal.exportCredentials')}
                 </button>
               </>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="card space-y-3">
+        <p className="text-sm font-semibold text-afriland-black">{t('encadreurPortal.groupedPayment.title')}</p>
+        <p className="text-xs text-afriland-gray-600">{t('encadreurPortal.groupedPayment.help')}</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <label className="form-label">{t('paymentPage.method')}</label>
+            <select className="form-input" value={groupedMethod} onChange={(e) => setGroupedMethod(e.target.value)}>
+              {VERSEMENT_METHODS.map((method) => (
+                <option key={method} value={method}>{t(`paymentPage.methods.${method}`)}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="form-label">{t('paymentPage.reference')}</label>
+            <input className="form-input" value={groupedReference} onChange={(e) => setGroupedReference(e.target.value)} />
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-secondary" onClick={handleDownloadGroupedTemplate}>
+            {t('adminEncadreurs.downloadTemplate')}
+          </button>
+          <button type="button" className="btn-primary" onClick={handleGroupedImportClick} disabled={groupedImporting}>
+            {groupedImporting ? t('common.loading') : t('adminEncadreurs.importFile')}
+          </button>
+          <input ref={groupedFileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleGroupedFileChange} />
+        </div>
+        {groupedSummary && (
+          <div className="rounded-md bg-afriland-gray-50 p-3 text-sm">
+            <p className="font-medium text-visa-granted">
+              {t('encadreurPortal.groupedPayment.created', { count: groupedSummary.created.length })}
+            </p>
+            {groupedSummary.notFound?.length > 0 && (
+              <p className="text-afriland-gray-600">
+                {t('encadreurPortal.groupedPayment.notFound', { count: groupedSummary.notFound.length })}
+              </p>
+            )}
+            {groupedSummary.invalidAmount?.length > 0 && (
+              <ul className="mt-1 list-disc pl-5 text-visa-refused">
+                {groupedSummary.invalidAmount.map((err, index) => (
+                  <li key={index}>{t('adminEncadreurs.importErrorRow', { row: err.row, reason: err.reason || err.phone })}</li>
+                ))}
+              </ul>
             )}
           </div>
         )}
