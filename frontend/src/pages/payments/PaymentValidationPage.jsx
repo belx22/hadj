@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -8,14 +9,36 @@ import {
   getVersementsHistory,
   validateVersement,
   bulkValidateVersements,
+  importPaymentStatuses,
   rejectVersement,
   getRefunds,
   processRefund,
 } from '../../api/paymentsApi';
+import { getEncadreurs } from '../../api/referenceDataApi';
+import { exportToExcel } from '../../utils/excel';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { VERSEMENT_STATUS_COLORS, VERSEMENT_METHODS } from '../../utils/constants';
+import { VERSEMENT_STATUS_COLORS, VERSEMENT_METHODS, REGIONS } from '../../utils/constants';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
+
+// Filtres réutilisés par les onglets « En attente » et « Historique » :
+// filtrage par encadreur et par région des versements.
+function PaymentFilters({ region, setRegion, encadreurId, setEncadreurId, encadreurs, children }) {
+  const { t } = useTranslation();
+  return (
+    <div className="card grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <select className="form-input" value={region} onChange={(e) => setRegion(e.target.value)}>
+        <option value="">{t('dashboard.filters.region')}</option>
+        {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+      </select>
+      <select className="form-input" value={encadreurId} onChange={(e) => setEncadreurId(e.target.value)}>
+        <option value="">{t('dashboard.filters.encadreur')}</option>
+        {encadreurs.map((enc) => <option key={enc.id} value={enc.id}>{enc.name}</option>)}
+      </select>
+      {children}
+    </div>
+  );
+}
 
 const TABS = ['pending', 'history', 'refunds'];
 
@@ -57,12 +80,24 @@ function PendingTab() {
   const { user } = useAuth();
   const toast = useToast();
   const [rows, setRows] = useState([]);
+  const [encadreurs, setEncadreurs] = useState([]);
+  const [region, setRegion] = useState('');
+  const [encadreurId, setEncadreurId] = useState('');
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
-  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(rows);
+  const [importing, setImporting] = useState(false);
+  const [importSummary, setImportSummary] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const filteredRows = useMemo(
+    () => rows.filter((r) => (!region || r.region === region) && (!encadreurId || r.encadreurId === encadreurId)),
+    [rows, region, encadreurId]
+  );
+
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(filteredRows);
 
   function reload() {
     setLoading(true);
@@ -75,6 +110,7 @@ function PendingTab() {
 
   useEffect(() => {
     reload();
+    getEncadreurs({ onlyActive: false }).then(setEncadreurs);
   }, []);
 
   function toggleSelected(id) {
@@ -133,6 +169,58 @@ function PendingTab() {
     }
   }
 
+  function handleDownloadImportTemplate() {
+    exportToExcel(
+      [
+        { Reference: 'OM-2027-000123', Statut: 'VALIDE', Client: 'Amadou Bah' },
+        { Reference: 'MTN-2027-000456', Statut: 'REJETE', Client: 'Fatou Sow' },
+        { Reference: 'CPT-100002', Statut: '', Client: 'Ibrahima Diallo' },
+      ],
+      'modele-statuts-paiement.xlsx',
+      'StatutsPaiement'
+    );
+  }
+
+  function handleImportClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleImportFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setImporting(true);
+    setImportSummary(null);
+    setError(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      // La référence est recherchée quelle que soit la colonne qui la porte
+      // (Reference / Référence / Ref / Transaction...), idem pour le statut.
+      const parsed = rawRows.map((row) => {
+        const lower = Object.entries(row).map(([k, v]) => [k.trim().toLowerCase(), v]);
+        const pick = (keys) => {
+          const match = lower.find(([k]) => keys.includes(k));
+          return match ? String(match[1] ?? '').trim() : '';
+        };
+        return {
+          reference: pick(['reference', 'référence', 'ref', 'référence de la transaction', 'transaction', 'مرجع']),
+          status: pick(['statut', 'status', 'etat', 'état', 'الحالة']),
+        };
+      });
+      const summary = await importPaymentStatuses(parsed, user);
+      setImportSummary(summary);
+      reload();
+    } catch {
+      setImportSummary({ updated: [], skipped: [], unmatched: [], parseError: true });
+    } finally {
+      setImporting(false);
+    }
+  }
+
   async function handleReject(row) {
     const reason = window.prompt(t('paymentValidation.rejectPrompt'));
     if (reason === null) return;
@@ -156,6 +244,51 @@ function PendingTab() {
           <p className="text-sm font-semibold text-visa-refused">{error}</p>
         </div>
       )}
+
+      <PaymentFilters
+        region={region}
+        setRegion={setRegion}
+        encadreurId={encadreurId}
+        setEncadreurId={setEncadreurId}
+        encadreurs={encadreurs}
+      />
+
+      <div className="card space-y-3">
+        <p className="text-sm font-semibold text-afriland-black">{t('paymentValidation.import.title')}</p>
+        <p className="text-xs text-afriland-gray-600">{t('paymentValidation.import.help')}</p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-secondary" onClick={handleDownloadImportTemplate}>
+            {t('paymentValidation.import.downloadTemplate')}
+          </button>
+          <button type="button" className="btn-primary" onClick={handleImportClick} disabled={importing}>
+            {importing ? t('common.loading') : t('paymentValidation.import.importFile')}
+          </button>
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
+        </div>
+        {importSummary && (
+          <div className="rounded-md bg-afriland-gray-50 p-3 text-sm">
+            {importSummary.parseError ? (
+              <p className="text-visa-refused">{t('paymentValidation.import.parseError')}</p>
+            ) : (
+              <>
+                <p className="font-medium text-visa-granted">
+                  {t('paymentValidation.import.updated', { count: importSummary.updated.length })}
+                </p>
+                {importSummary.skipped.length > 0 && (
+                  <p className="text-visa-complement">
+                    {t('paymentValidation.import.skipped', { count: importSummary.skipped.length })}
+                  </p>
+                )}
+                {importSummary.unmatched.length > 0 && (
+                  <p className="text-afriland-gray-600">
+                    {t('paymentValidation.import.unmatched', { count: importSummary.unmatched.length })}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <button
@@ -191,7 +324,7 @@ function PendingTab() {
             {loading && (
               <tr><td colSpan={10} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
             )}
-            {!loading && rows.length === 0 && (
+            {!loading && filteredRows.length === 0 && (
               <tr><td colSpan={10} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
             {!loading && pageItems.map((row) => (
@@ -264,9 +397,14 @@ function PendingTab() {
 function HistoryTab() {
   const { t } = useTranslation();
   const [rows, setRows] = useState([]);
+  const [encadreurs, setEncadreurs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ status: '', from: '', to: '' });
+  const [filters, setFilters] = useState({ status: '', from: '', to: '', region: '', encadreurId: '' });
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(rows);
+
+  useEffect(() => {
+    getEncadreurs({ onlyActive: false }).then(setEncadreurs);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -287,12 +425,21 @@ function HistoryTab() {
 
   return (
     <div className="space-y-4">
-      <div className="card grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <PaymentFilters
+        region={filters.region}
+        setRegion={(v) => updateFilter('region', v)}
+        encadreurId={filters.encadreurId}
+        setEncadreurId={(v) => updateFilter('encadreurId', v)}
+        encadreurs={encadreurs}
+      >
         <select className="form-input" value={filters.status} onChange={(e) => updateFilter('status', e.target.value)}>
           <option value="">{t('common.all')}</option>
           <option value="VALIDE">{t('paymentPage.statuses.VALIDE')}</option>
           <option value="REJETE">{t('paymentPage.statuses.REJETE')}</option>
         </select>
+      </PaymentFilters>
+
+      <div className="card grid grid-cols-2 gap-3 sm:grid-cols-3">
         <input
           type="date"
           className="form-input"

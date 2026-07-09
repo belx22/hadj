@@ -367,6 +367,16 @@
     "singleDayHelp": "Use the 4th field to filter on a single day (from = to = chosen date), or the first two fields for a period.",
     "processedOn": "Processed on",
     "processedBy": "Processed by",
+    "import": {
+      "title": "Bank reconciliation (Excel / CSV)",
+      "help": "Import a file of confirmed payments. Columns: \"Reference\" (required) and \"Statut\" (VALIDE or REJETE; empty = VALIDE). For each pending payment, if its reference appears in the file, its status is updated; otherwise it stays unchanged. The \"Client\" column is optional (readability).",
+      "downloadTemplate": "Download template",
+      "importFile": "Import file",
+      "updated": "{{count}} payment(s) updated",
+      "skipped": "{{count}} skipped: reference already recorded",
+      "unmatched": "{{count}} reference(s) in the file with no matching pending payment",
+      "parseError": "File unreadable. Check the format (Excel/CSV) and columns."
+    },
     "refunds": {
       "help": "A rejected visa automatically places already-validated payments in a refund-pending state. Choose the refund method (defaults to the original payment method) and a reference.",
       "originalMethod": "Original payment method",

@@ -4,6 +4,7 @@ import {
   mockGetVersementsHistory,
   mockValidateVersement,
   mockBulkValidateVersements,
+  mockImportPaymentStatusesByReference,
   mockRejectVersement,
   mockGetRefunds,
   mockProcessRefund,
@@ -30,6 +31,12 @@ export async function validateVersement(bordereauId, versementId, actor) {
 export async function bulkValidateVersements(items, actor) {
   if (USE_MOCK) return mockBulkValidateVersements(items, actor);
   const { data } = await axiosClient.put('/versements/valider-en-masse', { items });
+  return data;
+}
+
+export async function importPaymentStatuses(rows, actor) {
+  if (USE_MOCK) return mockImportPaymentStatusesByReference(rows, actor);
+  const { data } = await axiosClient.post('/versements/import-statuts', { rows });
   return data;
 }
 

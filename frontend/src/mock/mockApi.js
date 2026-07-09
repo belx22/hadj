@@ -750,6 +750,7 @@ export async function mockGetPendingVersements() {
   await delay(350);
   const rows = [];
   db.bordereaux.forEach((bordereau) => {
+    const encadreur = db.encadreurs.find((e) => e.id === bordereau.encadreurId);
     bordereau.versements
       .filter((v) => v.status === 'PENDING')
       .forEach((v) => {
@@ -760,6 +761,9 @@ export async function mockGetPendingVersements() {
           idNumber: bordereau.idNumber,
           phone: bordereau.phone,
           season: bordereau.season,
+          region: bordereau.region,
+          encadreurId: bordereau.encadreurId || null,
+          encadreurName: encadreur?.name || null,
         });
       });
   });
@@ -768,10 +772,11 @@ export async function mockGetPendingVersements() {
 
 // Historique des paiements déjà traités (validés ou rejetés), filtrable par
 // statut et par période (du/au, ou un jour précis en renseignant from = to).
-export async function mockGetVersementsHistory({ status, from, to } = {}) {
+export async function mockGetVersementsHistory({ status, from, to, region, encadreurId } = {}) {
   await delay(350);
   const rows = [];
   db.bordereaux.forEach((bordereau) => {
+    const encadreur = db.encadreurs.find((e) => e.id === bordereau.encadreurId);
     bordereau.versements
       .filter((v) => v.status === 'VALIDE' || v.status === 'REJETE')
       .forEach((v) => {
@@ -782,12 +787,17 @@ export async function mockGetVersementsHistory({ status, from, to } = {}) {
           idNumber: bordereau.idNumber,
           phone: bordereau.phone,
           season: bordereau.season,
+          region: bordereau.region,
+          encadreurId: bordereau.encadreurId || null,
+          encadreurName: encadreur?.name || null,
         });
       });
   });
 
   let filtered = rows;
   if (status) filtered = filtered.filter((v) => v.status === status);
+  if (region) filtered = filtered.filter((v) => v.region === region);
+  if (encadreurId) filtered = filtered.filter((v) => v.encadreurId === encadreurId);
   if (from) filtered = filtered.filter((v) => (v.validatedAt || v.createdAt) >= from);
   if (to) filtered = filtered.filter((v) => (v.validatedAt || v.createdAt) <= to);
 
@@ -859,6 +869,85 @@ export async function mockBulkValidateVersements(items, actor) {
   }
 
   return { validated, skipped };
+}
+
+// Import d'un fichier (Excel/CSV) de rapprochement bancaire : pour chaque
+// versement EN ATTENTE, on cherche sa référence dans le fichier. Si elle y
+// figure, on applique le statut indiqué (VALIDE par défaut si la colonne
+// Statut est vide — la simple présence de la référence confirme le versement) ;
+// sinon on ne touche pas au versement.
+const IMPORT_STATUS_ALIASES = {
+  VALIDE: ['VALIDE', 'VALIDÉ', 'VALID', 'OK', 'CONFIRME', 'CONFIRMÉ', 'CONFIRMED', 'PAID', 'PAYE', 'PAYÉ', 'REGLE', 'RÉGLÉ'],
+  REJETE: ['REJETE', 'REJETÉ', 'REJECTED', 'KO', 'REFUSE', 'REFUSÉ', 'ECHEC', 'ÉCHEC', 'FAILED'],
+};
+
+function normalizeImportStatus(raw) {
+  const value = String(raw || '').trim().toUpperCase();
+  if (!value) return 'VALIDE'; // présence de la référence = confirmation
+  if (IMPORT_STATUS_ALIASES.REJETE.includes(value)) return 'REJETE';
+  if (IMPORT_STATUS_ALIASES.VALIDE.includes(value)) return 'VALIDE';
+  return 'VALIDE';
+}
+
+export async function mockImportPaymentStatusesByReference(rows, actor) {
+  await delay(700);
+
+  // Construit la table référence -> statut souhaité à partir du fichier.
+  const refToStatus = new Map();
+  rows.forEach((row) => {
+    const reference = String(row.reference || '').trim();
+    if (!reference) return;
+    refToStatus.set(reference, normalizeImportStatus(row.status));
+  });
+
+  const updated = [];
+  const skipped = [];
+  const now = new Date().toISOString().slice(0, 10);
+
+  db.bordereaux.forEach((bordereau) => {
+    bordereau.versements = bordereau.versements.map((v) => {
+      if (v.status !== 'PENDING') return v;
+      const ref = (v.reference || '').trim();
+      if (!ref || !refToStatus.has(ref)) return v;
+      const newStatus = refToStatus.get(ref);
+      // Une référence déjà comptabilisée ailleurs ne peut être re-validée.
+      if (newStatus === 'VALIDE' && isReferenceAlreadyValidated(ref, v.id)) {
+        skipped.push({ bordereauId: bordereau.id, versementId: v.id, reference: ref });
+        return v;
+      }
+      updated.push({ bordereauId: bordereau.id, versementId: v.id, reference: ref, status: newStatus });
+      return {
+        ...v,
+        status: newStatus,
+        validatedAt: now,
+        validatedBy: actor?.username,
+        note: newStatus === 'REJETE' ? 'Rapprochement bancaire (import)' : v.note,
+      };
+    });
+  });
+
+  if (updated.length > 0) {
+    addAudit('IMPORT_STATUTS_PAIEMENT', `${updated.length} versement(s)`, actor?.username || 'system');
+    persist();
+    updated.forEach((u) => {
+      const bordereau = db.bordereaux.find((b) => b.id === u.bordereauId);
+      if (!bordereau) return;
+      notifyPilgrim(
+        bordereau,
+        u.status === 'VALIDE'
+          ? 'Copilote Hadj: votre versement a été validé et comptabilisé.'
+          : 'Copilote Hadj: votre versement a été rejeté.',
+        'Mise à jour de votre versement'
+      );
+    });
+  }
+
+  // Références présentes dans le fichier mais ne correspondant à aucun versement
+  // en attente (déjà traité, inexistant, ou déjà comptabilisé ailleurs).
+  const matchedRefs = new Set([...updated, ...skipped].map((u) => u.reference));
+  const unmatched = [...refToStatus.keys()].filter((r) => !matchedRefs.has(r));
+
+  return { updated, skipped, unmatched };
 }
 
 export async function mockRejectVersement(bordereauId, versementId, reason, actor) {
