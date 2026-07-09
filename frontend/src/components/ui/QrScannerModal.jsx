@@ -21,6 +21,15 @@ export default function QrScannerModal({ onScan, onClose }) {
     let cancelled = false;
 
     async function start() {
+      // L'accès caméra (getUserMedia) n'est disponible que dans un contexte
+      // sécurisé : HTTPS ou localhost. En HTTP simple (ex : serveur de démo
+      // http://IP:port), le navigateur bloque l'API et `navigator.mediaDevices`
+      // est indéfini. On le détecte en amont pour afficher un message précis
+      // plutôt qu'une erreur générique de permission.
+      if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        setError(t('paymentPage.errors.cameraInsecure'));
+        return;
+      }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: 'environment' },
@@ -35,8 +44,13 @@ export default function QrScannerModal({ onScan, onClose }) {
           await videoRef.current.play();
         }
         tick();
-      } catch {
-        if (!cancelled) setError(t('paymentPage.errors.cameraUnavailable'));
+      } catch (err) {
+        if (cancelled) return;
+        if (err?.name === 'NotAllowedError' || err?.name === 'SecurityError') {
+          setError(t('paymentPage.errors.cameraDenied'));
+        } else {
+          setError(t('paymentPage.errors.cameraUnavailable'));
+        }
       }
     }
 

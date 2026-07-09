@@ -341,7 +341,9 @@
       "beneficiaryNotFound": "Veuillez renseigner un CNI/Passeport valide et retrouvé pour chaque bénéficiaire",
       "receiptTooLarge": "Le fichier dépasse 1,5 Mo. Merci de choisir un fichier plus léger.",
       "qrInvalid": "Ce QR code ne correspond pas au format attendu d'un bordereau de versement.",
-      "cameraUnavailable": "Impossible d'accéder à la caméra. Vérifiez les autorisations ou saisissez les informations manuellement."
+      "cameraUnavailable": "Impossible d'accéder à la caméra. Vérifiez les autorisations ou saisissez les informations manuellement.",
+      "cameraInsecure": "Le scan par caméra nécessite une connexion sécurisée (HTTPS). Sur ce site en HTTP, saisissez la référence manuellement.",
+      "cameraDenied": "Accès à la caméra refusé. Autorisez la caméra dans les paramètres du navigateur, ou saisissez la référence manuellement."
     }
   },
   "paymentValidation": {
