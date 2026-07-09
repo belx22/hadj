@@ -7,6 +7,7 @@ import {
   getPendingVersements,
   getVersementsHistory,
   validateVersement,
+  bulkValidateVersements,
   rejectVersement,
   getRefunds,
   processRefund,
@@ -59,12 +60,15 @@ function PendingTab() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(rows);
 
   function reload() {
     setLoading(true);
     getPendingVersements().then((data) => {
       setRows(data);
+      setSelectedIds(new Set());
       setLoading(false);
     });
   }
@@ -72,6 +76,25 @@ function PendingTab() {
   useEffect(() => {
     reload();
   }, []);
+
+  function toggleSelected(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function togglePageSelection() {
+    const pageIds = pageItems.map((r) => r.id);
+    const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      pageIds.forEach((id) => (allSelected ? next.delete(id) : next.add(id)));
+      return next;
+    });
+  }
 
   async function handleValidate(row) {
     setBusyId(row.id);
@@ -91,6 +114,25 @@ function PendingTab() {
     }
   }
 
+  async function handleBulkValidate() {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    setError(null);
+    try {
+      const items = rows
+        .filter((r) => selectedIds.has(r.id))
+        .map((r) => ({ bordereauId: r.bordereauId, versementId: r.id }));
+      const result = await bulkValidateVersements(items, user);
+      toast.success(t('paymentValidation.bulkValidated', { count: result.validated.length }));
+      if (result.skipped.length > 0) {
+        setError(t('paymentValidation.bulkSkipped', { count: result.skipped.length }));
+      }
+      reload();
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   async function handleReject(row) {
     const reason = window.prompt(t('paymentValidation.rejectPrompt'));
     if (reason === null) return;
@@ -104,6 +146,9 @@ function PendingTab() {
     }
   }
 
+  const pageIds = pageItems.map((r) => r.id);
+  const pageAllSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+
   return (
     <div className="space-y-4">
       {error && (
@@ -112,13 +157,29 @@ function PendingTab() {
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={selectedIds.size === 0 || bulkBusy}
+          onClick={handleBulkValidate}
+        >
+          {bulkBusy ? t('common.loading') : t('paymentValidation.validateSelected')}
+        </button>
+        <p className="text-sm text-afriland-gray-600">{t('paymentValidation.selectedCount', { count: selectedIds.size })}</p>
+      </div>
+
       <div className="card overflow-x-auto p-0">
-        <table className="w-full min-w-[760px] text-left text-sm">
+        <table className="w-full min-w-[840px] text-left text-sm">
           <thead className="bg-afriland-gray-50 text-xs uppercase text-afriland-gray-600">
             <tr>
+              <th className="px-4 py-3">
+                <input type="checkbox" checked={pageAllSelected} onChange={togglePageSelection} aria-label={t('paymentValidation.selectAll')} />
+              </th>
               <th className="px-4 py-3">{t('bordereau.table.pilgrim')}</th>
               <th className="px-4 py-3">{t('paymentPage.method')}</th>
               <th className="px-4 py-3">{t('paymentPage.reference')}</th>
+              <th className="px-4 py-3">{t('paymentValidation.accountNumber')}</th>
               <th className="px-4 py-3">{t('bordereau.agency')}</th>
               <th className="px-4 py-3 text-right">{t('bordereau.amountPaid')}</th>
               <th className="px-4 py-3">{t('bordereau.date')}</th>
@@ -128,13 +189,16 @@ function PendingTab() {
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
             {loading && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
+              <tr><td colSpan={10} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
             )}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
+              <tr><td colSpan={10} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
             {!loading && pageItems.map((row) => (
-              <tr key={row.id}>
+              <tr key={row.id} className={selectedIds.has(row.id) ? 'bg-afriland-red/5' : undefined}>
+                <td className="px-4 py-3">
+                  <input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => toggleSelected(row.id)} aria-label={row.id} />
+                </td>
                 <td className="px-4 py-3">
                   <p className="font-medium">{row.pilgrimName}</p>
                   <p className="text-xs text-afriland-gray-600">{row.idNumber}</p>
@@ -156,6 +220,7 @@ function PendingTab() {
                     </span>
                   )}
                 </td>
+                <td className="px-4 py-3 font-mono text-xs">{row.accountNumber || '—'}</td>
                 <td className="px-4 py-3">{row.agency || '—'}</td>
                 <td className="px-4 py-3 text-right">{formatCurrency(row.amount)}</td>
                 <td className="px-4 py-3">{formatDate(row.createdAt)}</td>

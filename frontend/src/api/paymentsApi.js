@@ -3,6 +3,7 @@ import {
   mockGetPendingVersements,
   mockGetVersementsHistory,
   mockValidateVersement,
+  mockBulkValidateVersements,
   mockRejectVersement,
   mockGetRefunds,
   mockProcessRefund,
@@ -23,6 +24,12 @@ export async function getVersementsHistory(filters) {
 export async function validateVersement(bordereauId, versementId, actor) {
   if (USE_MOCK) return mockValidateVersement(bordereauId, versementId, actor);
   const { data } = await axiosClient.put(`/versements/${versementId}/valider`, { bordereauId });
+  return data;
+}
+
+export async function bulkValidateVersements(items, actor) {
+  if (USE_MOCK) return mockBulkValidateVersements(items, actor);
+  const { data } = await axiosClient.put('/versements/valider-en-masse', { items });
   return data;
 }
 

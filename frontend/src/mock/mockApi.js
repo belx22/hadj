@@ -489,7 +489,7 @@ export async function mockImportPilgrims(rows, encadreurId, actor) {
 // ---------------------------------------------------------------------------
 // Versements en ligne (Mobile Money / référence agence) — au compte-goutte
 // ---------------------------------------------------------------------------
-export async function mockCreateVersementOnline(idNumber, phone, { method, amount, reference, agency, receiptImage, qrData, otherDetails }) {
+export async function mockCreateVersementOnline(idNumber, phone, { method, amount, reference, agency, receiptImage, qrData, otherDetails, accountNumber }) {
   await delay(700);
   const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber && b.phone === phone);
   if (!bordereau) {
@@ -517,6 +517,8 @@ export async function mockCreateVersementOnline(idNumber, phone, { method, amoun
     receiptImage: method === 'AGENCE' ? receiptImage || null : null,
     qrData: method === 'AGENCE' ? qrData || null : null,
     otherDetails: method === 'AUTRE' ? otherDetails || null : null,
+    // Numéro de compte du versement — champ optionnel, peut rester null.
+    accountNumber: accountNumber?.trim() ? accountNumber.trim() : null,
     status: 'PENDING',
     createdAt,
     validatedAt: null,
@@ -560,7 +562,7 @@ export async function mockLookupBeneficiary(idNumber, season) {
 export async function mockCreateGroupedVersementOnline(
   payerIdNumber,
   payerPhone,
-  { method, reference, agency, receiptImage, qrData, otherDetails, beneficiaries }
+  { method, reference, agency, receiptImage, qrData, otherDetails, accountNumber, beneficiaries }
 ) {
   await delay(800);
   const payer = db.bordereaux.find((b) => b.idNumber === payerIdNumber && b.phone === payerPhone);
@@ -615,6 +617,7 @@ export async function mockCreateGroupedVersementOnline(
       receiptImage: method === 'AGENCE' ? receiptImage || null : null,
       qrData: method === 'AGENCE' ? qrData || null : null,
       otherDetails: method === 'AUTRE' ? otherDetails || null : null,
+      accountNumber: accountNumber?.trim() ? accountNumber.trim() : null,
       status: 'PENDING',
       createdAt,
       validatedAt: null,
@@ -716,6 +719,7 @@ export async function mockImportGroupedVersementsByEncadreur(rows, encadreurId, 
       receiptImage: null,
       qrData: null,
       otherDetails: null,
+      accountNumber: null,
       status: 'PENDING',
       createdAt,
       validatedAt: null,
@@ -822,6 +826,39 @@ export async function mockValidateVersement(bordereauId, versementId, actor) {
   persist();
   notifyPilgrim(bordereau, 'Copilote Hadj: votre versement a été validé et comptabilisé.', 'Versement validé');
   return decorateBordereau(bordereau);
+}
+
+// Validation en masse d'une sélection de versements en attente. Chaque
+// versement dont la référence a déjà été comptabilisée ailleurs est ignoré
+// (skipped) au lieu de bloquer toute l'opération.
+export async function mockBulkValidateVersements(items, actor) {
+  await delay(700);
+  const validated = [];
+  const skipped = [];
+  const now = new Date().toISOString().slice(0, 10);
+
+  items.forEach(({ bordereauId, versementId }) => {
+    const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
+    if (!bordereau) return;
+    const versement = bordereau.versements.find((v) => v.id === versementId);
+    if (!versement || versement.status !== 'PENDING') return;
+    if (isReferenceAlreadyValidated(versement.reference, versementId)) {
+      skipped.push({ bordereauId, versementId, reference: versement.reference });
+      return;
+    }
+    bordereau.versements = bordereau.versements.map((v) =>
+      v.id === versementId ? { ...v, status: 'VALIDE', validatedAt: now, validatedBy: actor?.username } : v
+    );
+    validated.push({ bordereauId, versementId });
+    notifyPilgrim(bordereau, 'Copilote Hadj: votre versement a été validé et comptabilisé.', 'Versement validé');
+  });
+
+  if (validated.length > 0) {
+    addAudit('VALIDATION_PAIEMENT_EN_MASSE', `${validated.length} versement(s)`, actor?.username || 'system');
+    persist();
+  }
+
+  return { validated, skipped };
 }
 
 export async function mockRejectVersement(bordereauId, versementId, reason, actor) {

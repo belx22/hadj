@@ -15,7 +15,7 @@ import { formatCurrency, formatDate } from '../../utils/formatters';
 import { AGENCIES, VERSEMENT_METHODS, VERSEMENT_STATUS_COLORS, getAgencyByCode } from '../../utils/constants';
 import { parseVersementQrCode } from '../../utils/qrcode';
 
-const EMPTY_FORM = { method: 'MOBILE_MONEY_ORANGE', amount: '', reference: '', agency: '', receiptImage: null, receiptImageName: '', otherDetails: '' };
+const EMPTY_FORM = { method: 'MOBILE_MONEY_ORANGE', amount: '', reference: '', agency: '', receiptImage: null, receiptImageName: '', otherDetails: '', accountNumber: '' };
 const EMPTY_BENEFICIARY = { idNumber: '', amount: '', lookup: null };
 const MAX_RECEIPT_SIZE = 1_500_000; // ~1.5 Mo avant encodage base64
 
@@ -144,6 +144,7 @@ export default function VisaPelerinPaymentPage() {
           receiptImage: form.method === 'AGENCE' ? form.receiptImage : null,
           qrData: form.method === 'AGENCE' ? qrData : null,
           otherDetails: form.method === 'AUTRE' ? form.otherDetails.trim() : null,
+          accountNumber: form.accountNumber.trim() || null,
           beneficiaries: beneficiaries.map((b) => ({ idNumber: b.idNumber.trim(), amount: Number(b.amount) })),
         });
         await login(dossier.idNumber, dossier.phone);
@@ -180,6 +181,7 @@ export default function VisaPelerinPaymentPage() {
         receiptImage: form.method === 'AGENCE' ? form.receiptImage : null,
         qrData: form.method === 'AGENCE' ? qrData : null,
         otherDetails: form.method === 'AUTRE' ? form.otherDetails.trim() : null,
+        accountNumber: form.accountNumber.trim() || null,
       });
       await login(dossier.idNumber, dossier.phone);
       setForm(EMPTY_FORM);
@@ -344,6 +346,18 @@ export default function VisaPelerinPaymentPage() {
                 />
               </div>
             )}
+
+            <div>
+              <label className="form-label">
+                {t('paymentPage.accountNumber')} <span className="text-afriland-gray-400">({t('common.optional')})</span>
+              </label>
+              <input
+                className="form-input"
+                value={form.accountNumber}
+                onChange={(e) => update('accountNumber', e.target.value)}
+                placeholder={t('paymentPage.accountNumberPlaceholder')}
+              />
+            </div>
 
             {isGrouped ? (
               <div className="space-y-3">
