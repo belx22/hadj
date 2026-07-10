@@ -9,7 +9,7 @@ import { checkDuplicate } from '../../api/bordereauApi';
 import { getEncadreurs, getOfficialPrice } from '../../api/referenceDataApi';
 import { validateBordereau } from '../../utils/validators';
 import { formatCurrency } from '../../utils/formatters';
-import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, isEncadreurPilgrimType } from '../../utils/constants';
+import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS } from '../../utils/constants';
 
 // Formulaire volontairement réduit à l'essentiel : le statut (Nouveau) est
 // déduit automatiquement — un agent peut toujours l'affiner plus tard via le
@@ -50,20 +50,11 @@ export default function PilgrimSelfRegisterPage() {
     getOfficialPrice(form.season, form.pilgrimType).then(setOfficialPrice);
   }, [form.season, form.pilgrimType]);
 
-  const showPilgrimCount = isEncadreurPilgrimType(form.pilgrimType);
-
-  const targetAmount = useMemo(
-    () => (Number(form.pilgrimCount) || 0) * officialPrice,
-    [form.pilgrimCount, officialPrice]
-  );
+  // Inscription individuelle : toujours 1 pèlerin (le champ n'est pas exposé).
+  const targetAmount = useMemo(() => officialPrice, [officialPrice]);
 
   function update(field, value) {
-    setForm((prev) => {
-      const next = { ...prev, [field]: value };
-      // Repasser sur un type non-encadreur ramène le bordereau à un seul pèlerin.
-      if (field === 'pilgrimType' && !isEncadreurPilgrimType(value)) next.pilgrimCount = 1;
-      return next;
-    });
+    setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
@@ -178,34 +169,20 @@ export default function PilgrimSelfRegisterPage() {
           </Field>
         </div>
 
-        <div className={clsx('grid grid-cols-1 gap-3', showPilgrimCount && 'sm:grid-cols-2')}>
-          <Field label={t('bordereau.pilgrimType')} error={errors.pilgrimType} required>
-            <select
-              className={clsx('form-input', errors.pilgrimType && 'form-input-error')}
-              value={form.pilgrimType}
-              onChange={(e) => update('pilgrimType', e.target.value)}
-            >
-              {PILGRIM_TYPES.map((type) => (
-                <option key={type} value={type}>{t(`bordereau.pilgrimTypes.${type}`)}</option>
-              ))}
-            </select>
-          </Field>
-
-          {/* Un encadreur peut inscrire plusieurs pèlerins sur son bordereau ;
-              pour tous les autres types le nombre reste figé à 1. */}
-          {showPilgrimCount && (
-            <Field label={t('bordereau.pilgrimCount')} error={errors.pilgrimCount} required>
-              <input
-                type="number"
-                min="1"
-                inputMode="numeric"
-                className={clsx('form-input', errors.pilgrimCount && 'form-input-error')}
-                value={form.pilgrimCount}
-                onChange={(e) => update('pilgrimCount', e.target.value)}
-              />
-            </Field>
-          )}
-        </div>
+        {/* Auto-inscription : le pèlerin choisit son type. Le nombre de pèlerins
+            n'apparaît pas ici (il vaut toujours 1 pour une inscription
+            individuelle) — un encadreur inscrit son groupe depuis son portail. */}
+        <Field label={t('bordereau.pilgrimType')} error={errors.pilgrimType} required>
+          <select
+            className={clsx('form-input', errors.pilgrimType && 'form-input-error')}
+            value={form.pilgrimType}
+            onChange={(e) => update('pilgrimType', e.target.value)}
+          >
+            {PILGRIM_TYPES.map((type) => (
+              <option key={type} value={type}>{t(`bordereau.pilgrimTypes.${type}`)}</option>
+            ))}
+          </select>
+        </Field>
 
         <div className="rounded-lg bg-afriland-gray-50 p-3">
           <p className="text-xs font-medium uppercase text-afriland-gray-600">{t('pilgrimRegister.targetAmount')}</p>
