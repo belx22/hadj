@@ -15,7 +15,8 @@ import {
   processRefund,
 } from '../../api/paymentsApi';
 import { getEncadreurs } from '../../api/referenceDataApi';
-import { exportToExcel } from '../../utils/excel';
+import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
+import { generateListPdf } from '../../utils/pdf';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { VERSEMENT_STATUS_COLORS, VERSEMENT_METHODS, REGIONS } from '../../utils/constants';
 import Pagination from '../../components/ui/Pagination';
@@ -170,14 +171,15 @@ function PendingTab() {
   }
 
   function handleDownloadImportTemplate() {
-    exportToExcel(
+    exportTemplateToExcel(
       [
         { Reference: 'OM-2027-000123', Statut: 'VALIDE', Client: 'Amadou Bah' },
         { Reference: 'MTN-2027-000456', Statut: 'REJETE', Client: 'Fatou Sow' },
         { Reference: 'CPT-100002', Statut: '', Client: 'Ibrahima Diallo' },
       ],
       'modele-statuts-paiement.xlsx',
-      'StatutsPaiement'
+      'StatutsPaiement',
+      { Statut: ['VALIDE', 'REJETE'] }
     );
   }
 
@@ -423,8 +425,47 @@ function HistoryTab() {
     setFilters((prev) => ({ ...prev, from: day, to: day }));
   }
 
+  // Source unique pour les deux exports : Excel et PDF restent alignés.
+  // On exporte la liste filtrée, pas seulement la page affichée.
+  function buildExportRows() {
+    return rows.map((v) => ({
+      Date: v.validatedAt || v.createdAt,
+      Client: v.pilgrimName,
+      CNI_Passeport: v.idNumber,
+      Region: v.region,
+      Encadreur: v.encadreurName || '—',
+      Moyen: v.method,
+      Reference: v.reference,
+      Montant: v.amount,
+      Statut: v.status,
+    }));
+  }
+
+  function handleExportExcel() {
+    exportToExcel(buildExportRows(), 'paiements.xlsx', 'Paiements');
+  }
+
+  function handleExportPdf() {
+    const exportRows = buildExportRows();
+    generateListPdf({
+      title: t('paymentValidation.tabs.history'),
+      columns: Object.keys(exportRows[0] || { Date: '' }),
+      rows: exportRows.map((row) => Object.values(row)),
+      filename: 'paiements.pdf',
+    });
+  }
+
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap justify-end gap-2">
+        <button type="button" className="btn-secondary" onClick={handleExportExcel} disabled={rows.length === 0}>
+          {t('common.exportExcel')}
+        </button>
+        <button type="button" className="btn-secondary" onClick={handleExportPdf} disabled={rows.length === 0}>
+          {t('common.exportPdf')}
+        </button>
+      </div>
+
       <PaymentFilters
         region={filters.region}
         setRegion={(v) => updateFilter('region', v)}

@@ -1,14 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getPassportDeposits, togglePassportDeposit } from '../../api/attestationsApi';
+import { getPassportDeposits, togglePassportDeposit, importPassportDeposits } from '../../api/attestationsApi';
 import { getSeasons } from '../../api/referenceDataApi';
 import StatCard from '../../components/ui/StatCard';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
+import { exportTemplateToExcel } from '../../utils/excel';
 import { generatePassportDepositCertificate } from '../../utils/pdf';
 import { CURRENT_SEASON } from '../../utils/constants';
+
+const DEPOSIT_CHOICES = ['OUI', 'NON'];
 
 export default function PassportAttestationsPage() {
   const { t } = useTranslation();
@@ -19,6 +23,9 @@ export default function PassportAttestationsPage() {
   const [data, setData] = useState({ items: [], totalPilgrims: 0, depositedPilgrims: 0, remainingPilgrims: 0 });
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importSummary, setImportSummary] = useState(null);
+  const fileInputRef = useRef(null);
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(data.items);
 
   useEffect(() => {
@@ -49,6 +56,61 @@ export default function PassportAttestationsPage() {
     }
   }
 
+  function handleDownloadTemplate() {
+    exportTemplateToExcel(
+      [
+        { idNumber: '1002345678', deposited: 'OUI', pilgrimName: 'Amadou Bah' },
+        { idNumber: '1002345679', deposited: 'NON', pilgrimName: 'Fatou Sow' },
+      ],
+      'modele-depots-passeports.xlsx',
+      'DepotsPasseports',
+      { deposited: DEPOSIT_CHOICES }
+    );
+  }
+
+  function handleImportClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setImporting(true);
+    setImportSummary(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      // On tolère les en-têtes usuels (FR/EN/AR) plutôt que d'imposer un nom exact.
+      const rows = rawRows.map((row) => {
+        const lower = Object.entries(row).map(([k, v]) => [k.trim().toLowerCase(), v]);
+        const pick = (keys) => {
+          const match = lower.find(([k]) => keys.includes(k));
+          return match ? String(match[1] ?? '').trim() : '';
+        };
+        return {
+          idNumber: pick(['idnumber', 'cni', 'passeport', 'cni / passeport', 'n° cni / passeport', 'رقم البطاقة']),
+          deposited: pick(['deposited', 'depot', 'dépôt', 'depose', 'déposé', 'statut', 'الإيداع']),
+        };
+      });
+
+      const summary = await importPassportDeposits(rows, season, user);
+      setImportSummary(summary);
+      if (summary.updated.length > 0) {
+        toast.success(t('attestations.import.successToast', { count: summary.updated.length }));
+        reload();
+      }
+    } catch {
+      toast.error(t('common.error'));
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -67,6 +129,46 @@ export default function PassportAttestationsPage() {
         <StatCard label={t('attestations.totalPilgrims')} value={data.totalPilgrims} />
         <StatCard label={t('attestations.deposited')} value={data.depositedPilgrims} accent="text-visa-granted" />
         <StatCard label={t('attestations.remaining')} value={data.remainingPilgrims} accent="text-visa-complement" />
+      </div>
+
+      <div className="card space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-afriland-black">{t('attestations.import.title')}</p>
+          <p className="text-xs text-afriland-gray-600">{t('attestations.import.help')}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-secondary" onClick={handleDownloadTemplate}>
+            {t('attestations.import.downloadTemplate')}
+          </button>
+          <button type="button" className="btn-primary" onClick={handleImportClick} disabled={importing}>
+            {importing ? t('common.loading') : t('attestations.import.importFile')}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </div>
+
+        {importSummary && (
+          <div className="rounded-md bg-afriland-gray-50 p-3 text-sm">
+            <p className="font-medium text-visa-granted">
+              {t('attestations.import.updated', { count: importSummary.updated.length })}
+            </p>
+            {importSummary.notFound.length > 0 && (
+              <p className="text-afriland-gray-600">
+                {t('attestations.import.notFound', { count: importSummary.notFound.length })}
+              </p>
+            )}
+            {importSummary.invalid.length > 0 && (
+              <p className="text-visa-refused">
+                {t('attestations.import.invalid', { count: importSummary.invalid.length })}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="card overflow-x-auto p-0">

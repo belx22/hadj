@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getEncadreurCommissions, getSeasons } from '../../api/referenceDataApi';
 import StatCard from '../../components/ui/StatCard';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 import { formatCurrency } from '../../utils/formatters';
 import { exportToExcel } from '../../utils/excel';
+import { generateListPdf } from '../../utils/pdf';
 import { CURRENT_SEASON } from '../../utils/constants';
 
 export default function EncadreurCommissionsPage() {
@@ -12,6 +15,7 @@ export default function EncadreurCommissionsPage() {
   const [seasons, setSeasons] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(rows);
 
   useEffect(() => {
     getSeasons().then((data) => setSeasons([...data].sort((a, b) => b.season - a.season)));
@@ -29,22 +33,35 @@ export default function EncadreurCommissionsPage() {
   const totalPlaces = rows.reduce((sum, r) => sum + r.placesAcquired, 0);
   const totalCommissionDue = rows.reduce((sum, r) => sum + r.totalCommissionDue, 0);
 
+  // Source unique pour les deux exports : on exporte toutes les lignes de la
+  // saison, pas seulement la page affichée.
+  function buildExportRows() {
+    return rows.map((r) => ({
+      Encadreur: r.encadreurName,
+      Code: r.encadreurCode,
+      MontantVerse: r.totalPaid,
+      PrixOfficielHorsCommission: r.officialPrice,
+      PlacesAcquises: r.placesAcquired,
+      Reliquat: r.reliquat,
+      MontantPourPlaceSupplementaire: r.amountNeededForNextPlace,
+      CommissionParPelerin: r.commissionPerPilgrim,
+      CommissionTotaleDue: r.totalCommissionDue,
+    }));
+  }
+
   function handleExportExcel() {
-    exportToExcel(
-      rows.map((r) => ({
-        Encadreur: r.encadreurName,
-        Code: r.encadreurCode,
-        MontantVerse: r.totalPaid,
-        PrixOfficielHorsCommission: r.officialPrice,
-        PlacesAcquises: r.placesAcquired,
-        Reliquat: r.reliquat,
-        MontantPourPlaceSupplementaire: r.amountNeededForNextPlace,
-        CommissionParPelerin: r.commissionPerPilgrim,
-        CommissionTotaleDue: r.totalCommissionDue,
-      })),
-      `commissions-encadreurs-${season}.xlsx`,
-      'Commissions'
-    );
+    exportToExcel(buildExportRows(), `commissions-encadreurs-${season}.xlsx`, 'Commissions');
+  }
+
+  function handleExportPdf() {
+    const exportRows = buildExportRows();
+    generateListPdf({
+      title: t('adminCommissions.title'),
+      subtitle: `${t('bordereau.season')} ${season}`,
+      columns: Object.keys(exportRows[0] || { Encadreur: '' }),
+      rows: exportRows.map((row) => Object.values(row)),
+      filename: `commissions-encadreurs-${season}.pdf`,
+    });
   }
 
   return (
@@ -61,6 +78,7 @@ export default function EncadreurCommissionsPage() {
             ))}
           </select>
           <button type="button" className="btn-secondary" onClick={handleExportExcel}>{t('common.exportExcel')}</button>
+          <button type="button" className="btn-secondary" onClick={handleExportPdf}>{t('common.exportPdf')}</button>
         </div>
       </div>
 
@@ -88,7 +106,7 @@ export default function EncadreurCommissionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-afriland-gray-200">
-              {rows.map((r) => (
+              {pageItems.map((r) => (
                 <tr key={r.encadreurId}>
                   <td className="py-2">
                     <p className="font-medium text-afriland-black">{r.encadreurName}</p>
@@ -118,6 +136,11 @@ export default function EncadreurCommissionsPage() {
               )}
             </tbody>
           </table>
+        )}
+        {!loading && rows.length > 0 && (
+          <div className="-mx-5 -mb-5 mt-3">
+            <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
+          </div>
         )}
       </div>
     </div>

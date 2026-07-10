@@ -1449,6 +1449,69 @@ export async function mockTogglePassportDeposit(bordereauId, deposited, actor) {
   return decorateBordereau(bordereau);
 }
 
+// Valeurs acceptées dans la colonne « Depot » du fichier d'import : on tolère
+// les variantes courantes (OUI/NON, VRAI/FAUX, 1/0) pour absorber les exports
+// Excel localisés.
+const DEPOSIT_TRUE = new Set(['OUI', 'YES', 'VRAI', 'TRUE', '1', 'DEPOSE', 'DÉPOSÉ']);
+const DEPOSIT_FALSE = new Set(['NON', 'NO', 'FAUX', 'FALSE', '0', 'NON_DEPOSE', 'NON DÉPOSÉ']);
+
+function parseDepositFlag(raw) {
+  // Colonne vide => on considère le passeport comme déposé (cas nominal).
+  const value = String(raw ?? '').trim().toUpperCase();
+  if (!value) return true;
+  if (DEPOSIT_TRUE.has(value)) return true;
+  if (DEPOSIT_FALSE.has(value)) return false;
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Import en masse des dépôts de passeports (Module Superviseur — Attestations).
+// Chaque ligne cible un pèlerin par son numéro CNI/Passeport ; la colonne
+// « Depot » (optionnelle) permet aussi d'annuler un dépôt.
+// ---------------------------------------------------------------------------
+export async function mockImportPassportDeposits(rows, season, actor) {
+  await delay(700);
+  const updated = [];
+  const notFound = [];
+  const invalid = [];
+
+  rows.forEach((row, index) => {
+    const idNumber = String(row.idNumber ?? '').trim();
+    if (!idNumber) {
+      invalid.push({ row: index + 2, reason: 'MISSING_ID' });
+      return;
+    }
+
+    const deposited = parseDepositFlag(row.deposited);
+    if (deposited === null) {
+      invalid.push({ row: index + 2, idNumber, reason: 'INVALID_FLAG' });
+      return;
+    }
+
+    const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber && b.season === season);
+    if (!bordereau) {
+      notFound.push({ row: index + 2, idNumber });
+      return;
+    }
+
+    bordereau.passportDeposited = deposited;
+    bordereau.passportDepositedAt = deposited ? new Date().toISOString().slice(0, 10) : null;
+    updated.push({
+      bordereauId: bordereau.id,
+      idNumber,
+      pilgrimName: `${bordereau.pilgrimFirstName} ${bordereau.pilgrimLastName}`,
+      deposited,
+    });
+  });
+
+  if (updated.length > 0) {
+    addAudit('IMPORT_DEPOTS_PASSEPORTS', `${updated.length} ligne(s)`, actor?.username || 'system');
+    persist();
+  }
+
+  return { updated, notFound, invalid };
+}
+
 // ---------------------------------------------------------------------------
 // Audit
 // ---------------------------------------------------------------------------

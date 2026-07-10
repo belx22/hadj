@@ -6,7 +6,7 @@ import { getEncadreurs } from '../../api/referenceDataApi';
 import { changeVisaStatus } from '../../api/visaApi';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { exportToExcel } from '../../utils/excel';
-import { generateBordereauReceipt } from '../../utils/pdf';
+import { generateBordereauReceipt, generateListPdf } from '../../utils/pdf';
 import { AGENCIES, PILGRIM_TYPES, REGIONS, VISA_STATUSES } from '../../utils/constants';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import Pagination from '../../components/ui/Pagination';
@@ -60,23 +60,34 @@ export default function BordereauListPage() {
     setFilters((prev) => ({ ...prev, [field]: value }));
   }
 
+  // Source unique pour les deux exports : Excel et PDF restent alignés.
+  function buildExportRows() {
+    return items.map((b) => ({
+      Reference: b.reference,
+      Pelerin: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
+      Telephone: b.phone,
+      Region: b.region,
+      Agence: b.agency,
+      Encadreur: encadreurName(b.encadreurId),
+      Montant: b.amountPaid,
+      Date: b.createdAt,
+      Priorite: b.onlinePriority ? 'Oui' : 'Non',
+      StatutVisa: b.visaStatus,
+    }));
+  }
+
   function handleExportExcel() {
-    exportToExcel(
-      items.map((b) => ({
-        Reference: b.reference,
-        Pelerin: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
-        Telephone: b.phone,
-        Region: b.region,
-        Agence: b.agency,
-        Encadreur: encadreurName(b.encadreurId),
-        Montant: b.amountPaid,
-        Date: b.createdAt,
-        Priorite: b.onlinePriority ? 'Oui' : 'Non',
-        StatutVisa: b.visaStatus,
-      })),
-      'bordereaux.xlsx',
-      'Bordereaux'
-    );
+    exportToExcel(buildExportRows(), 'bordereaux.xlsx', 'Bordereaux');
+  }
+
+  function handleExportPdf() {
+    const rows = buildExportRows();
+    generateListPdf({
+      title: t('bordereau.listTitle'),
+      columns: Object.keys(rows[0] || { Reference: '' }),
+      rows: rows.map((row) => Object.values(row)),
+      filename: 'bordereaux.pdf',
+    });
   }
 
   return (
@@ -88,6 +99,7 @@ export default function BordereauListPage() {
         </div>
         <div className="flex gap-2">
           <button type="button" className="btn-secondary" onClick={handleExportExcel}>{t('common.exportExcel')}</button>
+          <button type="button" className="btn-secondary" onClick={handleExportPdf}>{t('common.exportPdf')}</button>
           <Link to="/bordereaux/nouveau" className="btn-primary">{t('nav.bordereauNew')}</Link>
         </div>
       </div>

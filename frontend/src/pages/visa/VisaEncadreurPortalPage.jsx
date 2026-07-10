@@ -15,7 +15,7 @@ import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { formatCurrency } from '../../utils/formatters';
-import { exportToExcel } from '../../utils/excel';
+import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
 import { generateReportingPdf } from '../../utils/pdf';
 import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, VISA_STATUSES, VERSEMENT_METHODS, isEncadreurPilgrimType } from '../../utils/constants';
 import { validateBordereau } from '../../utils/validators';
@@ -223,10 +223,13 @@ export default function VisaEncadreurPortalPage() {
   }
 
   function handleDownloadTemplate() {
-    exportToExcel(
+    // Les listes déroulantes portent les codes bruts (et non les libellés
+    // traduits) : c'est ce que l'import attend côté normalizeRow().
+    exportTemplateToExcel(
       [{ pilgrimLastName: 'Nom', pilgrimFirstName: 'Prénom', phone: '699112233', idNumber: '1002345699', region: REGIONS[0], pilgrimType: 'PELERIN' }],
       'modele-pelerins.xlsx',
-      'Pelerins'
+      'Pelerins',
+      { region: REGIONS, pilgrimType: PILGRIM_TYPES }
     );
   }
 

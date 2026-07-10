@@ -4,7 +4,8 @@ import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getEncadreurs, createEncadreur, updateEncadreur, importEncadreurs } from '../../api/referenceDataApi';
-import { exportToExcel } from '../../utils/excel';
+import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
+import { generateListPdf } from '../../utils/pdf';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { REGIONS } from '../../utils/constants';
@@ -103,15 +104,40 @@ export default function EncadreursAdminPage() {
   }
 
   function handleDownloadTemplate() {
-    exportToExcel(
+    exportTemplateToExcel(
       [{ name: 'El Hadj Exemple Nom', region: REGIONS[0], code: '' }],
       'modele-encadreurs.xlsx',
-      'Encadreurs'
+      'Encadreurs',
+      { region: REGIONS }
     );
   }
 
   function handleImportClick() {
     fileInputRef.current?.click();
+  }
+
+  // Source unique pour les deux exports : Excel et PDF restent alignés.
+  function buildExportRows() {
+    return encadreurs.map((enc) => ({
+      Nom: enc.name,
+      Code: enc.code || '—',
+      Region: enc.region,
+      Statut: enc.active ? 'Actif' : 'Inactif',
+    }));
+  }
+
+  function handleExportExcel() {
+    exportToExcel(buildExportRows(), 'encadreurs.xlsx', 'Encadreurs');
+  }
+
+  function handleExportPdf() {
+    const rows = buildExportRows();
+    generateListPdf({
+      title: t('adminEncadreurs.title'),
+      columns: Object.keys(rows[0] || { Nom: '' }),
+      rows: rows.map((row) => Object.values(row)),
+      filename: 'encadreurs.pdf',
+    });
   }
 
   async function handleFileChange(e) {
@@ -139,9 +165,15 @@ export default function EncadreursAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-afriland-black">{t('adminEncadreurs.title')}</h1>
-        <p className="text-sm text-afriland-gray-600">{t('adminEncadreurs.subtitle')}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-afriland-black">{t('adminEncadreurs.title')}</h1>
+          <p className="text-sm text-afriland-gray-600">{t('adminEncadreurs.subtitle')}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-secondary" onClick={handleExportExcel}>{t('common.exportExcel')}</button>
+          <button type="button" className="btn-secondary" onClick={handleExportPdf}>{t('common.exportPdf')}</button>
+        </div>
       </div>
 
       <div className="card space-y-3">

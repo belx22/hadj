@@ -531,6 +531,16 @@
   "attestations": {
     "title": "Passport deposit certificates",
     "subtitle": "Calculator of deposited passports against the number of pilgrims registered for the season",
+    "import": {
+      "title": "Bulk update of deposits",
+      "help": "Import an Excel or CSV file with the ID/Passport number and a Depot column (OUI / NON). An empty Depot column means OUI.",
+      "downloadTemplate": "Download template",
+      "importFile": "Import file",
+      "updated": "{{count}} deposit(s) updated",
+      "notFound": "{{count}} row(s) skipped: pilgrim not found for this season",
+      "invalid": "{{count}} invalid row(s)",
+      "successToast": "{{count}} deposit(s) updated"
+    },
     "totalPilgrims": "Registered pilgrims",
     "deposited": "Passports deposited",
     "remaining": "Passports remaining",

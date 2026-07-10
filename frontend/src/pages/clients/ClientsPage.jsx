@@ -5,7 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { getBordereaux } from '../../api/bordereauApi';
 import { getEncadreurs } from '../../api/referenceDataApi';
 import { importVisaStatuses, checkStatusAnomalies } from '../../api/visaApi';
-import { exportToExcel } from '../../utils/excel';
+import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
+import { generateListPdf } from '../../utils/pdf';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
@@ -115,28 +116,41 @@ export default function ClientsPage() {
   }
 
   function handleDownloadTemplate() {
-    exportToExcel(
+    // Codes bruts dans la liste déroulante : c'est ce qu'attend l'import.
+    exportTemplateToExcel(
       [{ idNumber: '1002345678', status: 'ACCORDE', note: '' }],
       'modele-statuts-visa.xlsx',
-      'Statuts'
+      'Statuts',
+      { status: VISA_STATUSES }
     );
   }
 
+  // Source unique pour les deux exports : Excel et PDF restent alignés.
+  function buildExportRows() {
+    return filtered.map((b) => ({
+      Pelerin: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
+      CNI_Passeport: b.idNumber,
+      Telephone: b.phone,
+      Region: b.region,
+      Encadreur: encadreurName(b.encadreurId),
+      MontantPaye: b.amountPaid,
+      MontantCible: b.targetAmount,
+      StatutVisa: b.visaStatus,
+    }));
+  }
+
   function handleExportClients() {
-    exportToExcel(
-      filtered.map((b) => ({
-        Pelerin: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
-        CNI_Passeport: b.idNumber,
-        Telephone: b.phone,
-        Region: b.region,
-        Encadreur: encadreurName(b.encadreurId),
-        MontantPaye: b.amountPaid,
-        MontantCible: b.targetAmount,
-        StatutVisa: b.visaStatus,
-      })),
-      'clients.xlsx',
-      'Clients'
-    );
+    exportToExcel(buildExportRows(), 'clients.xlsx', 'Clients');
+  }
+
+  function handleExportClientsPdf() {
+    const rows = buildExportRows();
+    generateListPdf({
+      title: t('clients.title'),
+      columns: Object.keys(rows[0] || { Pelerin: '' }),
+      rows: rows.map((row) => Object.values(row)),
+      filename: 'clients.pdf',
+    });
   }
 
   return (
@@ -146,9 +160,14 @@ export default function ClientsPage() {
           <h1 className="text-xl font-bold text-afriland-black">{t('clients.title')}</h1>
           <p className="text-sm text-afriland-gray-600">{t('clients.subtitle')}</p>
         </div>
-        <button type="button" className="btn-secondary" onClick={handleExportClients}>
-          {t('common.exportExcel')}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-secondary" onClick={handleExportClients}>
+            {t('common.exportExcel')}
+          </button>
+          <button type="button" className="btn-secondary" onClick={handleExportClientsPdf}>
+            {t('common.exportPdf')}
+          </button>
+        </div>
       </div>
 
       <div className="card space-y-3">

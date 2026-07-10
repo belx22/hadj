@@ -531,6 +531,16 @@
   "attestations": {
     "title": "Attestations de dépôt de passeport",
     "subtitle": "Calculateur des passeports déposés par rapport au nombre de pèlerins inscrits pour la saison",
+    "import": {
+      "title": "Mise à jour en masse des dépôts",
+      "help": "Importez un fichier Excel ou CSV avec le N° CNI/Passeport et la colonne Depot (OUI / NON). Une colonne Depot vide vaut OUI.",
+      "downloadTemplate": "Télécharger le modèle",
+      "importFile": "Importer le fichier",
+      "updated": "{{count}} dépôt(s) mis à jour",
+      "notFound": "{{count}} ligne(s) ignorée(s) : pèlerin introuvable pour cette saison",
+      "invalid": "{{count}} ligne(s) invalide(s)",
+      "successToast": "{{count}} dépôt(s) mis à jour"
+    },
     "totalPilgrims": "Pèlerins inscrits",
     "deposited": "Passeports déposés",
     "remaining": "Passeports restants",

@@ -15,6 +15,51 @@ function addHeader(doc, title) {
   doc.text(title, 14, 32);
 }
 
+/**
+ * Export PDF générique d'une liste (encadreurs, clients, bordereaux, paiements).
+ * Mise en page paysage : les listes ont beaucoup de colonnes.
+ *
+ * @param {object}   options
+ * @param {string}   options.title     Titre affiché en tête du document.
+ * @param {string[]} options.columns   Libellés des colonnes.
+ * @param {Array<Array<string|number>>} options.rows  Lignes déjà formatées.
+ * @param {string}   options.filename  Nom du fichier téléchargé.
+ * @param {string}   [options.subtitle] Ligne de contexte (filtres, saison…).
+ */
+export function generateListPdf({ title, columns, rows, filename, subtitle }) {
+  const doc = new jsPDF({ orientation: 'landscape' });
+
+  // L'en-tête est dessiné pour une page A4 portrait (210 mm) : en paysage la
+  // largeur utile passe à 297 mm, on redessine donc les bandeaux à la bonne taille.
+  doc.setFillColor(17, 17, 17);
+  doc.rect(0, 0, 297, 22, 'F');
+  doc.setFillColor(200, 16, 46);
+  doc.rect(0, 22, 297, 2, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(14);
+  doc.text('Afriland First Bank — Copilote Hadj', 14, 14);
+  doc.setTextColor(17, 17, 17);
+  doc.setFontSize(12);
+  doc.text(title, 14, 32);
+
+  doc.setFontSize(9);
+  doc.setTextColor(89, 89, 89);
+  const generatedAt = `Généré le ${formatDate(new Date().toISOString().slice(0, 10))} — ${rows.length} ligne(s)`;
+  doc.text(subtitle ? `${subtitle} — ${generatedAt}` : generatedAt, 14, 38);
+
+  autoTable(doc, {
+    startY: 44,
+    head: [columns],
+    body: rows.map((row) => row.map((cell) => (cell == null ? '—' : String(cell)))),
+    headStyles: { fillColor: [200, 16, 46] },
+    styles: { fontSize: 8, cellPadding: 2 },
+    alternateRowStyles: { fillColor: [246, 246, 246] },
+    margin: { left: 14, right: 14 },
+  });
+
+  doc.save(filename);
+}
+
 export function generateBordereauReceipt(bordereau) {
   const doc = new jsPDF();
   addHeader(doc, 'Reçu numérique de souscription');
