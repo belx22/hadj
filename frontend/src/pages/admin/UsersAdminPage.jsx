@@ -42,6 +42,12 @@ export default function UsersAdminPage() {
   // Profils que l'utilisateur connecté a le droit de créer.
   const creatableRoles = useMemo(() => getCreatableRoles(actor?.role), [actor?.role]);
 
+  // À l'édition, on autorise les mêmes rôles + le rôle courant du compte
+  // (sinon un rôle non créable par l'acteur disparaîtrait du menu).
+  function editableRoles(currentRole) {
+    return creatableRoles.includes(currentRole) ? creatableRoles : [currentRole, ...creatableRoles];
+  }
+
   // Le rôle par défaut dépend de l'acteur : on prend le premier autorisé.
   useEffect(() => {
     if (creatableRoles.length > 0) {
@@ -209,10 +215,15 @@ export default function UsersAdminPage() {
     if (editValues.newPassword.trim()) {
       updates.password = editValues.newPassword.trim();
     }
-    await updateUser(id, updates, actor);
-    toast.success(t('toasts.userUpdated'));
-    setEditingId(null);
-    reload();
+    try {
+      await updateUser(id, updates, actor);
+      toast.success(t('toasts.userUpdated'));
+      setEditingId(null);
+      reload();
+    } catch (err) {
+      if (err.code === 'FORBIDDEN_ROLE') setEditError(t('adminUsers.errors.forbiddenRole'));
+      else setEditError(t('common.error'));
+    }
   }
 
   return (
@@ -340,7 +351,11 @@ export default function UsersAdminPage() {
                           value={editValues.role}
                           onChange={(e) => updateEditField('role', e.target.value)}
                         >
-                          {Object.values(ROLES).map((role) => <option key={role} value={role}>{t(`roles.${role}`)}</option>)}
+                          {/* Rôles autorisés + le rôle actuel, pour ne pas le
+                              faire disparaître de la liste lors de l'édition. */}
+                          {editableRoles(editValues.role).map((role) => (
+                            <option key={role} value={role}>{t(`roles.${role}`)}</option>
+                          ))}
                         </select>
                       </div>
                       {editValues.role === ROLES.ENCADREUR ? (

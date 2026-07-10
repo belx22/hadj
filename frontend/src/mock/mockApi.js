@@ -1430,6 +1430,15 @@ export async function mockImportUsers(rows, actor) {
 
 export async function mockUpdateUser(id, updates, actor) {
   await delay(350);
+  const target = db.users.find((u) => u.id === id);
+  if (!target) throw new Error('NOT_FOUND');
+
+  // Une modification de rôle est soumise à la même hiérarchie qu'une création :
+  // sinon un gestionnaire pourrait promouvoir un compte existant en superviseur.
+  if (updates.role && updates.role !== target.role) {
+    assertCanCreateRole(actor, updates.role);
+  }
+
   db.users = db.users.map((u) => (u.id === id ? { ...u, ...updates } : u));
   addAudit('MODIFICATION_UTILISATEUR', id, actor?.username || 'system');
   persist();
