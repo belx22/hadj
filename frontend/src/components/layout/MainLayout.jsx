@@ -10,7 +10,8 @@ const NAV_ITEMS = [
   { to: '/dashboard', key: 'nav.dashboard', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
   { to: '/clients', key: 'nav.clients', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
   { to: '/bordereaux', key: 'nav.bordereauList', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ', 'ADMIN_DSI'] },
-  { to: '/bordereaux/nouveau', key: 'nav.bordereauNew', roles: ['OPERATEUR_HADJ', 'GESTIONNAIRE_HADJ'] },
+  // « Nouveau bordereau » a été retiré du menu back-office : la création reste
+  // accessible depuis la liste des bordereaux (route /bordereaux/nouveau).
   { to: '/paiements', key: 'nav.payments', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
   { to: '/attestations', key: 'nav.attestations', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
   { to: '/parametrage/powerbi', key: 'nav.powerbi', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },

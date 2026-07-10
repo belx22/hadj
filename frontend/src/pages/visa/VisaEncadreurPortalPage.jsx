@@ -17,7 +17,7 @@ import usePagination from '../../hooks/usePagination';
 import { formatCurrency } from '../../utils/formatters';
 import { exportToExcel } from '../../utils/excel';
 import { generateReportingPdf } from '../../utils/pdf';
-import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, VISA_STATUSES, VERSEMENT_METHODS } from '../../utils/constants';
+import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, VISA_STATUSES, VERSEMENT_METHODS, isEncadreurPilgrimType } from '../../utils/constants';
 import { validateBordereau } from '../../utils/validators';
 
 const EMPTY_FORM = { pilgrimLastName: '', pilgrimFirstName: '', phone: '', idNumber: '', region: '', pilgrimType: 'PELERIN', pilgrimCount: 1 };
@@ -152,7 +152,12 @@ export default function VisaEncadreurPortalPage() {
   }
 
   function updateForm(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      // Repasser sur un type non-encadreur ramène le bordereau à un seul pèlerin.
+      if (field === 'pilgrimType' && !isEncadreurPilgrimType(value)) next.pilgrimCount = 1;
+      return next;
+    });
     setFormErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
@@ -404,17 +409,21 @@ export default function VisaEncadreurPortalPage() {
           <select className="form-input" value={form.pilgrimType} onChange={(e) => updateForm('pilgrimType', e.target.value)}>
             {PILGRIM_TYPES.map((type) => <option key={type} value={type}>{t(`bordereau.pilgrimTypes.${type}`)}</option>)}
           </select>
-          <div>
-            <input
-              type="number"
-              min="1"
-              className={`form-input ${formErrors.pilgrimCount ? 'form-input-error' : ''}`}
-              placeholder={t('bordereau.pilgrimCount')}
-              value={form.pilgrimCount}
-              onChange={(e) => updateForm('pilgrimCount', e.target.value)}
-            />
-            {formErrors.pilgrimCount && <p className="form-error">{formErrors.pilgrimCount}</p>}
-          </div>
+          {/* Le nombre de pèlerins n'a de sens que pour un bordereau d'encadreur. */}
+          {isEncadreurPilgrimType(form.pilgrimType) && (
+            <div>
+              <input
+                type="number"
+                min="1"
+                inputMode="numeric"
+                className={`form-input ${formErrors.pilgrimCount ? 'form-input-error' : ''}`}
+                placeholder={t('bordereau.pilgrimCount')}
+                value={form.pilgrimCount}
+                onChange={(e) => updateForm('pilgrimCount', e.target.value)}
+              />
+              {formErrors.pilgrimCount && <p className="form-error">{formErrors.pilgrimCount}</p>}
+            </div>
+          )}
           <button type="submit" className="btn-primary" disabled={submitting}>
             {submitting ? t('common.loading') : t('encadreurPortal.registerButton')}
           </button>

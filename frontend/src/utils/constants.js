@@ -14,6 +14,15 @@ export const REGIONS = [
 
 export const PILGRIM_TYPES = ['PELERIN', 'ENCADREUR_AVEC_COMMISSION', 'ENCADREUR_SANS_COMMISSION', 'OFFICIEL', 'GUH'];
 
+// Seuls les encadreurs inscrivent plusieurs pèlerins sur un même bordereau :
+// pour tous les autres types le nombre de pèlerins vaut 1, et le champ
+// correspondant est masqué dans les formulaires d'inscription.
+export const ENCADREUR_PILGRIM_TYPES = ['ENCADREUR_AVEC_COMMISSION', 'ENCADREUR_SANS_COMMISSION'];
+
+export function isEncadreurPilgrimType(pilgrimType) {
+  return ENCADREUR_PILGRIM_TYPES.includes(pilgrimType);
+}
+
 export const PILGRIM_STATUSES = ['NOUVEAU', 'RECURRENT'];
 
 export const VISA_STATUSES = ['EN_ATTENTE', 'EN_COURS', 'ACCORDE', 'REFUSE', 'COMPLEMENT_REQUIS'];

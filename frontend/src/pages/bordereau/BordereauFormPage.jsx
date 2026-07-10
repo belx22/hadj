@@ -7,7 +7,7 @@ import { getEncadreurs, getOfficialPrice } from '../../api/referenceDataApi';
 import { generateBordereauReceipt } from '../../utils/pdf';
 import { formatCurrency } from '../../utils/formatters';
 import { validateBordereau } from '../../utils/validators';
-import { AGENCIES, CURRENT_SEASON, PILGRIM_STATUSES, PILGRIM_TYPES, REGIONS } from '../../utils/constants';
+import { AGENCIES, CURRENT_SEASON, PILGRIM_STATUSES, PILGRIM_TYPES, REGIONS, isEncadreurPilgrimType } from '../../utils/constants';
 
 const EMPTY_FORM = {
   reference: '',
@@ -49,13 +49,20 @@ export default function BordereauFormPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.season, form.pilgrimType]);
 
+  const showPilgrimCount = isEncadreurPilgrimType(form.pilgrimType);
+
   const computedAmount = useMemo(
     () => (Number(form.pilgrimCount) || 0) * officialPrice,
     [form.pilgrimCount, officialPrice]
   );
 
   function update(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      // Repasser sur un type non-encadreur ramène le bordereau à un seul pèlerin.
+      if (field === 'pilgrimType' && !isEncadreurPilgrimType(value)) next.pilgrimCount = 1;
+      return next;
+    });
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
@@ -243,15 +250,20 @@ export default function BordereauFormPage() {
           </select>
         </Field>
 
-        <Field label={t('bordereau.pilgrimCount')} error={errors.pilgrimCount} required>
-          <input
-            type="number"
-            min="1"
-            className={clsx('form-input', errors.pilgrimCount && 'form-input-error')}
-            value={form.pilgrimCount}
-            onChange={(e) => update('pilgrimCount', e.target.value)}
-          />
-        </Field>
+        {/* Un encadreur peut inscrire plusieurs pèlerins sur son bordereau ;
+            pour tous les autres types le nombre reste figé à 1. */}
+        {showPilgrimCount && (
+          <Field label={t('bordereau.pilgrimCount')} error={errors.pilgrimCount} required>
+            <input
+              type="number"
+              min="1"
+              inputMode="numeric"
+              className={clsx('form-input', errors.pilgrimCount && 'form-input-error')}
+              value={form.pilgrimCount}
+              onChange={(e) => update('pilgrimCount', e.target.value)}
+            />
+          </Field>
+        )}
 
         <Field label={t('bordereau.computedAmount')}>
           <input className="form-input bg-afriland-gray-50 font-semibold" value={formatCurrency(computedAmount)} disabled />

@@ -217,7 +217,7 @@ export default function VisaPelerinPaymentPage() {
 
         <PaymentCodeCard code={dossier.paymentCode} />
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard label={t('paymentPage.target')} value={formatCurrency(dossier.targetAmount)} />
           <StatCard label={t('paymentPage.validated')} value={formatCurrency(dossier.amountPaid)} accent="text-visa-granted" />
           <StatCard label={t('paymentPage.pending')} value={formatCurrency(dossier.pendingAmount)} accent="text-visa-pending" />
@@ -437,7 +437,10 @@ export default function VisaPelerinPaymentPage() {
 
         <div className="card">
           <p className="mb-3 text-sm font-semibold text-afriland-black">{t('visa.paymentHistory')}</p>
-          <table className="w-full text-left text-sm">
+          {/* Défilement horizontal sur mobile : le tableau garde une largeur
+              minimale lisible plutôt que d'écraser ses colonnes. */}
+          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <table className="w-full min-w-[38rem] text-left text-sm">
             <thead className="text-xs uppercase text-afriland-gray-600">
               <tr>
                 <th className="py-2">{t('bordereau.date')}</th>
@@ -470,6 +473,7 @@ export default function VisaPelerinPaymentPage() {
               )}
             </tbody>
           </table>
+          </div>
           <div className="-mx-5 -mb-5 mt-3">
             <Pagination page={page} totalPages={totalPages} totalItems={totalItems} pageSize={pageSize} onPageChange={setPage} />
           </div>
