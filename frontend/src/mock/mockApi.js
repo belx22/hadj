@@ -5,12 +5,35 @@ import {
   SEED_AUDIT_LOGS,
   SEED_ENCADREURS,
 } from './seedData';
-import { CURRENT_SEASON, DEFAULT_OFFICIAL_PRICE, PILGRIM_TYPES, REGIONS, VISA_STATUSES } from '../utils/constants';
+import {
+  AGENCIES,
+  CURRENT_SEASON,
+  DEFAULT_OFFICIAL_PRICE,
+  PILGRIM_TYPES,
+  REGIONS,
+  ROLES,
+  VISA_STATUSES,
+  canCreateRole,
+} from '../utils/constants';
 
 const VISA_STATUSES_SET = new Set(VISA_STATUSES);
+const ROLE_VALUES = new Set(Object.values(ROLES));
 
-const STORAGE_KEY = 'copilote-hadj-mock-db-v4';
+// v5 : ajout des collections `smtpSettings` et `passwordResets` — un cache v4
+// ne les contiendrait pas.
+const STORAGE_KEY = 'copilote-hadj-mock-db-v5';
 const NETWORK_DELAY = 350;
+
+// Paramètres SMTP par défaut, modifiables par l'Admin DSI depuis son interface.
+const DEFAULT_SMTP_SETTINGS = {
+  host: 'smtp.afrilandfirstbank.cm',
+  port: 587,
+  secure: true,
+  username: 'no-reply@afrilandfirstbank.cm',
+  fromName: 'Copilote Hadj',
+  fromEmail: 'no-reply@afrilandfirstbank.cm',
+  otpTtlMinutes: 10,
+};
 
 function seedDb() {
   return {
@@ -19,6 +42,8 @@ function seedDb() {
     bordereaux: SEED_BORDEREAUX,
     auditLogs: SEED_AUDIT_LOGS,
     encadreurs: SEED_ENCADREURS,
+    smtpSettings: { ...DEFAULT_SMTP_SETTINGS },
+    passwordResets: [],
   };
 }
 
@@ -1278,8 +1303,19 @@ export async function mockGetUsers() {
   return db.users.map(({ password: _pw, ...safe }) => safe);
 }
 
+// La hiérarchie est vérifiée ici (et pas seulement dans l'UI) : le formulaire
+// masque les rôles interdits, mais rien n'empêcherait un appel direct à l'API.
+function assertCanCreateRole(actor, targetRole) {
+  if (!canCreateRole(actor?.role, targetRole)) {
+    const error = new Error('FORBIDDEN_ROLE');
+    error.code = 'FORBIDDEN_ROLE';
+    throw error;
+  }
+}
+
 export async function mockCreateUser(payload, actor) {
   await delay(400);
+  assertCanCreateRole(actor, payload.role);
   const exists = db.users.some((u) => u.username === payload.username);
   if (exists) {
     const error = new Error('USERNAME_TAKEN');
@@ -1295,6 +1331,103 @@ export async function mockCreateUser(payload, actor) {
   return safe;
 }
 
+function generateUserPassword() {
+  // Mot de passe temporaire lisible, communiqué à l'utilisateur créé.
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let password = '';
+  for (let i = 0; i < 8; i += 1) {
+    password += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return password;
+}
+
+// Plage des diacritiques combinants, construite par échappement pour ne pas
+// dépendre de l'encodage du fichier source.
+const COMBINING_MARKS = new RegExp('[\\u0300-\\u036f]', 'g');
+
+function slugifyUsername(name) {
+  return String(name)
+    .normalize('NFD')
+    .replace(COMBINING_MARKS, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '.')
+    .replace(/^\.+|\.+$/g, '');
+}
+
+// ---------------------------------------------------------------------------
+// Import en masse d'utilisateurs (Admin / Superviseur / Gestionnaire).
+// Le nom (et l'identifiant déduit) est contrôlé : une ligne dont le nom ou le
+// username existe déjà est ignorée plutôt que de créer un doublon.
+// ---------------------------------------------------------------------------
+export async function mockImportUsers(rows, actor) {
+  await delay(700);
+  const created = [];
+  const duplicates = [];
+  const forbidden = [];
+  const invalid = [];
+
+  // On compare sur des noms normalisés pour attraper « Paul  MBARGA » vs « paul mbarga ».
+  const normalizeName = (value) => String(value).trim().toLowerCase().replace(/\s+/g, ' ');
+  const existingNames = new Set(db.users.map((u) => normalizeName(u.name)));
+  const existingUsernames = new Set(db.users.map((u) => u.username));
+
+  rows.forEach((row, index) => {
+    const line = index + 2;
+    const name = String(row.name ?? '').trim();
+    const role = String(row.role ?? '').trim().toUpperCase();
+
+    if (!name || !role) {
+      invalid.push({ row: line, reason: 'MISSING_FIELD' });
+      return;
+    }
+    if (!ROLE_VALUES.has(role)) {
+      invalid.push({ row: line, name, reason: 'UNKNOWN_ROLE' });
+      return;
+    }
+    if (!canCreateRole(actor?.role, role)) {
+      forbidden.push({ row: line, name, role });
+      return;
+    }
+    if (existingNames.has(normalizeName(name))) {
+      duplicates.push({ row: line, name });
+      return;
+    }
+
+    const username = String(row.username ?? '').trim() || slugifyUsername(name);
+    if (existingUsernames.has(username)) {
+      duplicates.push({ row: line, name, username });
+      return;
+    }
+
+    const password = String(row.password ?? '').trim() || generateUserPassword();
+    // db.users grandit à chaque ligne créée : sa longueur suffit pour l'identifiant.
+    const record = {
+      id: `U-${db.users.length + 1}`,
+      username,
+      password,
+      name,
+      email: String(row.email ?? '').trim() || null,
+      role,
+      active: true,
+    };
+    if (role === 'ENCADREUR') record.encadreurId = String(row.encadreurId ?? '').trim() || null;
+    else record.agency = String(row.agency ?? '').trim() || AGENCIES[0];
+
+    db.users = [...db.users, record];
+    existingNames.add(normalizeName(name));
+    existingUsernames.add(username);
+    // Le mot de passe est renvoyé une seule fois, pour remise à l'utilisateur.
+    created.push({ name, username, password, role });
+  });
+
+  if (created.length > 0) {
+    addAudit('IMPORT_UTILISATEURS', `${created.length} compte(s)`, actor?.username || 'system');
+    persist();
+  }
+
+  return { created, duplicates, forbidden, invalid };
+}
+
 export async function mockUpdateUser(id, updates, actor) {
   await delay(350);
   db.users = db.users.map((u) => (u.id === id ? { ...u, ...updates } : u));
@@ -1302,6 +1435,127 @@ export async function mockUpdateUser(id, updates, actor) {
   persist();
   const { password: _pw, ...safe } = db.users.find((u) => u.id === id);
   return safe;
+}
+
+// ---------------------------------------------------------------------------
+// Paramètres SMTP (Admin DSI) — servent à l'envoi du code OTP de
+// réinitialisation de mot de passe.
+// ---------------------------------------------------------------------------
+export async function mockGetSmtpSettings() {
+  await delay(250);
+  return { ...(db.smtpSettings || DEFAULT_SMTP_SETTINGS) };
+}
+
+export async function mockUpdateSmtpSettings(settings, actor) {
+  await delay(400);
+  if (actor?.role !== 'ADMIN_DSI') {
+    const error = new Error('FORBIDDEN');
+    error.code = 'FORBIDDEN';
+    throw error;
+  }
+  db.smtpSettings = { ...(db.smtpSettings || DEFAULT_SMTP_SETTINGS), ...settings };
+  addAudit('MODIFICATION_SMTP', 'smtpSettings', actor?.username || 'system');
+  persist();
+  return { ...db.smtpSettings };
+}
+
+// ---------------------------------------------------------------------------
+// Mot de passe oublié : envoi d'un code OTP par email, puis réinitialisation.
+// ---------------------------------------------------------------------------
+function generateOtp() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function maskEmail(email) {
+  // On ne renvoie jamais l'email complet à un appelant non authentifié.
+  const [local, domain] = String(email).split('@');
+  if (!domain) return '***';
+  const head = local.slice(0, 2);
+  return `${head}${'*'.repeat(Math.max(local.length - 2, 1))}@${domain}`;
+}
+
+function findUserByIdentifier(identifier) {
+  const value = String(identifier || '').trim().toLowerCase();
+  return db.users.find(
+    (u) => u.username.toLowerCase() === value || String(u.email || '').toLowerCase() === value
+  );
+}
+
+export async function mockRequestPasswordReset(identifier) {
+  await delay(600);
+  const user = findUserByIdentifier(identifier);
+  const settings = db.smtpSettings || DEFAULT_SMTP_SETTINGS;
+
+  // Réponse volontairement identique que le compte existe ou non : on ne
+  // révèle pas quels identifiants sont valides (énumération de comptes).
+  if (!user || !user.email || user.active === false) {
+    return { sent: true, maskedEmail: null };
+  }
+
+  const ttlMs = (Number(settings.otpTtlMinutes) || 10) * 60 * 1000;
+  const otp = generateOtp();
+  const reset = {
+    username: user.username,
+    otp,
+    expiresAt: Date.now() + ttlMs,
+    attempts: 0,
+  };
+  db.passwordResets = [...(db.passwordResets || []).filter((r) => r.username !== user.username), reset];
+  persist();
+
+  sendMockEmail(
+    user.email,
+    `${settings.fromName} — Code de réinitialisation`,
+    `Votre code de vérification est ${otp}. Il expire dans ${settings.otpTtlMinutes} minutes.`
+  );
+  addAudit('DEMANDE_REINITIALISATION_MDP', user.username, user.username);
+
+  return { sent: true, maskedEmail: maskEmail(user.email) };
+}
+
+const MAX_OTP_ATTEMPTS = 5;
+
+export async function mockResetPasswordWithOtp(identifier, otp, newPassword) {
+  await delay(600);
+  const user = findUserByIdentifier(identifier);
+  const reset = (db.passwordResets || []).find((r) => r.username === user?.username);
+
+  if (!user || !reset) {
+    const error = new Error('INVALID_OTP');
+    error.code = 'INVALID_OTP';
+    throw error;
+  }
+  if (Date.now() > reset.expiresAt) {
+    db.passwordResets = db.passwordResets.filter((r) => r.username !== user.username);
+    persist();
+    const error = new Error('OTP_EXPIRED');
+    error.code = 'OTP_EXPIRED';
+    throw error;
+  }
+  if (reset.attempts >= MAX_OTP_ATTEMPTS) {
+    const error = new Error('TOO_MANY_ATTEMPTS');
+    error.code = 'TOO_MANY_ATTEMPTS';
+    throw error;
+  }
+  if (String(otp).trim() !== reset.otp) {
+    reset.attempts += 1;
+    persist();
+    const error = new Error('INVALID_OTP');
+    error.code = 'INVALID_OTP';
+    throw error;
+  }
+  if (!newPassword || String(newPassword).length < 6) {
+    const error = new Error('WEAK_PASSWORD');
+    error.code = 'WEAK_PASSWORD';
+    throw error;
+  }
+
+  db.users = db.users.map((u) => (u.id === user.id ? { ...u, password: newPassword } : u));
+  db.passwordResets = db.passwordResets.filter((r) => r.username !== user.username);
+  addAudit('REINITIALISATION_MDP', user.username, user.username);
+  persist();
+
+  return { success: true };
 }
 
 // ---------------------------------------------------------------------------

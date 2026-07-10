@@ -78,6 +78,7 @@
     "encadreurs": "Guides",
     "commissions": "Guide commissions",
     "users": "Users",
+    "smtp": "Email settings (SMTP)",
     "powerbi": "Power BI connector",
     "clients": "Clients"
   },
@@ -94,6 +95,7 @@
     "password": "Password",
     "loginButton": "Sign in",
     "invalidCredentials": "Incorrect username or password",
+    "forgotPassword": "Forgot your password?",
     "welcome": "Welcome",
     "loginSubtitle": "Access your Hadj Copilot workspace",
     "demoAccounts": "Demo accounts",
@@ -424,12 +426,65 @@
     "title": "User management",
     "subtitle": "Create and administer staff / management accounts",
     "name": "Full name",
+    "email": "Email",
     "role": "Role",
     "add": "Create user",
     "newPassword": "New password",
     "newPasswordPlaceholder": "Leave blank to keep unchanged",
+    "import": {
+      "title": "Bulk user import",
+      "help": "Import an Excel or CSV file (Name, Email, Role, Agency). Existing names are skipped. Without a password, a temporary one is generated.",
+      "downloadTemplate": "Download template",
+      "importFile": "Import file",
+      "exportCredentials": "Export credentials",
+      "created": "{{count}} account(s) created",
+      "duplicates": "{{count}} duplicate(s) skipped: name or username already exists",
+      "forbidden": "{{count}} row(s) rejected: role not allowed for your profile",
+      "invalid": "{{count}} invalid row(s)",
+      "successToast": "{{count}} account(s) created"
+    },
     "errors": {
-      "usernameTaken": "This username is already taken"
+      "usernameTaken": "This username is already taken",
+      "forbiddenRole": "Your profile is not allowed to create this role"
+    }
+  },
+  "adminSmtp": {
+    "title": "Email settings (SMTP)",
+    "subtitle": "Outgoing server used for password reset codes",
+    "host": "SMTP server",
+    "port": "Port",
+    "username": "SMTP username",
+    "password": "SMTP password",
+    "passwordPlaceholder": "Leave blank to keep unchanged",
+    "secure": "Secure connection (TLS)",
+    "fromName": "Sender name",
+    "fromEmail": "Sender email",
+    "otpTtl": "Code validity (minutes)",
+    "savedToast": "Email settings saved",
+    "errors": {
+      "forbidden": "Only the IT administrator can change these settings"
+    }
+  },
+  "forgotPassword": {
+    "subtitle": "Reset your password with a code sent by email",
+    "identifier": "Username or email",
+    "identifierHelp": "A verification code will be emailed to you if it matches an active account.",
+    "sendCode": "Send code",
+    "codeSentTo": "A code has been sent to {{email}}.",
+    "codeSentGeneric": "If an account matches, a code has just been emailed.",
+    "otp": "Verification code (6 digits)",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "resetButton": "Reset password",
+    "backToRequest": "Send a new code",
+    "backToLogin": "Back to sign in",
+    "successToast": "Password reset. You can now sign in.",
+    "errors": {
+      "invalidOtp": "Incorrect verification code",
+      "otpExpired": "The code has expired, please request a new one",
+      "tooManyAttempts": "Too many attempts. Request a new code.",
+      "weakPassword": "The password must be at least {{min}} characters",
+      "passwordMismatch": "The two passwords do not match"
     }
   },
   "clients": {

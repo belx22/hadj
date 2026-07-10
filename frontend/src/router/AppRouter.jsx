@@ -17,6 +17,7 @@ const BordereauListPage = lazy(() => import('../pages/bordereau/BordereauListPag
 const BordereauFormPage = lazy(() => import('../pages/bordereau/BordereauFormPage'));
 const AuditLogPage = lazy(() => import('../pages/audit/AuditLogPage'));
 
+const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
 const PilgrimSelfRegisterPage = lazy(() => import('../pages/pilgrim/PilgrimSelfRegisterPage'));
 
 const VisaPelerinLoginPage = lazy(() => import('../pages/visa/VisaPelerinLoginPage'));
@@ -31,6 +32,7 @@ const EncadreursAdminPage = lazy(() => import('../pages/admin/EncadreursAdminPag
 const EncadreurCommissionsPage = lazy(() => import('../pages/admin/EncadreurCommissionsPage'));
 const PassportAttestationsPage = lazy(() => import('../pages/admin/PassportAttestationsPage'));
 const SeasonsAdminPage = lazy(() => import('../pages/admin/SeasonsAdminPage'));
+const SmtpSettingsPage = lazy(() => import('../pages/admin/SmtpSettingsPage'));
 const PowerBiConnectorPage = lazy(() => import('../pages/admin/PowerBiConnectorPage'));
 
 function HomeRoute() {
@@ -47,6 +49,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<HomeRoute />} />
         <Route path="/login/staff" element={<StaffLoginPage />} />
+        <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
 
         <Route path="/inscription" element={<PilgrimSelfRegisterPage />} />
         <Route path="/visa/pelerin" element={<VisaPelerinLoginPage />} />
@@ -76,13 +79,21 @@ export default function AppRouter() {
           </Route>
         </Route>
 
-        <Route element={<ProtectedRoute roles={['ADMIN_DSI', 'GESTIONNAIRE_HADJ']} />}>
+        {/* Tous les rôles pouvant créer au moins un profil accèdent à la page
+            utilisateurs ; le formulaire n'y propose que les rôles autorisés. */}
+        <Route element={<ProtectedRoute roles={['ADMIN_DSI', 'SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ']} />}>
           <Route element={<MainLayout />}>
             <Route path="/parametrage/utilisateurs" element={<UsersAdminPage />} />
           </Route>
         </Route>
 
-        <Route element={<ProtectedRoute roles={['ADMIN_DSI', 'GESTIONNAIRE_HADJ']} />}>
+        <Route element={<ProtectedRoute roles={['ADMIN_DSI']} />}>
+          <Route element={<MainLayout />}>
+            <Route path="/parametrage/smtp" element={<SmtpSettingsPage />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute roles={['ADMIN_DSI', 'GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ']} />}>
           <Route element={<MainLayout />}>
             <Route path="/parametrage/encadreurs" element={<EncadreursAdminPage />} />
           </Route>

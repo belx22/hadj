@@ -78,6 +78,7 @@
     "encadreurs": "Encadreurs",
     "commissions": "Commissions encadreurs",
     "users": "Utilisateurs",
+    "smtp": "Configuration email (SMTP)",
     "powerbi": "Connecteur Power BI",
     "clients": "Clients"
   },
@@ -94,6 +95,7 @@
     "password": "Mot de passe",
     "loginButton": "Se connecter",
     "invalidCredentials": "Identifiant ou mot de passe incorrect",
+    "forgotPassword": "Mot de passe oublié ?",
     "welcome": "Bienvenue",
     "loginSubtitle": "Accédez à votre espace Copilote Hadj",
     "demoAccounts": "Comptes de démonstration",
@@ -424,12 +426,65 @@
     "title": "Gestion des utilisateurs",
     "subtitle": "Créer et administrer les comptes agents / direction",
     "name": "Nom complet",
+    "email": "Email",
     "role": "Rôle",
     "add": "Créer l'utilisateur",
     "newPassword": "Nouveau mot de passe",
     "newPasswordPlaceholder": "Laisser vide pour ne pas modifier",
+    "import": {
+      "title": "Import en masse d'utilisateurs",
+      "help": "Importez un fichier Excel ou CSV (Nom, Email, Rôle, Agence). Les noms déjà présents sont ignorés. Sans mot de passe, un mot de passe temporaire est généré.",
+      "downloadTemplate": "Télécharger le modèle",
+      "importFile": "Importer le fichier",
+      "exportCredentials": "Exporter les identifiants",
+      "created": "{{count}} compte(s) créé(s)",
+      "duplicates": "{{count}} doublon(s) ignoré(s) : nom ou identifiant déjà existant",
+      "forbidden": "{{count}} ligne(s) refusée(s) : rôle non autorisé pour votre profil",
+      "invalid": "{{count}} ligne(s) invalide(s)",
+      "successToast": "{{count}} compte(s) créé(s)"
+    },
     "errors": {
-      "usernameTaken": "Cet identifiant est déjà utilisé"
+      "usernameTaken": "Cet identifiant est déjà utilisé",
+      "forbiddenRole": "Votre profil n'est pas autorisé à créer ce rôle"
+    }
+  },
+  "adminSmtp": {
+    "title": "Configuration email (SMTP)",
+    "subtitle": "Serveur d'envoi utilisé pour les codes de réinitialisation de mot de passe",
+    "host": "Serveur SMTP",
+    "port": "Port",
+    "username": "Identifiant SMTP",
+    "password": "Mot de passe SMTP",
+    "passwordPlaceholder": "Laisser vide pour ne pas modifier",
+    "secure": "Connexion sécurisée (TLS)",
+    "fromName": "Nom de l'expéditeur",
+    "fromEmail": "Email de l'expéditeur",
+    "otpTtl": "Durée de validité du code (minutes)",
+    "savedToast": "Configuration email enregistrée",
+    "errors": {
+      "forbidden": "Seul l'administrateur DSI peut modifier cette configuration"
+    }
+  },
+  "forgotPassword": {
+    "subtitle": "Réinitialisez votre mot de passe avec un code envoyé par email",
+    "identifier": "Identifiant ou email",
+    "identifierHelp": "Un code de vérification vous sera envoyé par email s'il correspond à un compte actif.",
+    "sendCode": "Envoyer le code",
+    "codeSentTo": "Un code a été envoyé à {{email}}.",
+    "codeSentGeneric": "Si un compte correspond, un code vient d'être envoyé par email.",
+    "otp": "Code de vérification (6 chiffres)",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "resetButton": "Réinitialiser le mot de passe",
+    "backToRequest": "Renvoyer un code",
+    "backToLogin": "Retour à la connexion",
+    "successToast": "Mot de passe réinitialisé. Vous pouvez vous connecter.",
+    "errors": {
+      "invalidOtp": "Code de vérification incorrect",
+      "otpExpired": "Le code a expiré, veuillez en demander un nouveau",
+      "tooManyAttempts": "Trop de tentatives. Demandez un nouveau code.",
+      "weakPassword": "Le mot de passe doit contenir au moins {{min}} caractères",
+      "passwordMismatch": "Les deux mots de passe ne correspondent pas"
     }
   },
   "clients": {

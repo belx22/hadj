@@ -12,7 +12,10 @@ import {
   mockGetUsers,
   mockCreateUser,
   mockUpdateUser,
+  mockImportUsers,
   mockGetEncadreurCommissions,
+  mockGetSmtpSettings,
+  mockUpdateSmtpSettings,
 } from '../mock/mockApi';
 
 // --- Encadreurs ---
@@ -87,6 +90,25 @@ export async function createUser(payload, actor) {
 export async function updateUser(id, updates, actor) {
   if (USE_MOCK) return mockUpdateUser(id, updates, actor);
   const { data } = await axiosClient.put(`/utilisateurs/${id}`, updates);
+  return data;
+}
+
+export async function importUsers(rows, actor) {
+  if (USE_MOCK) return mockImportUsers(rows, actor);
+  const { data } = await axiosClient.post('/utilisateurs/import', { rows });
+  return data;
+}
+
+// --- Paramètres SMTP (Admin DSI) ---
+export async function getSmtpSettings() {
+  if (USE_MOCK) return mockGetSmtpSettings();
+  const { data } = await axiosClient.get('/parametrage/smtp');
+  return data;
+}
+
+export async function updateSmtpSettings(settings, actor) {
+  if (USE_MOCK) return mockUpdateSmtpSettings(settings, actor);
+  const { data } = await axiosClient.put('/parametrage/smtp', settings);
   return data;
 }
 

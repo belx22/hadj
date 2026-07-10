@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../../components/layout/AuthLayout';
 import { useAuth } from '../../context/AuthContext';
 
@@ -69,6 +69,11 @@ export default function StaffLoginPage() {
         <button type="submit" className="btn-primary w-full" disabled={loading}>
           {loading ? t('common.loading') : t('auth.loginButton')}
         </button>
+        <div className="text-center">
+          <Link to="/mot-de-passe-oublie" className="text-sm font-semibold text-afriland-red hover:underline">
+            {t('auth.forgotPassword')}
+          </Link>
+        </div>
       </form>
 
       <div className="mt-6 rounded-lg border border-dashed border-afriland-gray-400 p-3">

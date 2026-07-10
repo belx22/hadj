@@ -1,12 +1,13 @@
 import { CURRENT_SEASON, DEFAULT_OFFICIAL_PRICE } from '../utils/constants';
 
 // Comptes de démonstration — espace agent / direction (mot de passe simplifié pour la démo).
+// `email` sert à la réinitialisation du mot de passe par code OTP.
 export const SEED_USERS = [
-  { id: 'U-1', username: 'superviseur', password: 'superviseur123', role: 'SUPERVISEUR', name: 'Marie Etoundi', agency: 'Yaoundé - Siège', active: true },
-  { id: 'U-2', username: 'gestionnaire', password: 'gestionnaire123', role: 'GESTIONNAIRE_HADJ', name: 'Ibrahim Njoya', agency: 'Yaoundé - Siège', active: true },
-  { id: 'U-3', username: 'operateur', password: 'operateur123', role: 'OPERATEUR_HADJ', name: 'Paul Mbarga', agency: 'Douala - Akwa', active: true },
-  { id: 'U-4', username: 'encadreur1', password: 'encadreur123', role: 'ENCADREUR', name: 'El Hadj Oumarou Sanda', encadreurId: 'ENC-001', active: true },
-  { id: 'U-5', username: 'admin', password: 'admin123', role: 'ADMIN_DSI', name: 'Sandrine Fouda', agency: 'Yaoundé - Siège', active: true },
+  { id: 'U-1', username: 'superviseur', password: 'superviseur123', role: 'SUPERVISEUR', name: 'Marie Etoundi', email: 'marie.etoundi@afrilandfirstbank.cm', agency: 'Yaoundé - Siège', active: true },
+  { id: 'U-2', username: 'gestionnaire', password: 'gestionnaire123', role: 'GESTIONNAIRE_HADJ', name: 'Ibrahim Njoya', email: 'ibrahim.njoya@afrilandfirstbank.cm', agency: 'Yaoundé - Siège', active: true },
+  { id: 'U-3', username: 'operateur', password: 'operateur123', role: 'OPERATEUR_HADJ', name: 'Paul Mbarga', email: 'paul.mbarga@afrilandfirstbank.cm', agency: 'Douala - Akwa', active: true },
+  { id: 'U-4', username: 'encadreur1', password: 'encadreur123', role: 'ENCADREUR', name: 'El Hadj Oumarou Sanda', email: 'oumarou.sanda@afrilandfirstbank.cm', encadreurId: 'ENC-001', active: true },
+  { id: 'U-5', username: 'admin', password: 'admin123', role: 'ADMIN_DSI', name: 'Sandrine Fouda', email: 'sandrine.fouda@afrilandfirstbank.cm', agency: 'Yaoundé - Siège', active: true },
 ];
 
 // Liste officielle des encadreurs (référentiel — géré par le Gestionnaire Hadj / Admin DSI).

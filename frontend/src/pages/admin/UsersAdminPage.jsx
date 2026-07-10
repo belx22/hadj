@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getUsers, createUser, updateUser, getEncadreurs } from '../../api/referenceDataApi';
+import { getUsers, createUser, updateUser, importUsers, getEncadreurs } from '../../api/referenceDataApi';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
-import { AGENCIES, ROLES } from '../../utils/constants';
+import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
+import { AGENCIES, ROLES, getCreatableRoles } from '../../utils/constants';
 
-const EMPTY_FORM = { username: '', password: '', name: '', role: ROLES.OPERATEUR_HADJ, agency: AGENCIES[0], encadreurId: '' };
+const EMPTY_FORM = { username: '', password: '', name: '', email: '', role: '', agency: AGENCIES[0], encadreurId: '' };
 
 function emptyEditValues(u) {
   return {
@@ -32,7 +34,20 @@ export default function UsersAdminPage() {
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
   const [editError, setEditError] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importSummary, setImportSummary] = useState(null);
+  const fileInputRef = useRef(null);
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(users);
+
+  // Profils que l'utilisateur connecté a le droit de créer.
+  const creatableRoles = useMemo(() => getCreatableRoles(actor?.role), [actor?.role]);
+
+  // Le rôle par défaut dépend de l'acteur : on prend le premier autorisé.
+  useEffect(() => {
+    if (creatableRoles.length > 0) {
+      setForm((prev) => (prev.role ? prev : { ...prev, role: creatableRoles[0] }));
+    }
+  }, [creatableRoles]);
 
   function reload() {
     setLoading(true);
@@ -57,7 +72,13 @@ export default function UsersAdminPage() {
     if (!form.username.trim() || !form.password.trim() || !form.name.trim()) return;
     setSubmitting(true);
     try {
-      const payload = { username: form.username.trim(), password: form.password, name: form.name.trim(), role: form.role };
+      const payload = {
+        username: form.username.trim(),
+        password: form.password,
+        name: form.name.trim(),
+        email: form.email.trim() || null,
+        role: form.role,
+      };
       if (form.role === ROLES.ENCADREUR) {
         payload.encadreurId = form.encadreurId;
       } else {
@@ -65,14 +86,86 @@ export default function UsersAdminPage() {
       }
       await createUser(payload, actor);
       toast.success(t('toasts.userCreated'));
-      setForm(EMPTY_FORM);
+      setForm({ ...EMPTY_FORM, role: creatableRoles[0] || '' });
       reload();
     } catch (err) {
       if (err.code === 'USERNAME_TAKEN') setError(t('adminUsers.errors.usernameTaken'));
+      else if (err.code === 'FORBIDDEN_ROLE') setError(t('adminUsers.errors.forbiddenRole'));
       else setError(t('common.error'));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleDownloadTemplate() {
+    exportTemplateToExcel(
+      [{ name: 'Nom Prénom', username: '', email: 'nom.prenom@afrilandfirstbank.cm', role: creatableRoles[0] || '', agency: AGENCIES[0], password: '' }],
+      'modele-utilisateurs.xlsx',
+      'Utilisateurs',
+      { role: creatableRoles, agency: AGENCIES }
+    );
+  }
+
+  function handleImportClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setImporting(true);
+    setImportSummary(null);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      const rows = rawRows.map((row) => {
+        const lower = Object.entries(row).map(([k, v]) => [k.trim().toLowerCase(), v]);
+        const pick = (keys) => {
+          const match = lower.find(([k]) => keys.includes(k));
+          return match ? String(match[1] ?? '').trim() : '';
+        };
+        return {
+          name: pick(['name', 'nom', 'nom complet', 'الاسم']),
+          username: pick(['username', 'identifiant', 'utilisateur']),
+          email: pick(['email', 'courriel', 'mail']),
+          role: pick(['role', 'rôle', 'profil']),
+          agency: pick(['agency', 'agence']),
+          encadreurId: pick(['encadreurid', 'encadreur']),
+          password: pick(['password', 'motdepasse', 'mot de passe']),
+        };
+      });
+
+      const summary = await importUsers(rows, actor);
+      setImportSummary(summary);
+      if (summary.created.length > 0) {
+        toast.success(t('adminUsers.import.successToast', { count: summary.created.length }));
+        reload();
+      }
+    } catch {
+      toast.error(t('common.error'));
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  // Les mots de passe générés ne sont renvoyés qu'une fois : on permet de les
+  // exporter pour remise aux utilisateurs créés.
+  function handleExportCredentials() {
+    exportToExcel(
+      importSummary.created.map((u) => ({
+        Nom: u.name,
+        Identifiant: u.username,
+        MotDePasse: u.password,
+        Role: u.role,
+      })),
+      'identifiants-utilisateurs.xlsx',
+      'Identifiants'
+    );
   }
 
   async function toggleActive(u) {
@@ -134,8 +227,18 @@ export default function UsersAdminPage() {
         <input type="password" className="form-input" placeholder={t('auth.password')} value={form.password} onChange={(e) => update('password', e.target.value)} />
         <input className="form-input" placeholder={t('adminUsers.name')} value={form.name} onChange={(e) => update('name', e.target.value)} />
 
+        <input
+          type="email"
+          className="form-input"
+          placeholder={t('adminUsers.email')}
+          value={form.email}
+          onChange={(e) => update('email', e.target.value)}
+        />
+
+        {/* Séparation des rôles : on ne propose que les profils que l'utilisateur
+            connecté a le droit de créer (le mock refuse les autres de toute façon). */}
         <select className="form-input" value={form.role} onChange={(e) => update('role', e.target.value)}>
-          {Object.values(ROLES).map((role) => <option key={role} value={role}>{t(`roles.${role}`)}</option>)}
+          {creatableRoles.map((role) => <option key={role} value={role}>{t(`roles.${role}`)}</option>)}
         </select>
 
         {form.role === ROLES.ENCADREUR ? (
@@ -155,6 +258,50 @@ export default function UsersAdminPage() {
 
         {error && <p className="form-error sm:col-span-2 lg:col-span-3">{error}</p>}
       </form>
+
+      <div className="card space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-afriland-black">{t('adminUsers.import.title')}</p>
+          <p className="text-xs text-afriland-gray-600">{t('adminUsers.import.help')}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="btn-secondary" onClick={handleDownloadTemplate}>
+            {t('adminUsers.import.downloadTemplate')}
+          </button>
+          <button type="button" className="btn-primary" onClick={handleImportClick} disabled={importing}>
+            {importing ? t('common.loading') : t('adminUsers.import.importFile')}
+          </button>
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFileChange} />
+          {importSummary?.created.length > 0 && (
+            <button type="button" className="btn-secondary" onClick={handleExportCredentials}>
+              {t('adminUsers.import.exportCredentials')}
+            </button>
+          )}
+        </div>
+
+        {importSummary && (
+          <div className="rounded-md bg-afriland-gray-50 p-3 text-sm">
+            <p className="font-medium text-visa-granted">
+              {t('adminUsers.import.created', { count: importSummary.created.length })}
+            </p>
+            {importSummary.duplicates.length > 0 && (
+              <p className="text-afriland-gray-600">
+                {t('adminUsers.import.duplicates', { count: importSummary.duplicates.length })}
+              </p>
+            )}
+            {importSummary.forbidden.length > 0 && (
+              <p className="text-visa-refused">
+                {t('adminUsers.import.forbidden', { count: importSummary.forbidden.length })}
+              </p>
+            )}
+            {importSummary.invalid.length > 0 && (
+              <p className="text-visa-refused">
+                {t('adminUsers.import.invalid', { count: importSummary.invalid.length })}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="card overflow-x-auto p-0">
         <table className="w-full min-w-[640px] text-left text-sm">

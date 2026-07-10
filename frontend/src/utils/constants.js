@@ -43,6 +43,35 @@ export const ROLES = {
   ADMIN_DSI: 'ADMIN_DSI',
 };
 
+// Séparation des rôles : qui peut créer quel profil.
+// L'ADMIN_DSI crée tous les profils ; un superviseur crée gestionnaires et
+// agents (jamais l'inverse) ; un gestionnaire crée agents et encadreurs ;
+// un agent ne crée que des encadreurs. Un encadreur ne crée aucun compte
+// (il inscrit uniquement des pèlerins depuis son portail).
+export const CREATABLE_ROLES = {
+  ADMIN_DSI: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ', 'ENCADREUR', 'ADMIN_DSI'],
+  SUPERVISEUR: ['GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ'],
+  GESTIONNAIRE_HADJ: ['OPERATEUR_HADJ', 'ENCADREUR'],
+  OPERATEUR_HADJ: ['ENCADREUR'],
+  ENCADREUR: [],
+};
+
+export function getCreatableRoles(actorRole) {
+  return CREATABLE_ROLES[actorRole] || [];
+}
+
+export function canCreateRole(actorRole, targetRole) {
+  return getCreatableRoles(actorRole).includes(targetRole);
+}
+
+// Les « clients » (pèlerins) sont créés par le gestionnaire, l'agent, l'encadreur
+// (via son portail) et l'admin — mais pas par le superviseur, qui supervise.
+export const ROLES_CREATING_CLIENTS = ['ADMIN_DSI', 'GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ', 'ENCADREUR'];
+
+export function canCreateClients(actorRole) {
+  return ROLES_CREATING_CLIENTS.includes(actorRole);
+}
+
 // Page d'accueil par rôle une fois connecté (utilisé par le routeur et par le
 // clic sur le logo dans le header).
 export const ROLE_HOME = {
