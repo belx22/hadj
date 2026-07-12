@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import logo from '../../assets/logo-afriland.png';
-import KaabaIllustration from '../illustrations/KaabaIllustration';
+import IslamicFinanceIllustration from '../illustrations/IslamicFinanceIllustration';
 import ArabesquePattern from '../illustrations/ArabesquePattern';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 
@@ -14,7 +14,7 @@ export default function AuthLayout({ children, subtitle }) {
       <div className="relative hidden items-center justify-center overflow-hidden bg-afriland-black lg:flex">
         <ArabesquePattern className="absolute inset-0" tone="#FFFFFF" opacity={0.05} />
         <div className="relative z-10 flex max-w-sm flex-col items-center px-8 text-center">
-          <KaabaIllustration className="mb-6 w-56" />
+          <IslamicFinanceIllustration className="mb-6 w-64" />
           <h2 className="text-xl font-bold text-white">{t('app.name')}</h2>
           <p className="mt-2 text-sm text-afriland-gray-200/80">{t('app.tagline')}</p>
         </div>
