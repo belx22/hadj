@@ -579,7 +579,7 @@
   },
   "adminCommissions": {
     "title": "Guide commissions",
-    "subtitle": "Track guide-with-commission payments and places acquired per season",
+    "subtitle": "Track guide fees covered by pilgrims and places acquired per season",
     "tableTitle": "Detail by guide",
     "formula": "Places acquired = amount paid ÷ official price per place (excluding commission). The remainder is either an available leftover, or the amount still needed for one more place.",
     "totalPaid": "Total paid (guides)",

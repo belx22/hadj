@@ -579,7 +579,7 @@
   },
   "adminCommissions": {
     "title": "Commissions encadreurs",
-    "subtitle": "Suivi des versements des encadreurs avec commission et des places acquises par saison",
+    "subtitle": "Suivi des frais d'encadreur pris en charge par les pèlerins et des places acquises par saison",
     "tableTitle": "Détail par encadreur",
     "formula": "Places acquises = montant versé ÷ prix officiel d'une place (hors commission). Le reste est un reliquat disponible, ou le montant restant à verser pour obtenir une place supplémentaire.",
     "totalPaid": "Total versé (encadreurs)",
