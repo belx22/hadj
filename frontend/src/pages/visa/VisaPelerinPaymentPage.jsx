@@ -6,6 +6,7 @@ import { usePilgrim } from '../../context/PilgrimContext';
 import { createVersementOnline, createGroupedVersementOnline, lookupBeneficiary } from '../../api/visaApi';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
+import PilgrimBottomNav from '../../components/layout/PilgrimBottomNav';
 import StatCard from '../../components/ui/StatCard';
 import PaymentCodeCard from '../../components/ui/PaymentCodeCard';
 import QrScannerModal from '../../components/ui/QrScannerModal';
@@ -202,7 +203,7 @@ export default function VisaPelerinPaymentPage() {
         </button>
       </Header>
 
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8 sm:px-6">
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8 pb-24 sm:px-6 sm:pb-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-afriland-black">{t('paymentPage.title')}</h1>
@@ -266,24 +267,19 @@ export default function VisaPelerinPaymentPage() {
             {isGrouped && <p className="text-xs text-afriland-gray-600">{t('paymentPage.groupedPayment.help')}</p>}
 
             <div>
-              <label className="form-label">{t('paymentPage.method')}</label>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <label className="form-label" htmlFor="payment-method">{t('paymentPage.method')}</label>
+              {/* Menu déroulant : les champs additionnels s'affichent selon le
+                  moyen de paiement choisi (agence → scan/reçu, autre → précision). */}
+              <select
+                id="payment-method"
+                className="form-input"
+                value={form.method}
+                onChange={(e) => update('method', e.target.value)}
+              >
                 {VERSEMENT_METHODS.map((method) => (
-                  <button
-                    type="button"
-                    key={method}
-                    onClick={() => update('method', method)}
-                    className={clsx(
-                      'rounded-md border px-3 py-2 text-sm font-medium transition-colors',
-                      form.method === method
-                        ? 'border-afriland-red bg-afriland-red/10 text-afriland-red'
-                        : 'border-afriland-gray-400 text-afriland-gray-600'
-                    )}
-                  >
-                    {t(`paymentPage.methods.${method}`)}
-                  </button>
+                  <option key={method} value={method}>{t(`paymentPage.methods.${method}`)}</option>
                 ))}
-              </div>
+              </select>
             </div>
 
             {form.method === 'AGENCE' && (
@@ -481,6 +477,7 @@ export default function VisaPelerinPaymentPage() {
       </main>
 
       <Footer />
+      <PilgrimBottomNav />
 
       {scannerOpen && (
         <QrScannerModal onScan={handleQrScanned} onClose={() => setScannerOpen(false)} />

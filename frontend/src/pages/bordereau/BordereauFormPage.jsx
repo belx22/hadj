@@ -21,6 +21,7 @@ const EMPTY_FORM = {
   encadreurId: '',
   pilgrimType: '',
   pilgrimStatus: 'NOUVEAU',
+  includesEncadreurFees: false,
   pilgrimCount: 1,
   season: CURRENT_SEASON,
   onlinePriority: false,
@@ -45,9 +46,9 @@ export default function BordereauFormPage() {
   }, []);
 
   useEffect(() => {
-    getOfficialPrice(form.season, form.pilgrimType).then(setOfficialPrice);
+    getOfficialPrice(form.season, form.pilgrimType, form.includesEncadreurFees).then(setOfficialPrice);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.season, form.pilgrimType]);
+  }, [form.season, form.pilgrimType, form.includesEncadreurFees]);
 
   const showPilgrimCount = isEncadreurPilgrimType(form.pilgrimType);
 
@@ -248,6 +249,20 @@ export default function BordereauFormPage() {
               <option key={status} value={status}>{t(`bordereau.pilgrimStatuses.${status}`)}</option>
             ))}
           </select>
+        </Field>
+
+        {/* Prise en charge des frais de l'encadreur : majore le montant du
+            versement de la commission par pèlerin de la saison. */}
+        <Field label={t('bordereau.includesEncadreurFees')}>
+          <label className="flex items-center gap-2 text-sm text-afriland-gray-700">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-afriland-red"
+              checked={form.includesEncadreurFees}
+              onChange={(e) => update('includesEncadreurFees', e.target.checked)}
+            />
+            {t('bordereau.includesEncadreurFeesHelp')}
+          </label>
         </Field>
 
         {/* Un encadreur peut inscrire plusieurs pèlerins sur son bordereau ;

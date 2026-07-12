@@ -12,15 +12,15 @@ export const REGIONS = [
   'Sud-Ouest',
 ];
 
-export const PILGRIM_TYPES = ['PELERIN', 'ENCADREUR_AVEC_COMMISSION', 'ENCADREUR_SANS_COMMISSION', 'OFFICIEL', 'GUH'];
+export const PILGRIM_TYPES = ['PELERIN', 'ENCADREUR', 'OFFICIEL', 'GUH'];
 
-// Seuls les encadreurs inscrivent plusieurs pèlerins sur un même bordereau :
-// pour tous les autres types le nombre de pèlerins vaut 1, et le champ
-// correspondant est masqué dans les formulaires d'inscription.
-export const ENCADREUR_PILGRIM_TYPES = ['ENCADREUR_AVEC_COMMISSION', 'ENCADREUR_SANS_COMMISSION'];
-
+// Seul l'encadreur inscrit plusieurs pèlerins sur un même bordereau : pour tous
+// les autres types le nombre de pèlerins vaut 1, et le champ correspondant est
+// masqué dans les formulaires d'inscription. La prise en charge (ou non) des
+// frais de l'encadreur est désormais un choix du pèlerin (drapeau
+// `includesEncadreurFees`), et non plus un type de pèlerin distinct.
 export function isEncadreurPilgrimType(pilgrimType) {
-  return ENCADREUR_PILGRIM_TYPES.includes(pilgrimType);
+  return pilgrimType === 'ENCADREUR';
 }
 
 export const PILGRIM_STATUSES = ['NOUVEAU', 'RECURRENT'];

@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import { usePilgrim } from '../../context/PilgrimContext';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
+import PilgrimBottomNav from '../../components/layout/PilgrimBottomNav';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import VisaJourneyStepper from '../../components/ui/VisaJourneyStepper';
 import StatCard from '../../components/ui/StatCard';
@@ -42,7 +43,7 @@ export default function VisaPelerinDossierPage() {
         </button>
       </Header>
 
-      <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 py-8 sm:px-6">
+      <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 py-8 pb-24 sm:px-6 sm:pb-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-afriland-black">{t('visa.myFile')}</h1>
@@ -141,6 +142,7 @@ export default function VisaPelerinDossierPage() {
       </main>
 
       <Footer />
+      <PilgrimBottomNav />
     </div>
   );
 }

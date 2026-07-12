@@ -35,8 +35,7 @@ export const SEED_SEASONS = [
     isOpen: true,
     prices: {
       PELERIN: DEFAULT_OFFICIAL_PRICE,
-      ENCADREUR_AVEC_COMMISSION: DEFAULT_OFFICIAL_PRICE,
-      ENCADREUR_SANS_COMMISSION: DEFAULT_OFFICIAL_PRICE,
+      ENCADREUR: DEFAULT_OFFICIAL_PRICE,
       OFFICIEL: 3_000_000,
       GUH: 3_000_000,
     },
@@ -50,8 +49,7 @@ export const SEED_SEASONS = [
     isOpen: false,
     prices: {
       PELERIN: 3_200_000,
-      ENCADREUR_AVEC_COMMISSION: 3_200_000,
-      ENCADREUR_SANS_COMMISSION: 3_200_000,
+      ENCADREUR: 3_200_000,
       OFFICIEL: 2_800_000,
       GUH: 2_800_000,
     },
@@ -178,7 +176,8 @@ export const SEED_BORDEREAUX = [
   {
     id: 'BOR-0008', reference: 'CPT-100007', source: 'AGENT',
     pilgrimLastName: 'Issa', pilgrimFirstName: 'Moussa', phone: '699009988', idNumber: '1002345685',
-    region: 'Adamaoua', agency: 'Ngaoundéré - Centre', encadreurId: 'ENC-004', pilgrimType: 'ENCADREUR_AVEC_COMMISSION', pilgrimStatus: 'NOUVEAU',
+    region: 'Adamaoua', agency: 'Ngaoundéré - Centre', encadreurId: 'ENC-004', pilgrimType: 'PELERIN', pilgrimStatus: 'NOUVEAU',
+    includesEncadreurFees: true,
     pilgrimCount: 1, season: CURRENT_SEASON, receiptNumber: 'RC-2007', onlinePriority: false, createdAt: '2027-02-05',
     visaStatus: 'ACCORDE',
     versements: [versement({ amount: 3_500_000, method: 'AGENCE', agency: 'Ngaoundéré - Centre', createdAt: '2027-02-05' })],

@@ -50,9 +50,11 @@ export async function getSeasons() {
   return data;
 }
 
-export async function getOfficialPrice(season, pilgrimType) {
-  if (USE_MOCK) return mockGetOfficialPrice(season, pilgrimType);
-  const { data } = await axiosClient.get('/parametrage/prix-officiel', { params: { season, pilgrimType } });
+export async function getOfficialPrice(season, pilgrimType, includesEncadreurFees = false) {
+  if (USE_MOCK) return mockGetOfficialPrice(season, pilgrimType, includesEncadreurFees);
+  const { data } = await axiosClient.get('/parametrage/prix-officiel', {
+    params: { season, pilgrimType, includesEncadreurFees },
+  });
   return data.price;
 }
 

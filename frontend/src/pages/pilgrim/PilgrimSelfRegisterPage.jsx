@@ -24,6 +24,7 @@ const EMPTY_FORM = {
   encadreurId: '',
   pilgrimType: 'PELERIN',
   pilgrimStatus: 'NOUVEAU',
+  includesEncadreurFees: false,
   pilgrimCount: 1,
   season: CURRENT_SEASON,
 };
@@ -47,8 +48,8 @@ export default function PilgrimSelfRegisterPage() {
   }, [form.region]);
 
   useEffect(() => {
-    getOfficialPrice(form.season, form.pilgrimType).then(setOfficialPrice);
-  }, [form.season, form.pilgrimType]);
+    getOfficialPrice(form.season, form.pilgrimType, form.includesEncadreurFees).then(setOfficialPrice);
+  }, [form.season, form.pilgrimType, form.includesEncadreurFees]);
 
   // Inscription individuelle : toujours 1 pèlerin (le champ n'est pas exposé).
   const targetAmount = useMemo(() => officialPrice, [officialPrice]);
@@ -184,9 +185,27 @@ export default function PilgrimSelfRegisterPage() {
           </select>
         </Field>
 
+        {/* Le pèlerin choisit de prendre en charge (ou non) les frais de son
+            encadreur, ce qui majore le montant à régler. */}
+        <label className="flex items-start gap-3 rounded-lg border border-afriland-gray-200 p-3 cursor-pointer hover:bg-afriland-gray-50">
+          <input
+            type="checkbox"
+            className="mt-0.5 h-5 w-5 shrink-0 accent-afriland-red"
+            checked={form.includesEncadreurFees}
+            onChange={(e) => update('includesEncadreurFees', e.target.checked)}
+          />
+          <span>
+            <span className="block text-sm font-medium text-afriland-black">{t('bordereau.includesEncadreurFees')}</span>
+            <span className="block text-xs text-afriland-gray-600">{t('bordereau.includesEncadreurFeesHelp')}</span>
+          </span>
+        </label>
+
         <div className="rounded-lg bg-afriland-gray-50 p-3">
           <p className="text-xs font-medium uppercase text-afriland-gray-600">{t('pilgrimRegister.targetAmount')}</p>
           <p className="text-lg font-bold text-afriland-red">{formatCurrency(targetAmount)}</p>
+          <p className="mt-0.5 text-xs text-afriland-gray-600">
+            {form.includesEncadreurFees ? t('bordereau.withEncadreurFees') : t('bordereau.withoutEncadreurFees')}
+          </p>
         </div>
 
         {submitError && <p className="form-error">{submitError}</p>}

@@ -137,11 +137,14 @@
     "officialPrice": "السعر الرسمي للحج",
     "pilgrimTypes": {
       "PELERIN": "حاج",
-      "ENCADREUR_AVEC_COMMISSION": "مؤطر بعمولة",
-      "ENCADREUR_SANS_COMMISSION": "مؤطر بدون عمولة",
+      "ENCADREUR": "مؤطر",
       "OFFICIEL": "رسمي",
       "GUH": "GUH"
     },
+    "includesEncadreurFees": "تحمّل رسوم المؤطر",
+    "includesEncadreurFeesHelp": "حدد هذا الخيار إذا كان الحاج يدفع رسوم المؤطر إضافةً إلى سعر الحج",
+    "withEncadreurFees": "مع رسوم المؤطر",
+    "withoutEncadreurFees": "بدون رسوم المؤطر",
     "pilgrimStatuses": {
       "NOUVEAU": "جديد",
       "RECURRENT": "متكرر"
@@ -214,6 +217,11 @@
       "period": "الفترة",
       "reset": "إعادة تعيين عوامل التصفية"
     }
+  },
+  "pilgrimNav": {
+    "dossier": "ملفي",
+    "payment": "الدفع",
+    "logout": "خروج"
   },
   "visa": {
     "statuses": {

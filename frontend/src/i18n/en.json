@@ -137,11 +137,14 @@
     "officialPrice": "Official Hadj price",
     "pilgrimTypes": {
       "PELERIN": "Pilgrim",
-      "ENCADREUR_AVEC_COMMISSION": "Guide with commission",
-      "ENCADREUR_SANS_COMMISSION": "Guide without commission",
+      "ENCADREUR": "Guide",
       "OFFICIEL": "Official",
       "GUH": "GUH"
     },
+    "includesEncadreurFees": "Cover the guide's fees",
+    "includesEncadreurFeesHelp": "Tick if the pilgrim pays the guide's fees on top of the Hajj price",
+    "withEncadreurFees": "With guide's fees",
+    "withoutEncadreurFees": "Without guide's fees",
     "pilgrimStatuses": {
       "NOUVEAU": "New",
       "RECURRENT": "Returning"
@@ -214,6 +217,11 @@
       "period": "Period",
       "reset": "Reset filters"
     }
+  },
+  "pilgrimNav": {
+    "dossier": "My file",
+    "payment": "Payment",
+    "logout": "Exit"
   },
   "visa": {
     "statuses": {

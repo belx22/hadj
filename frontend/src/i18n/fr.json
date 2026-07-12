@@ -137,11 +137,14 @@
     "officialPrice": "Prix officiel du Hadj",
     "pilgrimTypes": {
       "PELERIN": "Pèlerin",
-      "ENCADREUR_AVEC_COMMISSION": "Encadreur avec commission",
-      "ENCADREUR_SANS_COMMISSION": "Encadreur sans commission",
+      "ENCADREUR": "Encadreur",
       "OFFICIEL": "Officiel",
       "GUH": "GUH"
     },
+    "includesEncadreurFees": "Prise en charge des frais de l'encadreur",
+    "includesEncadreurFeesHelp": "Cochez si le pèlerin règle les frais de l'encadreur en plus du prix du Hadj",
+    "withEncadreurFees": "Avec frais de l'encadreur",
+    "withoutEncadreurFees": "Sans frais de l'encadreur",
     "pilgrimStatuses": {
       "NOUVEAU": "Nouveau",
       "RECURRENT": "Récurrent"
@@ -214,6 +217,11 @@
       "period": "Période",
       "reset": "Réinitialiser les filtres"
     }
+  },
+  "pilgrimNav": {
+    "dossier": "Mon dossier",
+    "payment": "Paiement",
+    "logout": "Quitter"
   },
   "visa": {
     "statuses": {

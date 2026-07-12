@@ -21,7 +21,7 @@ const ROLE_VALUES = new Set(Object.values(ROLES));
 
 // v5 : ajout des collections `smtpSettings` et `passwordResets` — un cache v4
 // ne les contiendrait pas.
-const STORAGE_KEY = 'copilote-hadj-mock-db-v5';
+const STORAGE_KEY = 'copilote-hadj-mock-db-v6';
 const NETWORK_DELAY = 350;
 
 // Paramètres SMTP par défaut, modifiables par l'Admin DSI depuis son interface.
@@ -123,9 +123,14 @@ function getSeason(season) {
   return db.seasons.find((s) => s.season === season) || db.seasons[0];
 }
 
-function getPrice(season, pilgrimType) {
+// Prix à régler pour un pèlerin : prix de base de son type, majoré des frais de
+// l'encadreur (commission par pèlerin de la saison) si le pèlerin a choisi de
+// les prendre en charge à l'inscription (`includesEncadreurFees`).
+function getPrice(season, pilgrimType, includesEncadreurFees = false) {
   const seasonData = getSeason(season);
-  return seasonData?.prices?.[pilgrimType] ?? DEFAULT_OFFICIAL_PRICE;
+  const base = seasonData?.prices?.[pilgrimType] ?? DEFAULT_OFFICIAL_PRICE;
+  const fees = includesEncadreurFees ? (seasonData?.commissionPerPilgrim || 0) : 0;
+  return base + fees;
 }
 
 function computeValidatedAmount(bordereau) {
@@ -137,14 +142,14 @@ function computePendingAmount(bordereau) {
 }
 
 function computeTargetAmount(bordereau) {
-  return bordereau.pilgrimCount * getPrice(bordereau.season, bordereau.pilgrimType);
+  return bordereau.pilgrimCount * getPrice(bordereau.season, bordereau.pilgrimType, bordereau.includesEncadreurFees);
 }
 
 function decorateBordereau(bordereau) {
   const amountPaid = computeValidatedAmount(bordereau);
   const pendingAmount = computePendingAmount(bordereau);
   const targetAmount = computeTargetAmount(bordereau);
-  const price = getPrice(bordereau.season, bordereau.pilgrimType);
+  const price = getPrice(bordereau.season, bordereau.pilgrimType, bordereau.includesEncadreurFees);
   const eligiblePilgrims = Math.floor(amountPaid / (price || 1));
   const encadreur = db.encadreurs.find((e) => e.id === bordereau.encadreurId);
   return {
@@ -221,7 +226,7 @@ export async function mockCreateBordereau(payload, actor) {
     throw error;
   }
 
-  const price = getPrice(payload.season, payload.pilgrimType);
+  const price = getPrice(payload.season, payload.pilgrimType, payload.includesEncadreurFees);
   const amount = Number(payload.pilgrimCount) * price;
   const id = `BOR-${String(db.bordereaux.length + 1).padStart(4, '0')}`;
   const receiptNumber = `RC-${2000 + db.bordereaux.length}`;
@@ -1568,11 +1573,11 @@ export async function mockResetPasswordWithOtp(identifier, otp, newPassword) {
 }
 
 // ---------------------------------------------------------------------------
-// Commissions encadreurs (Module Gestionnaire du Hadj) — un encadreur de type
-// ENCADREUR_AVEC_COMMISSION verse un montant global pour acquérir des places
-// pour son groupe. Formule : total versé ÷ prix officiel hors commission =
-// nombre de places acquises ; le reste est soit un reliquat disponible, soit
-// (si nul) l'encadreur doit compléter pour obtenir une place supplémentaire.
+// Commissions encadreurs (Module Gestionnaire du Hadj) — on agrège les
+// bordereaux dont le pèlerin a choisi de prendre en charge les frais de
+// l'encadreur (`includesEncadreurFees`). Formule : total versé ÷ prix officiel
+// hors commission = nombre de places acquises ; le reste est soit un reliquat
+// disponible, soit (si nul) le complément à verser pour une place de plus.
 // ---------------------------------------------------------------------------
 export async function mockGetEncadreurCommissions(season) {
   await delay(350);
@@ -1582,9 +1587,10 @@ export async function mockGetEncadreurCommissions(season) {
 
   return db.encadreurs.map((enc) => {
     const bordereaux = db.bordereaux
-      .filter((b) => b.encadreurId === enc.id && b.pilgrimType === 'ENCADREUR_AVEC_COMMISSION' && b.season === seasonData.season)
+      .filter((b) => b.encadreurId === enc.id && b.includesEncadreurFees && b.season === seasonData.season)
       .map(decorateBordereau);
     const totalPaid = bordereaux.reduce((sum, b) => sum + b.amountPaid, 0);
+    const pilgrimsWithFees = bordereaux.reduce((sum, b) => sum + b.pilgrimCount, 0);
     const placesAcquired = officialPrice > 0 ? Math.floor(totalPaid / officialPrice) : 0;
     const remainder = totalPaid - placesAcquired * officialPrice;
     const amountNeededForNextPlace = remainder > 0 ? officialPrice - remainder : 0;
@@ -1594,13 +1600,14 @@ export async function mockGetEncadreurCommissions(season) {
       encadreurName: enc.name,
       encadreurCode: enc.code,
       bordereauxCount: bordereaux.length,
+      pilgrimsWithFees,
       totalPaid,
       officialPrice,
       commissionPerPilgrim,
       placesAcquired,
       reliquat: remainder,
       amountNeededForNextPlace,
-      totalCommissionDue: placesAcquired * commissionPerPilgrim,
+      totalCommissionDue: pilgrimsWithFees * commissionPerPilgrim,
     };
   });
 }
@@ -1613,9 +1620,9 @@ export async function mockGetSeasons() {
   return db.seasons;
 }
 
-export async function mockGetOfficialPrice(season, pilgrimType) {
+export async function mockGetOfficialPrice(season, pilgrimType, includesEncadreurFees = false) {
   await delay(150);
-  return getPrice(season, pilgrimType);
+  return getPrice(season, pilgrimType, includesEncadreurFees);
 }
 
 export async function mockCreateSeason(payload, actor) {
