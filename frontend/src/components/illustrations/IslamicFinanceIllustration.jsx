@@ -109,11 +109,16 @@ function CoinStack({ x, baseY, count }) {
 
 /** Petite étoile à huit branches, motif géométrique islamique classique. */
 function EightPointStar({ cx, cy, r }) {
+  // Les props arrivent en chaînes depuis le JSX : on les convertit en nombres,
+  // sinon `chaîne + nombre` concatène et `.toFixed()` planterait le rendu.
+  const x = Number(cx);
+  const y = Number(cy);
+  const outer = Number(r);
   const points = [];
   for (let i = 0; i < 16; i += 1) {
-    const radius = i % 2 === 0 ? r : r * 0.42;
+    const radius = i % 2 === 0 ? outer : outer * 0.42;
     const angle = (Math.PI / 8) * i - Math.PI / 2;
-    points.push(`${(cx + radius * Math.cos(angle)).toFixed(1)},${(cy + radius * Math.sin(angle)).toFixed(1)}`);
+    points.push(`${(x + radius * Math.cos(angle)).toFixed(1)},${(y + radius * Math.sin(angle)).toFixed(1)}`);
   }
   return <polygon points={points.join(' ')} />;
 }
