@@ -43,6 +43,9 @@ export default function PilgrimSelfRegisterPage() {
   const [submitError, setSubmitError] = useState(null);
 
   const isEncadreur = isEncadreurPilgrimType(form.pilgrimType);
+  // Région et encadreur ne concernent que le pèlerin : un encadreur, un officiel
+  // ou un GUH ne se voient pas affecter d'encadreur.
+  const isPelerin = form.pilgrimType === 'PELERIN';
 
   useEffect(() => {
     getEncadreurs({ region: form.region || undefined }).then(setEncadreurs);
@@ -51,8 +54,13 @@ export default function PilgrimSelfRegisterPage() {
   function update(field, value) {
     setForm((prev) => {
       const next = { ...prev, [field]: value };
-      // Un type non-encadreur ne prend jamais en charge les frais d'encadreur.
       if (field === 'pilgrimType' && !isEncadreurPilgrimType(value)) next.includesEncadreurFees = false;
+      // En quittant le type Pèlerin, on efface la région et l'encadreur (non
+      // pertinents pour encadreur / officiel / GUH).
+      if (field === 'pilgrimType' && value !== 'PELERIN') {
+        next.region = '';
+        next.encadreurId = '';
+      }
       return next;
     });
     setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -73,7 +81,12 @@ export default function PilgrimSelfRegisterPage() {
     e.preventDefault();
     setSubmitError(null);
 
-    const validationErrors = validateBordereau(form, t, { requireAgency: false, requireEmail: false });
+    const validationErrors = validateBordereau(form, t, {
+      requireAgency: false,
+      requireEmail: false,
+      requireEncadreur: isPelerin,
+      requireRegion: isPelerin,
+    });
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
 
@@ -142,33 +155,36 @@ export default function PilgrimSelfRegisterPage() {
           )}
         </Field>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label={t('bordereau.region')} error={errors.region} required>
-            <select
-              className={clsx('form-input', errors.region && 'form-input-error')}
-              value={form.region}
-              onChange={(e) => update('region', e.target.value)}
-            >
-              <option value="">{t('common.select')}</option>
-              {REGIONS.map((region) => (
-                <option key={region} value={region}>{region}</option>
-              ))}
-            </select>
-          </Field>
+        {/* Région et encadreur : réservés au type Pèlerin. */}
+        {isPelerin && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label={t('bordereau.region')} error={errors.region} required>
+              <select
+                className={clsx('form-input', errors.region && 'form-input-error')}
+                value={form.region}
+                onChange={(e) => update('region', e.target.value)}
+              >
+                <option value="">{t('common.select')}</option>
+                {REGIONS.map((region) => (
+                  <option key={region} value={region}>{region}</option>
+                ))}
+              </select>
+            </Field>
 
-          <Field label={t('pilgrimRegister.chooseEncadreur')} error={errors.encadreurId} required>
-            <select
-              className={clsx('form-input', errors.encadreurId && 'form-input-error')}
-              value={form.encadreurId}
-              onChange={(e) => update('encadreurId', e.target.value)}
-            >
-              <option value="">{t('common.select')}</option>
-              {encadreurs.map((enc) => (
-                <option key={enc.id} value={enc.id}>{enc.name}</option>
-              ))}
-            </select>
-          </Field>
-        </div>
+            <Field label={t('pilgrimRegister.chooseEncadreur')} error={errors.encadreurId} required>
+              <select
+                className={clsx('form-input', errors.encadreurId && 'form-input-error')}
+                value={form.encadreurId}
+                onChange={(e) => update('encadreurId', e.target.value)}
+              >
+                <option value="">{t('common.select')}</option>
+                {encadreurs.map((enc) => (
+                  <option key={enc.id} value={enc.id}>{enc.name}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        )}
 
         {/* Type de pèlerin + nombre de personnes. Pour un pèlerin, le nombre
             correspond aux personnes pour qui il paie ; pour un encadreur, au
