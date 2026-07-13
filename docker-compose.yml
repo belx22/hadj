@@ -1,22 +1,65 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: copilote-hadj-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-copilote_hadj}
+      POSTGRES_USER: ${POSTGRES_USER:-copilote}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-copilote}
+    volumes:
+      - copilote-hadj-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-copilote} -d ${POSTGRES_DB:-copilote_hadj}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - copilote-hadj-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: copilote-hadj-backend:latest
+    container_name: copilote-hadj-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-copilote_hadj}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-copilote}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-copilote}
+      COPILOTE_JWT_SECRET: ${COPILOTE_JWT_SECRET:-copilote-hadj-secret-key-change-me-in-production-please-1234567890}
+      COPILOTE_CORS_ORIGINS: ${COPILOTE_CORS_ORIGINS:-http://localhost:4456,http://62.169.26.178:4456}
+      COPILOTE_SEED_ENABLED: ${COPILOTE_SEED_ENABLED:-true}
+    networks:
+      - copilote-hadj-network
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
-        VITE_USE_MOCK: ${VITE_USE_MOCK:-true}
+        # Passe à "false" pour que le frontend consomme le backend réel via le
+        # proxy Nginx (/api → backend:8080). "true" garde le mock front autonome.
+        VITE_USE_MOCK: ${VITE_USE_MOCK:-false}
         VITE_DEFAULT_LOCALE: ${VITE_DEFAULT_LOCALE:-fr}
     image: copilote-hadj-frontend:latest
     container_name: copilote-hadj-frontend
     restart: unless-stopped
+    depends_on:
+      - backend
     ports:
       - "${FRONTEND_PORT:-4456}:80"
     networks:
       - copilote-hadj-network
 
-# Réseau dédié, prêt à accueillir les services `backend` et `postgres` (non
-# encore développés) lorsqu'ils rejoindront ce fichier.
 networks:
   copilote-hadj-network:
     driver: bridge
+
+volumes:
+  copilote-hadj-db:

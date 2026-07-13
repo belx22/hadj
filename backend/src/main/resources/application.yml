@@ -1,0 +1,41 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: copilote-hadj-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/copilote_hadj}
+    username: ${SPRING_DATASOURCE_USERNAME:copilote}
+    password: ${SPRING_DATASOURCE_PASSWORD:copilote}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+  sql:
+    init:
+      mode: never
+
+# Paramètres applicatifs
+copilote:
+  jwt:
+    # Clé HMAC (Base64 non requis) — à surcharger en production via COPILOTE_JWT_SECRET.
+    secret: ${COPILOTE_JWT_SECRET:copilote-hadj-secret-key-change-me-in-production-please-1234567890}
+    # Durée de validité du token en millisecondes (8 h par défaut).
+    expiration-ms: ${COPILOTE_JWT_EXPIRATION_MS:28800000}
+  cors:
+    # Origines autorisées (le frontend Nginx proxifie /api, donc same-origin en
+    # prod ; en dev on autorise Vite).
+    allowed-origins: ${COPILOTE_CORS_ORIGINS:http://localhost:5173,http://localhost:4173,http://localhost:4456}
+  seed:
+    # Injecte le jeu de données de démonstration au démarrage si la base est vide.
+    enabled: ${COPILOTE_SEED_ENABLED:true}
+
+logging:
+  level:
+    org.hibernate.SQL: warn
