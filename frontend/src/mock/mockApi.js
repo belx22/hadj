@@ -35,13 +35,20 @@ const DEFAULT_SMTP_SETTINGS = {
   otpTtlMinutes: 10,
 };
 
+// Clone profond des données de démonstration : sans cela, la base pointerait
+// directement sur les constantes SEED_* et toute mutation (nouveau versement,
+// changement de statut...) les altérerait de façon permanente — `resetMockDb`
+// ne réinitialiserait alors plus rien.
+const deepClone = (value) =>
+  typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
+
 function seedDb() {
   return {
-    users: SEED_USERS,
-    seasons: SEED_SEASONS,
-    bordereaux: SEED_BORDEREAUX,
-    auditLogs: SEED_AUDIT_LOGS,
-    encadreurs: SEED_ENCADREURS,
+    users: deepClone(SEED_USERS),
+    seasons: deepClone(SEED_SEASONS),
+    bordereaux: deepClone(SEED_BORDEREAUX),
+    auditLogs: deepClone(SEED_AUDIT_LOGS),
+    encadreurs: deepClone(SEED_ENCADREURS),
     smtpSettings: { ...DEFAULT_SMTP_SETTINGS },
     passwordResets: [],
   };
@@ -534,6 +541,12 @@ export async function mockCreateVersementOnline(idNumber, phone, { method, amoun
   if (!numericAmount || numericAmount <= 0 || numericAmount > remaining) {
     const error = new Error('INVALID_AMOUNT');
     error.code = 'INVALID_AMOUNT';
+    throw error;
+  }
+  // Pas de paiement fractionné : le montant doit couvrir la totalité du solde.
+  if (numericAmount < remaining) {
+    const error = new Error('PARTIAL_NOT_ALLOWED');
+    error.code = 'PARTIAL_NOT_ALLOWED';
     throw error;
   }
 

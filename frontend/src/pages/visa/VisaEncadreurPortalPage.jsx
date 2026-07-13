@@ -240,7 +240,8 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
       setPayError(t('encadreurPortal.payment.pilgrimRequired'));
       return;
     }
-    const amount = Number(payForm.amount);
+    // Pas de paiement fractionné : on règle la totalité du solde du pèlerin.
+    const amount = target.balance - target.pendingAmount;
     if (!amount || amount <= 0) {
       setPayError(t('encadreurPortal.payment.amountRequired'));
       return;
@@ -253,7 +254,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
         reference: payForm.reference.trim(),
       });
       toast.success(t('encadreurPortal.payment.success'));
-      setPayForm({ bordereauId: '', method: VERSEMENT_METHODS[0], amount: '', reference: '' });
+      setPayForm({ bordereauId: '', method: VERSEMENT_METHODS[0], reference: '' });
       reload();
     } catch {
       setPayError(t('common.error'));
@@ -261,6 +262,9 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
       setPayBusy(false);
     }
   }
+
+  const paySelected = group.find((b) => b.id === payForm.bordereauId);
+  const payRemaining = paySelected ? paySelected.balance - paySelected.pendingAmount : 0;
 
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
@@ -416,15 +420,10 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
               <option key={method} value={method}>{t(`paymentPage.methods.${method}`)}</option>
             ))}
           </select>
-          <input
-            type="number"
-            min="1"
-            inputMode="numeric"
-            className="form-input"
-            placeholder={t('encadreurPortal.payment.amount')}
-            value={payForm.amount}
-            onChange={(e) => setPayForm((p) => ({ ...p, amount: e.target.value }))}
-          />
+          {/* Montant figé au solde total du pèlerin (paiement en une fois). */}
+          <div className="form-input flex items-center bg-afriland-gray-50 font-semibold text-afriland-red">
+            {formatCurrency(payRemaining)}
+          </div>
           <input
             className="form-input lg:col-span-3"
             placeholder={t('paymentPage.reference')}

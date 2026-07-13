@@ -48,8 +48,7 @@ describe('portail encadreur (session encadreur)', () => {
     const pilgrimSelect = card.querySelector('select');
     const opt = [...pilgrimSelect.options].find((o) => o.value);
     fireEvent.change(pilgrimSelect, { target: { value: opt.value } });
-    const amount = card.querySelector('input[type="number"]');
-    fireEvent.change(amount, { target: { value: '50000' } });
+    // Le montant est figé au solde total du pèlerin (pas de saisie libre).
     fireEvent.click(within(card).getByRole('button', { name: /enregistrer le versement/i }));
     await waitFor(() => expect(document.body.textContent.length).toBeGreaterThan(0));
   });

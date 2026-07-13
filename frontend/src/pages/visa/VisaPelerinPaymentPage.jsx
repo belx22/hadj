@@ -162,13 +162,11 @@ export default function VisaPelerinPaymentPage() {
       return;
     }
 
-    const amount = Number(form.amount);
+    // Pas de paiement fractionné : le pèlerin règle la totalité de la somme
+    // exigée en une seule fois (montant = solde restant).
+    const amount = remaining;
     if (!amount || amount <= 0) {
       setError(t('paymentPage.errors.amountRequired'));
-      return;
-    }
-    if (amount > remaining) {
-      setError(t('paymentPage.errors.amountTooHigh'));
       return;
     }
 
@@ -188,8 +186,8 @@ export default function VisaPelerinPaymentPage() {
       setForm(EMPTY_FORM);
       setQrData(null);
       setSuccess(true);
-    } catch {
-      setError(t('common.error'));
+    } catch (err) {
+      setError(err.code === 'PARTIAL_NOT_ALLOWED' ? t('paymentPage.errors.fullAmountRequired') : t('common.error'));
     } finally {
       setSubmitting(false);
     }
@@ -413,15 +411,12 @@ export default function VisaPelerinPaymentPage() {
             ) : remaining > 0 ? (
               <div>
                 <label className="form-label">{t('paymentPage.amount')}</label>
-                <input
-                  type="number"
-                  min="1"
-                  max={remaining}
-                  className="form-input"
-                  value={form.amount}
-                  onChange={(e) => update('amount', e.target.value)}
-                />
-                <p className="mt-1 text-xs text-afriland-gray-600">{t('paymentPage.maxAmount', { amount: formatCurrency(remaining) })}</p>
+                {/* Paiement en une fois : montant figé au solde total exigé. */}
+                <div className="form-input flex items-center justify-between bg-afriland-gray-50">
+                  <span className="font-bold text-afriland-red">{formatCurrency(remaining)}</span>
+                  <span className="text-xs text-afriland-gray-600">{t('paymentPage.fullAmountOnly')}</span>
+                </div>
+                <p className="mt-1 text-xs text-afriland-gray-600">{t('paymentPage.noInstallmentHelp')}</p>
               </div>
             ) : (
               <p className="text-xs text-afriland-gray-600">{t('paymentPage.groupedPayment.ownComplete')}</p>

@@ -46,6 +46,8 @@ public class VersementService {
         long remaining = mapper.targetAmount(b) - mapper.validatedAmount(b) - mapper.pendingAmount(b);
         long amount = longVal(p.get("amount"));
         if (amount <= 0 || amount > remaining) throw new ApiException(400, "INVALID_AMOUNT");
+        // Pas de paiement fractionné : le montant doit couvrir la totalité du solde.
+        if (amount < remaining) throw new ApiException(400, "PARTIAL_NOT_ALLOWED");
 
         String method = str(p.get("method"));
         Versement v = newVersement(method, amount, str(p.get("reference")), p);

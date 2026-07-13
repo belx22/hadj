@@ -117,26 +117,37 @@ describe('inscription en ligne et par encadreur', () => {
 });
 
 describe('versements', () => {
-  // Sélectionne un dossier disposant d'un solde suffisant pour recevoir un
-  // versement de test (les dossiers de démo peuvent être déjà soldés).
+  // Sélectionne un dossier avec un solde à régler et renvoie ce solde total :
+  // les paiements fractionnés étant interdits, on verse toujours la totalité.
   async function payableDossier(min = 100000) {
     const all = await api.mockGetBordereaux();
     const b = all.find((x) => x.balance - x.pendingAmount > min);
-    return { idNumber: b.idNumber, phone: b.phone };
+    return { idNumber: b.idNumber, phone: b.phone, remaining: b.balance - b.pendingAmount };
   }
 
   it('enregistre un versement en ligne en attente', async () => {
     const d = await payableDossier();
     const res = await api.mockCreateVersementOnline(d.idNumber, d.phone, {
-      method: 'MOBILE_MONEY_ORANGE', amount: 100000, reference: 'TX-TEST-1',
+      method: 'MOBILE_MONEY_ORANGE', amount: d.remaining, reference: 'TX-TEST-1',
     });
-    expect(res.pendingAmount).toBeGreaterThanOrEqual(100000);
+    const last = res.versements[res.versements.length - 1];
+    expect(last.amount).toBe(d.remaining);
+    expect(last.status).toBe('PENDING');
+  });
+
+  it('refuse un paiement fractionné (compte-goutte)', async () => {
+    const d = await payableDossier();
+    await expect(
+      api.mockCreateVersementOnline(d.idNumber, d.phone, {
+        method: 'MOBILE_MONEY_ORANGE', amount: Math.floor(d.remaining / 2), reference: 'TX-PARTIAL',
+      })
+    ).rejects.toThrow('PARTIAL_NOT_ALLOWED');
   });
 
   it('conserve le numéro de compte optionnel et les détails "AUTRE"', async () => {
     const d = await payableDossier();
     const res = await api.mockCreateVersementOnline(d.idNumber, d.phone, {
-      method: 'AUTRE', amount: 50000, reference: 'TX-TEST-2', otherDetails: 'Chèque', accountNumber: '00012345',
+      method: 'AUTRE', amount: d.remaining, reference: 'TX-TEST-2', otherDetails: 'Chèque', accountNumber: '00012345',
     });
     const last = res.versements[res.versements.length - 1];
     expect(last.otherDetails).toBe('Chèque');
@@ -156,7 +167,7 @@ describe('versements', () => {
   it('valide puis liste les versements en attente et l’historique', async () => {
     const d = await payableDossier();
     await api.mockCreateVersementOnline(d.idNumber, d.phone, {
-      method: 'MOBILE_MONEY_MTN', amount: 100000, reference: 'TX-VAL-1',
+      method: 'MOBILE_MONEY_MTN', amount: d.remaining, reference: 'TX-VAL-1',
     });
     const pending = await api.mockGetPendingVersements();
     expect(pending.length).toBeGreaterThan(0);
@@ -170,7 +181,7 @@ describe('versements', () => {
   it('valide en masse une sélection de versements', async () => {
     const d = await payableDossier();
     await api.mockCreateVersementOnline(d.idNumber, d.phone, {
-      method: 'MOBILE_MONEY_MTN', amount: 30000, reference: 'TX-BULK-1',
+      method: 'MOBILE_MONEY_MTN', amount: d.remaining, reference: 'TX-BULK-1',
     });
     const pending = await api.mockGetPendingVersements();
     const bulk = await api.mockBulkValidateVersements(
@@ -182,7 +193,7 @@ describe('versements', () => {
   it('rejette un versement en attente', async () => {
     const d = await payableDossier();
     await api.mockCreateVersementOnline(d.idNumber, d.phone, {
-      method: 'MOBILE_MONEY_MTN', amount: 15000, reference: 'TX-REJ-1',
+      method: 'MOBILE_MONEY_MTN', amount: d.remaining, reference: 'TX-REJ-1',
     });
     const pending = await api.mockGetPendingVersements();
     const target = pending.find((p) => p.reference === 'TX-REJ-1');
@@ -193,7 +204,7 @@ describe('versements', () => {
   it('applique un import de rapprochement bancaire par référence', async () => {
     const d = await payableDossier();
     await api.mockCreateVersementOnline(d.idNumber, d.phone, {
-      method: 'MOBILE_MONEY_ORANGE', amount: 20000, reference: 'RAPPRO-1',
+      method: 'MOBILE_MONEY_ORANGE', amount: d.remaining, reference: 'RAPPRO-1',
     });
     const res = await api.mockImportPaymentStatusesByReference(
       [{ reference: 'RAPPRO-1', status: 'VALIDE' }, { reference: 'INCONNUE', status: 'VALIDE' }], ADMIN

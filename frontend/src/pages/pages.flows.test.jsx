@@ -77,8 +77,9 @@ describe('validation des paiements : onglets + validation (données semées)', (
   async function seedPending() {
     const all = await mock.mockGetBordereaux();
     const d = all.find((b) => b.balance - b.pendingAmount > 100000);
+    // Paiement en une fois : on verse la totalité du solde.
     await mock.mockCreateVersementOnline(d.idNumber, d.phone, {
-      method: 'MOBILE_MONEY_ORANGE', amount: 50000, reference: 'SEED-PENDING-1',
+      method: 'MOBILE_MONEY_ORANGE', amount: d.balance - d.pendingAmount, reference: 'SEED-PENDING-1',
     });
     // Un versement à rembourser (visa refusé sur un dossier déjà payé).
     const paid = all.find((b) => b.amountPaid > 0);
