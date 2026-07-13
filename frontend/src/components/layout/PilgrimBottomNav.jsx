@@ -2,16 +2,21 @@ import { useTranslation } from 'react-i18next';
 import { NavLink, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { usePilgrim } from '../../context/PilgrimContext';
+import { isEncadreurPilgrimType } from '../../utils/constants';
 
 // Barre de navigation basse, pensée pour le mobile (« mode téléphone ») : elle
 // est fixée en bas de l'écran et masquée dès le format tablette/desktop
 // (sm:hidden). Elle offre au pèlerin un accès en un geste à son dossier, au
 // paiement et à la déconnexion. Les pages pèlerin réservent un espace en bas
 // (pb-24 sm:pb-8) pour qu'elle ne recouvre pas le contenu.
-const TABS = [
+const BASE_TABS = [
   { to: '/visa/pelerin/dossier', key: 'pilgrimNav.dossier', icon: FileIcon },
   { to: '/visa/pelerin/paiement', key: 'pilgrimNav.payment', icon: CardIcon },
 ];
+
+// Onglet supplémentaire réservé aux pèlerins de type Encadreur : accès à leur
+// espace de gestion de groupe.
+const ENCADREUR_TAB = { to: '/visa/pelerin/encadreur', key: 'pilgrimNav.group', icon: GroupIcon };
 
 export default function PilgrimBottomNav() {
   const { t } = useTranslation();
@@ -19,6 +24,8 @@ export default function PilgrimBottomNav() {
   const { dossier, logout } = usePilgrim();
 
   if (!dossier) return null;
+
+  const TABS = isEncadreurPilgrimType(dossier.pilgrimType) ? [...BASE_TABS, ENCADREUR_TAB] : BASE_TABS;
 
   function handleLogout() {
     logout();
@@ -77,6 +84,16 @@ function CardIcon(props) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <rect x="2" y="5" width="20" height="14" rx="2" />
       <path d="M2 10h20M6 15h4" />
+    </svg>
+  );
+}
+
+function GroupIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   );
 }

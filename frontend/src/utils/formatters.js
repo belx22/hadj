@@ -23,11 +23,12 @@ export function formatDateTime(value, locale = 'fr-FR') {
   }).format(date);
 }
 
-// Numéro de compte : 21 chiffres. Le système ne conserve que les chiffres
-// (ex. « 100500010000004320768 »), mais on l'affiche au client en 4 groupes
-// « 1005 0001 00000043207 68 » (4 - 4 - 11 - 2) pour la lisibilité.
-const ACCOUNT_GROUPS = [4, 4, 11, 2];
-export const ACCOUNT_NUMBER_LENGTH = ACCOUNT_GROUPS.reduce((sum, n) => sum + n, 0); // 21
+// Numéro de compte : 22 chiffres. Le système ne conserve que les chiffres
+// (ex. « 1000500010000004320768 »), mais on l'affiche au client en 4 groupes
+// « 10005 0001 00000043207 68 » (5 - 4 - 11 - 2) pour la lisibilité — le code
+// banque Afriland est 10005.
+const ACCOUNT_GROUPS = [5, 4, 11, 2];
+export const ACCOUNT_NUMBER_LENGTH = ACCOUNT_GROUPS.reduce((sum, n) => sum + n, 0); // 22
 
 export function normalizeAccountNumber(value) {
   return String(value ?? '').replace(/\D/g, '').slice(0, ACCOUNT_NUMBER_LENGTH);

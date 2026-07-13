@@ -86,7 +86,8 @@ export default function PilgrimSelfRegisterPage() {
     try {
       await registerPilgrimOnline({ ...form, pilgrimCount: Number(form.pilgrimCount) });
       await loginPilgrim(form.idNumber.trim(), form.phone.trim());
-      navigate('/visa/pelerin/paiement');
+      // Après connexion, on passe d'abord par le dossier avant le paiement.
+      navigate('/visa/pelerin/dossier');
     } catch (err) {
       if (err.code === 'DUPLICATE_PILGRIM') {
         setSubmitError(t('bordereau.errors.duplicate', { season: form.season }));

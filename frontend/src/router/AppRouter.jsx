@@ -23,6 +23,7 @@ const PilgrimSelfRegisterPage = lazy(() => import('../pages/pilgrim/PilgrimSelfR
 const VisaPelerinLoginPage = lazy(() => import('../pages/visa/VisaPelerinLoginPage'));
 const VisaPelerinDossierPage = lazy(() => import('../pages/visa/VisaPelerinDossierPage'));
 const VisaPelerinPaymentPage = lazy(() => import('../pages/visa/VisaPelerinPaymentPage'));
+const VisaPelerinEncadreurPage = lazy(() => import('../pages/visa/VisaPelerinEncadreurPage'));
 const VisaEncadreurPortalPage = lazy(() => import('../pages/visa/VisaEncadreurPortalPage'));
 
 const ClientsPage = lazy(() => import('../pages/clients/ClientsPage'));
@@ -55,6 +56,7 @@ export default function AppRouter() {
         <Route path="/visa/pelerin" element={<VisaPelerinLoginPage />} />
         <Route path="/visa/pelerin/dossier" element={<VisaPelerinDossierPage />} />
         <Route path="/visa/pelerin/paiement" element={<VisaPelerinPaymentPage />} />
+        <Route path="/visa/pelerin/encadreur" element={<VisaPelerinEncadreurPage />} />
 
         <Route element={<ProtectedRoute roles={['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ', 'ADMIN_DSI']} />}>
           <Route element={<MainLayout />}>

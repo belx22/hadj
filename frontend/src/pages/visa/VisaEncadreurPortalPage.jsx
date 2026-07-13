@@ -83,10 +83,16 @@ function normalizePassportRow(rawRow) {
   return { idNumber: pick('idNumber'), deposited: pick('deposited') };
 }
 
-export default function VisaEncadreurPortalPage() {
+// Le portail est réutilisable : par défaut il s'appuie sur le compte staff
+// connecté (useAuth), mais il accepte des props pour être monté dans l'espace
+// pèlerin lorsqu'un pèlerin de type Encadreur consulte son groupe.
+export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, encadreurName: propName, actor: propActor } = {}) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
+  const encadreurId = propEncadreurId ?? user?.encadreurId;
+  const encadreurName = propName ?? user?.name;
+  const actor = propActor ?? user;
   const [group, setGroup] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -118,7 +124,7 @@ export default function VisaEncadreurPortalPage() {
 
   function reload() {
     setLoading(true);
-    getEncadreurGroup(user.encadreurId).then((groupData) => {
+    getEncadreurGroup(encadreurId).then((groupData) => {
       setGroup(groupData);
       setLoading(false);
     });
@@ -127,7 +133,7 @@ export default function VisaEncadreurPortalPage() {
   useEffect(() => {
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.encadreurId]);
+  }, [encadreurId]);
 
   // Tableau de bord : encaissements, reste à verser et suivi des passeports.
   const stats = useMemo(() => {
@@ -161,7 +167,7 @@ export default function VisaEncadreurPortalPage() {
         StatutVisa: b.visaStatus,
         Eligible: b.eligiblePilgrims >= b.pilgrimCount ? 'Oui' : 'Non',
       })),
-      `groupe-${user.encadreurId}.xlsx`,
+      `groupe-${encadreurId}.xlsx`,
       'Groupe'
     );
   }
@@ -175,10 +181,10 @@ export default function VisaEncadreurPortalPage() {
         eligiblePilgrims: stats.eligible,
         bordereauxCount: group.length,
         avgAmount: group.length ? Math.round(stats.collected / group.length) : 0,
-        byEncadreur: [{ encadreurName: user.name, collected: stats.collected, pilgrims: group.length, bordereaux: group.length }],
+        byEncadreur: [{ encadreurName: encadreurName, collected: stats.collected, pilgrims: group.length, bordereaux: group.length }],
         byRegion: [],
       },
-      `Groupe ${user.name}`
+      `Groupe ${encadreurName}`
     );
   }
 
@@ -196,7 +202,7 @@ export default function VisaEncadreurPortalPage() {
     setFormError(null);
     setRegisteredCredential(null);
     const validationErrors = validateBordereau(
-      { ...form, encadreurId: user.encadreurId },
+      { ...form, encadreurId },
       t,
       { requireAgency: false, requireEmail: false }
     );
@@ -205,7 +211,7 @@ export default function VisaEncadreurPortalPage() {
 
     setSubmitting(true);
     try {
-      const record = await registerPilgrimByEncadreur({ ...form, pilgrimCount: Number(form.pilgrimCount) }, user.encadreurId, user);
+      const record = await registerPilgrimByEncadreur({ ...form, pilgrimCount: Number(form.pilgrimCount) }, encadreurId, actor);
       toast.success(t('toasts.pilgrimRegisteredByEncadreur'));
       setRegisteredCredential({
         name: `${record.pilgrimFirstName} ${record.pilgrimLastName}`,
@@ -269,7 +275,7 @@ export default function VisaEncadreurPortalPage() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       const rows = rawRows.map(normalizeRow);
-      const summary = await importPilgrims(rows, user.encadreurId, user);
+      const summary = await importPilgrims(rows, encadreurId, actor);
       setImportSummary(summary);
       reload();
     } catch {
@@ -311,9 +317,9 @@ export default function VisaEncadreurPortalPage() {
       const rows = rawRows.map(normalizeGroupedRow);
       const summary = await importGroupedVersementsByEncadreur(
         rows,
-        user.encadreurId,
+        encadreurId,
         { method: groupedMethod, reference: groupedReference },
-        user
+        actor
       );
       setGroupedSummary(summary);
       reload();
@@ -345,7 +351,7 @@ export default function VisaEncadreurPortalPage() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       const rows = rawRows.map(normalizePassportRow);
-      const summary = await importPassportDeposits(rows, CURRENT_SEASON, user);
+      const summary = await importPassportDeposits(rows, CURRENT_SEASON, actor);
       setPassportSummary(summary);
       reload();
     } catch {
@@ -362,7 +368,7 @@ export default function VisaEncadreurPortalPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-afriland-black">{t('visa.encadreurLoginTitle')}</h1>
-          <p className="text-sm text-afriland-gray-600">{user.name}</p>
+          <p className="text-sm text-afriland-gray-600">{encadreurName}</p>
         </div>
         <div className="flex gap-2">
           <button type="button" className="btn-secondary" onClick={handleExportExcel}>{t('common.exportExcel')}</button>

@@ -222,6 +222,7 @@
   "pilgrimNav": {
     "dossier": "ملفي",
     "payment": "الدفع",
+    "group": "مجموعتي",
     "logout": "خروج"
   },
   "visa": {
@@ -320,7 +321,7 @@
     "otherDetails": "حدد وسيلة الدفع",
     "otherDetailsPlaceholder": "مثال: شيك، تحويل دولي...",
     "accountNumber": "رقم حساب الدفعة",
-    "accountNumberPlaceholder": "1005 0001 00000043207 68",
+    "accountNumberPlaceholder": "10005 0001 00000043207 68",
     "amount": "المبلغ المراد دفعه",
     "maxAmount": "الحد الأقصى: {{amount}}",
     "submit": "إرسال دفعتي",

@@ -11,6 +11,7 @@ import PilgrimSelfRegisterPage from './pilgrim/PilgrimSelfRegisterPage';
 import VisaPelerinLoginPage from './visa/VisaPelerinLoginPage';
 import VisaPelerinDossierPage from './visa/VisaPelerinDossierPage';
 import VisaPelerinPaymentPage from './visa/VisaPelerinPaymentPage';
+import VisaPelerinEncadreurPage from './visa/VisaPelerinEncadreurPage';
 import BordereauListPage from './bordereau/BordereauListPage';
 import BordereauFormPage from './bordereau/BordereauFormPage';
 import ClientsPage from './clients/ClientsPage';
@@ -50,6 +51,7 @@ const publicPages = [
   // Sans dossier chargé, ces pages redirigent (Navigate) sans planter.
   ['VisaPelerinDossierPage', <VisaPelerinDossierPage />],
   ['VisaPelerinPaymentPage', <VisaPelerinPaymentPage />],
+  ['VisaPelerinEncadreurPage', <VisaPelerinEncadreurPage />],
 ];
 
 const adminPages = [

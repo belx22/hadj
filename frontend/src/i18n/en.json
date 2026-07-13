@@ -222,6 +222,7 @@
   "pilgrimNav": {
     "dossier": "My file",
     "payment": "Payment",
+    "group": "My group",
     "logout": "Exit"
   },
   "visa": {
@@ -320,7 +321,7 @@
     "otherDetails": "Specify the payment method",
     "otherDetailsPlaceholder": "E.g.: cheque, international transfer...",
     "accountNumber": "Payment account number",
-    "accountNumberPlaceholder": "1005 0001 00000043207 68",
+    "accountNumberPlaceholder": "10005 0001 00000043207 68",
     "amount": "Amount to pay",
     "maxAmount": "Maximum: {{amount}}",
     "submit": "Submit my payment",

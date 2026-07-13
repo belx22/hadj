@@ -54,25 +54,25 @@ describe('formatDateTime', () => {
 });
 
 describe('numéro de compte', () => {
-  it('le format cible fait 21 chiffres', () => {
-    expect(ACCOUNT_NUMBER_LENGTH).toBe(21);
+  it('le format cible fait 22 chiffres (code banque 10005)', () => {
+    expect(ACCOUNT_NUMBER_LENGTH).toBe(22);
   });
 
-  it('normalise en ne gardant que les chiffres (max 21)', () => {
-    expect(normalizeAccountNumber('1005 0001 00000043207 68')).toBe('100500010000004320768');
+  it('normalise en ne gardant que les chiffres (max 22)', () => {
+    expect(normalizeAccountNumber('10005 0001 00000043207 68')).toBe('1000500010000004320768');
     expect(normalizeAccountNumber('abc123')).toBe('123');
-    expect(normalizeAccountNumber('1005000100000043207689999')).toBe('100500010000004320768');
+    expect(normalizeAccountNumber('10005000100000043207689999')).toBe('1000500010000004320768');
     expect(normalizeAccountNumber(null)).toBe('');
   });
 
-  it('affiche le numéro en groupes 4-4-11-2', () => {
-    expect(formatAccountNumber('100500010000004320768')).toBe('1005 0001 00000043207 68');
+  it('affiche le numéro en groupes 5-4-11-2', () => {
+    expect(formatAccountNumber('1000500010000004320768')).toBe('10005 0001 00000043207 68');
     // Round-trip : normaliser la valeur affichée redonne les chiffres bruts.
-    expect(normalizeAccountNumber(formatAccountNumber('100500010000004320768'))).toBe('100500010000004320768');
+    expect(normalizeAccountNumber(formatAccountNumber('1000500010000004320768'))).toBe('1000500010000004320768');
   });
 
   it('formate partiellement une saisie en cours', () => {
-    expect(formatAccountNumber('100500')).toBe('1005 00');
+    expect(formatAccountNumber('100050')).toBe('10005 0');
     expect(formatAccountNumber('')).toBe('');
   });
 });

@@ -222,6 +222,7 @@
   "pilgrimNav": {
     "dossier": "Mon dossier",
     "payment": "Paiement",
+    "group": "Mon groupe",
     "logout": "Quitter"
   },
   "visa": {
@@ -320,7 +321,7 @@
     "otherDetails": "Précisez le moyen de paiement",
     "otherDetailsPlaceholder": "Ex : chèque, virement international...",
     "accountNumber": "Numéro de compte du versement",
-    "accountNumberPlaceholder": "1005 0001 00000043207 68",
+    "accountNumberPlaceholder": "10005 0001 00000043207 68",
     "amount": "Montant à verser",
     "maxAmount": "Maximum : {{amount}}",
     "submit": "Envoyer mon versement",
