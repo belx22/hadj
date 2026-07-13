@@ -6,12 +6,13 @@ import { usePilgrim } from '../../context/PilgrimContext';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import PilgrimBottomNav from '../../components/layout/PilgrimBottomNav';
+import PilgrimTopNav from '../../components/layout/PilgrimTopNav';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import VisaJourneyStepper from '../../components/ui/VisaJourneyStepper';
 import StatCard from '../../components/ui/StatCard';
 import PaymentCodeCard from '../../components/ui/PaymentCodeCard';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { VERSEMENT_STATUS_COLORS } from '../../utils/constants';
+import { VERSEMENT_STATUS_COLORS, isEncadreurPilgrimType } from '../../utils/constants';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 
@@ -41,6 +42,7 @@ export default function VisaPelerinDossierPage() {
           {t('common.logout')}
         </button>
       </Header>
+      <PilgrimTopNav />
 
       <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 py-8 pb-24 sm:px-6 sm:pb-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -52,6 +54,20 @@ export default function VisaPelerinDossierPage() {
           </div>
           <VisaStatusBadge status={dossier.visaStatus} />
         </div>
+
+        {/* Accès direct à l'espace de gestion de groupe pour un encadreur. */}
+        {isEncadreurPilgrimType(dossier.pilgrimType) && (
+          <Link
+            to="/visa/pelerin/encadreur"
+            className="card flex flex-wrap items-center justify-between gap-3 border-afriland-red/20 bg-afriland-red/5 hover:bg-afriland-red/10"
+          >
+            <div>
+              <p className="text-sm font-semibold text-afriland-black">{t('pilgrimNav.group')}</p>
+              <p className="text-xs text-afriland-gray-600">{t('encadreurPortal.groupSpaceHelp')}</p>
+            </div>
+            <span className="btn-primary">{t('encadreurPortal.openGroupSpace')}</span>
+          </Link>
+        )}
 
         <div className="card">
           <p className="mb-4 text-sm font-semibold text-afriland-black">{t('visa.journeyTitle')}</p>

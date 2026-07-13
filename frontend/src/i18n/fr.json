@@ -569,6 +569,8 @@
       "notFound": "{{count}} ligne(s) sans pèlerin correspondant dans votre groupe"
     },
     "dashboardTitle": "Tableau de bord de suivi",
+    "groupSpaceHelp": "Inscrire vos pèlerins en masse et suivre vos KPI, versements et dépôts de passeports",
+    "openGroupSpace": "Ouvrir mon espace groupe",
     "remaining": "Reste à verser",
     "passportsTotal": "Passeports à déposer",
     "passportsDeposited": "Passeports déposés",

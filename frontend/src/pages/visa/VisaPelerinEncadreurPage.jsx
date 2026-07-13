@@ -4,6 +4,7 @@ import { usePilgrim } from '../../context/PilgrimContext';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import PilgrimBottomNav from '../../components/layout/PilgrimBottomNav';
+import PilgrimTopNav from '../../components/layout/PilgrimTopNav';
 import VisaEncadreurPortalPage from './VisaEncadreurPortalPage';
 import { isEncadreurPilgrimType } from '../../utils/constants';
 
@@ -30,6 +31,7 @@ export default function VisaPelerinEncadreurPage() {
           {t('common.logout')}
         </button>
       </Header>
+      <PilgrimTopNav />
 
       <main className="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 py-8 pb-24 sm:px-6 sm:pb-8">
         <VisaEncadreurPortalPage

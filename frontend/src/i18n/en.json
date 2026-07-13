@@ -569,6 +569,8 @@
       "notFound": "{{count}} row(s) with no matching pilgrim in your group"
     },
     "dashboardTitle": "Tracking dashboard",
+    "groupSpaceHelp": "Register your pilgrims in bulk and track your KPIs, payments and passport deposits",
+    "openGroupSpace": "Open my group space",
     "remaining": "Remaining to pay",
     "passportsTotal": "Passports to deposit",
     "passportsDeposited": "Passports deposited",

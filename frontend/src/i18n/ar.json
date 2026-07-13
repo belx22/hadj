@@ -569,6 +569,8 @@
       "notFound": "{{count}} سطر بدون حاج مطابق في مجموعتك"
     },
     "dashboardTitle": "لوحة متابعة",
+    "groupSpaceHelp": "سجّل حجاجك دفعة واحدة وتابع مؤشراتك ودفعاتك وإيداعات الجوازات",
+    "openGroupSpace": "فتح مساحة مجموعتي",
     "remaining": "المتبقي للدفع",
     "passportsTotal": "الجوازات المطلوب إيداعها",
     "passportsDeposited": "الجوازات المودعة",

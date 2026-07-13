@@ -7,6 +7,7 @@ import { createVersementOnline, createGroupedVersementOnline, lookupBeneficiary 
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import PilgrimBottomNav from '../../components/layout/PilgrimBottomNav';
+import PilgrimTopNav from '../../components/layout/PilgrimTopNav';
 import StatCard from '../../components/ui/StatCard';
 import PaymentCodeCard from '../../components/ui/PaymentCodeCard';
 import QrScannerModal from '../../components/ui/QrScannerModal';
@@ -200,6 +201,7 @@ export default function VisaPelerinPaymentPage() {
           {t('common.logout')}
         </button>
       </Header>
+      <PilgrimTopNav />
 
       <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8 pb-24 sm:px-6 sm:pb-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
