@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, waitFor, fireEvent } from '@testing-library/react';
+import { screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { renderWithProviders } from '../test/renderWithProviders';
 import { resetMockDb } from '../mock/mockApi';
 
 import VisaEncadreurPortalPage from './visa/VisaEncadreurPortalPage';
 import VisaPelerinPaymentPage from './visa/VisaPelerinPaymentPage';
+import PilgrimSelfRegisterPage from './pilgrim/PilgrimSelfRegisterPage';
 import VisaPelerinDossierPage from './visa/VisaPelerinDossierPage';
 import VisaPelerinLoginPage from './visa/VisaPelerinLoginPage';
 import StaffLoginPage from './auth/StaffLoginPage';
@@ -37,6 +38,48 @@ describe('portail encadreur (session encadreur)', () => {
     loginAs(encadreur);
     renderWithProviders(<VisaEncadreurPortalPage />, { route: '/visa/encadreur' });
     await waitFor(() => expect(document.body.textContent.length).toBeGreaterThan(50));
+  });
+
+  it('permet à l’encadreur d’effectuer un versement pour un pèlerin', async () => {
+    loginAs(encadreur);
+    renderWithProviders(<VisaEncadreurPortalPage />, { route: '/visa/encadreur' });
+    const paymentTitle = await screen.findByText(/effectuer un versement/i);
+    const card = paymentTitle.closest('.card');
+    const pilgrimSelect = card.querySelector('select');
+    const opt = [...pilgrimSelect.options].find((o) => o.value);
+    fireEvent.change(pilgrimSelect, { target: { value: opt.value } });
+    const amount = card.querySelector('input[type="number"]');
+    fireEvent.change(amount, { target: { value: '50000' } });
+    fireEvent.click(within(card).getByRole('button', { name: /enregistrer le versement/i }));
+    await waitFor(() => expect(document.body.textContent.length).toBeGreaterThan(0));
+  });
+
+  it('n’expose plus de changement de statut visa côté encadreur', async () => {
+    loginAs(encadreur);
+    renderWithProviders(<VisaEncadreurPortalPage />, { route: '/visa/encadreur' });
+    await screen.findByText(/effectuer un versement/i);
+    expect(screen.queryByText(/validation des visas en masse/i)).toBeNull();
+    expect(screen.queryByText(/appliquer à tout le groupe/i)).toBeNull();
+  });
+});
+
+describe('inscription : choix avec/sans frais pour le type Encadreur', () => {
+  it('affiche le sélecteur de frais uniquement pour le type Encadreur', async () => {
+    const { container } = renderWithProviders(<PilgrimSelfRegisterPage />, { route: '/inscription' });
+    await waitFor(() => expect(container.querySelectorAll('select').length).toBeGreaterThan(0));
+    // Le select "type de pèlerin" est celui dont les options contiennent ENCADREUR.
+    const typeSelect = [...container.querySelectorAll('select')].find((s) =>
+      [...s.options].some((o) => o.value === 'ENCADREUR')
+    );
+    const feesSelect = () =>
+      [...container.querySelectorAll('select')].find((s) => [...s.options].some((o) => o.value === 'WITH'));
+    // Aucun montant cible n'est affiché hors connexion.
+    expect(screen.queryByText(/montant cible/i)).toBeNull();
+    expect(feesSelect()).toBeUndefined();
+    fireEvent.change(typeSelect, { target: { value: 'ENCADREUR' } });
+    await waitFor(() => expect(feesSelect()).toBeTruthy());
+    fireEvent.change(typeSelect, { target: { value: 'PELERIN' } });
+    await waitFor(() => expect(feesSelect()).toBeUndefined());
   });
 });
 

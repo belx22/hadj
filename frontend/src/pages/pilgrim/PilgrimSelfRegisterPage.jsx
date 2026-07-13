@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
@@ -6,14 +6,14 @@ import AuthLayout from '../../components/layout/AuthLayout';
 import { usePilgrim } from '../../context/PilgrimContext';
 import { registerPilgrimOnline } from '../../api/visaApi';
 import { checkDuplicate } from '../../api/bordereauApi';
-import { getEncadreurs, getOfficialPrice } from '../../api/referenceDataApi';
+import { getEncadreurs } from '../../api/referenceDataApi';
 import { validateBordereau } from '../../utils/validators';
-import { formatCurrency } from '../../utils/formatters';
-import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS } from '../../utils/constants';
+import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, isEncadreurPilgrimType } from '../../utils/constants';
 
 // Formulaire volontairement réduit à l'essentiel : le statut (Nouveau) est
-// déduit automatiquement — un agent peut toujours l'affiner plus tard via le
-// module Bordereau. Le nombre de pèlerins n'apparaît que pour un encadreur.
+// déduit automatiquement. Le montant cible n'est pas affiché ici (il n'apparaît
+// qu'une fois connecté, dans l'espace pèlerin). Le choix « avec / sans frais de
+// l'encadreur » n'est proposé que pour le type Encadreur.
 const EMPTY_FORM = {
   pilgrimLastName: '',
   pilgrimFirstName: '',
@@ -37,25 +37,24 @@ export default function PilgrimSelfRegisterPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState({});
   const [encadreurs, setEncadreurs] = useState([]);
-  const [officialPrice, setOfficialPrice] = useState(0);
   const [duplicateWarning, setDuplicateWarning] = useState(false);
   const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
+  const isEncadreur = isEncadreurPilgrimType(form.pilgrimType);
+
   useEffect(() => {
     getEncadreurs({ region: form.region || undefined }).then(setEncadreurs);
   }, [form.region]);
 
-  useEffect(() => {
-    getOfficialPrice(form.season, form.pilgrimType, form.includesEncadreurFees).then(setOfficialPrice);
-  }, [form.season, form.pilgrimType, form.includesEncadreurFees]);
-
-  // Inscription individuelle : toujours 1 pèlerin (le champ n'est pas exposé).
-  const targetAmount = useMemo(() => officialPrice, [officialPrice]);
-
   function update(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      // Un type non-encadreur ne prend jamais en charge les frais d'encadreur.
+      if (field === 'pilgrimType' && !isEncadreurPilgrimType(value)) next.includesEncadreurFees = false;
+      return next;
+    });
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
@@ -170,43 +169,51 @@ export default function PilgrimSelfRegisterPage() {
           </Field>
         </div>
 
-        {/* Auto-inscription : le pèlerin choisit son type. Le nombre de pèlerins
-            n'apparaît pas ici (il vaut toujours 1 pour une inscription
-            individuelle) — un encadreur inscrit son groupe depuis son portail. */}
-        <Field label={t('bordereau.pilgrimType')} error={errors.pilgrimType} required>
-          <select
-            className={clsx('form-input', errors.pilgrimType && 'form-input-error')}
-            value={form.pilgrimType}
-            onChange={(e) => update('pilgrimType', e.target.value)}
+        {/* Type de pèlerin + nombre de personnes. Pour un pèlerin, le nombre
+            correspond aux personnes pour qui il paie ; pour un encadreur, au
+            nombre de pèlerins qu'il gère. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label={t('bordereau.pilgrimType')} error={errors.pilgrimType} required>
+            <select
+              className={clsx('form-input', errors.pilgrimType && 'form-input-error')}
+              value={form.pilgrimType}
+              onChange={(e) => update('pilgrimType', e.target.value)}
+            >
+              {PILGRIM_TYPES.map((type) => (
+                <option key={type} value={type}>{t(`bordereau.pilgrimTypes.${type}`)}</option>
+              ))}
+            </select>
+          </Field>
+
+          <Field
+            label={isEncadreur ? t('pilgrimRegister.pilgrimsToManage') : t('pilgrimRegister.personsToPay')}
+            error={errors.pilgrimCount}
+            required
           >
-            {PILGRIM_TYPES.map((type) => (
-              <option key={type} value={type}>{t(`bordereau.pilgrimTypes.${type}`)}</option>
-            ))}
-          </select>
-        </Field>
-
-        {/* Le pèlerin choisit de prendre en charge (ou non) les frais de son
-            encadreur, ce qui majore le montant à régler. */}
-        <label className="flex items-start gap-3 rounded-lg border border-afriland-gray-200 p-3 cursor-pointer hover:bg-afriland-gray-50">
-          <input
-            type="checkbox"
-            className="mt-0.5 h-5 w-5 shrink-0 accent-afriland-red"
-            checked={form.includesEncadreurFees}
-            onChange={(e) => update('includesEncadreurFees', e.target.checked)}
-          />
-          <span>
-            <span className="block text-sm font-medium text-afriland-black">{t('bordereau.includesEncadreurFees')}</span>
-            <span className="block text-xs text-afriland-gray-600">{t('bordereau.includesEncadreurFeesHelp')}</span>
-          </span>
-        </label>
-
-        <div className="rounded-lg bg-afriland-gray-50 p-3">
-          <p className="text-xs font-medium uppercase text-afriland-gray-600">{t('pilgrimRegister.targetAmount')}</p>
-          <p className="text-lg font-bold text-afriland-red">{formatCurrency(targetAmount)}</p>
-          <p className="mt-0.5 text-xs text-afriland-gray-600">
-            {form.includesEncadreurFees ? t('bordereau.withEncadreurFees') : t('bordereau.withoutEncadreurFees')}
-          </p>
+            <input
+              type="number"
+              min="1"
+              inputMode="numeric"
+              className={clsx('form-input', errors.pilgrimCount && 'form-input-error')}
+              value={form.pilgrimCount}
+              onChange={(e) => update('pilgrimCount', e.target.value)}
+            />
+          </Field>
         </div>
+
+        {/* Choix « avec / sans frais de l'encadreur » réservé au type Encadreur. */}
+        {isEncadreur && (
+          <Field label={t('bordereau.encadreurFees')} help={t('bordereau.includesEncadreurFeesHelp')}>
+            <select
+              className="form-input"
+              value={form.includesEncadreurFees ? 'WITH' : 'WITHOUT'}
+              onChange={(e) => update('includesEncadreurFees', e.target.value === 'WITH')}
+            >
+              <option value="WITHOUT">{t('bordereau.withoutEncadreurFees')}</option>
+              <option value="WITH">{t('bordereau.withEncadreurFees')}</option>
+            </select>
+          </Field>
+        )}
 
         {submitError && <p className="form-error">{submitError}</p>}
 

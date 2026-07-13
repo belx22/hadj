@@ -11,7 +11,6 @@ import VisaJourneyStepper from '../../components/ui/VisaJourneyStepper';
 import StatCard from '../../components/ui/StatCard';
 import PaymentCodeCard from '../../components/ui/PaymentCodeCard';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { generatePilgrimAttestation } from '../../utils/pdf';
 import { VERSEMENT_STATUS_COLORS } from '../../utils/constants';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
@@ -136,9 +135,6 @@ export default function VisaPelerinDossierPage() {
           </ul>
         </div>
 
-        <button type="button" className="btn-primary" onClick={() => generatePilgrimAttestation(dossier)}>
-          {t('visa.downloadAttestation')}
-        </button>
       </main>
 
       <Footer />

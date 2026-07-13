@@ -142,7 +142,8 @@
       "GUH": "GUH"
     },
     "includesEncadreurFees": "Prise en charge des frais de l'encadreur",
-    "includesEncadreurFeesHelp": "Cochez si le pèlerin règle les frais de l'encadreur en plus du prix du Hadj",
+    "includesEncadreurFeesHelp": "Choisissez si les frais de l'encadreur sont réglés en plus du prix du Hadj",
+    "encadreurFees": "Frais de l'encadreur",
     "withEncadreurFees": "Avec frais de l'encadreur",
     "withoutEncadreurFees": "Sans frais de l'encadreur",
     "pilgrimStatuses": {
@@ -269,6 +270,8 @@
     "subtitle": "Inscrivez-vous en ligne au Hadj / Oumra",
     "chooseEncadreur": "Choisissez votre encadreur",
     "targetAmount": "Montant cible à atteindre",
+    "personsToPay": "Nombre de personnes à payer",
+    "pilgrimsToManage": "Nombre de pèlerins à gérer",
     "submit": "M'inscrire"
   },
   "paymentPage": {
@@ -559,6 +562,27 @@
       "help": "Vous avez réglé un versement unique pour plusieurs pèlerins de votre groupe ? Choisissez le moyen de paiement et la référence utilisés, puis importez un fichier (nom, prénom, téléphone, montant) pour ventiler ce versement sur le dossier de chacun.",
       "created": "{{count}} versement(s) enregistré(s), en attente de validation",
       "notFound": "{{count}} ligne(s) sans pèlerin correspondant dans votre groupe"
+    },
+    "dashboardTitle": "Tableau de bord de suivi",
+    "remaining": "Reste à verser",
+    "passportsTotal": "Passeports à déposer",
+    "passportsDeposited": "Passeports déposés",
+    "passportsRemaining": "Passeports restants",
+    "payment": {
+      "title": "Effectuer un versement",
+      "help": "En tant qu'encadreur, vous pouvez enregistrer un versement pour l'un de vos pèlerins. Il sera mis en attente de validation par la banque.",
+      "selectPilgrim": "Pèlerin concerné",
+      "amount": "Montant à verser",
+      "submit": "Enregistrer le versement",
+      "success": "Versement enregistré, en attente de validation",
+      "pilgrimRequired": "Veuillez sélectionner un pèlerin",
+      "amountRequired": "Veuillez indiquer un montant valide"
+    },
+    "passports": {
+      "title": "Dépôt des passeports",
+      "help": "Importez la liste des passeports déjà déposés (colonne \"idNumber\" ; colonne \"Depot\" facultative : OUI/NON). Vide = déposé.",
+      "imported": "{{count}} dépôt(s) mis à jour",
+      "notFound": "{{count}} ligne(s) sans pèlerin correspondant"
     }
   },
   "adminSeasons": {

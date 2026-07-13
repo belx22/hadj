@@ -7,9 +7,10 @@ import {
   getEncadreurGroup,
   registerPilgrimByEncadreur,
   importPilgrims,
-  bulkChangeVisaStatus,
+  createVersementOnline,
   importGroupedVersementsByEncadreur,
 } from '../../api/visaApi';
+import { importPassportDeposits } from '../../api/attestationsApi';
 import StatCard from '../../components/ui/StatCard';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import Pagination from '../../components/ui/Pagination';
@@ -17,7 +18,7 @@ import usePagination from '../../hooks/usePagination';
 import { formatCurrency } from '../../utils/formatters';
 import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
 import { generateReportingPdf } from '../../utils/pdf';
-import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, VISA_STATUSES, VERSEMENT_METHODS, isEncadreurPilgrimType } from '../../utils/constants';
+import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, VERSEMENT_METHODS, isEncadreurPilgrimType } from '../../utils/constants';
 import { validateBordereau } from '../../utils/validators';
 
 const EMPTY_FORM = { pilgrimLastName: '', pilgrimFirstName: '', phone: '', idNumber: '', region: '', pilgrimType: 'PELERIN', pilgrimCount: 1 };
@@ -68,6 +69,20 @@ function normalizeGroupedRow(rawRow) {
   };
 }
 
+const PASSPORT_HEADER_ALIASES = {
+  idNumber: ['idnumber', 'cni', 'passeport', 'cni / passeport', 'n° cni / passeport'],
+  deposited: ['depot', 'dépôt', 'deposited', 'depose', 'déposé', 'statut'],
+};
+
+function normalizePassportRow(rawRow) {
+  const lower = Object.entries(rawRow).map(([k, v]) => [k.trim().toLowerCase(), v]);
+  const pick = (field) => {
+    const match = lower.find(([key]) => PASSPORT_HEADER_ALIASES[field].includes(key));
+    return match ? String(match[1] ?? '').trim() : '';
+  };
+  return { idNumber: pick('idNumber'), deposited: pick('deposited') };
+}
+
 export default function VisaEncadreurPortalPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -91,11 +106,15 @@ export default function VisaEncadreurPortalPage() {
   const [groupedImporting, setGroupedImporting] = useState(false);
   const groupedFileInputRef = useRef(null);
 
-  const [selectedIds, setSelectedIds] = useState(() => new Set());
-  const [bulkStatus, setBulkStatus] = useState(VISA_STATUSES[0]);
-  const [bulkNote, setBulkNote] = useState('');
-  const [bulkBusy, setBulkBusy] = useState(false);
-  const [bulkError, setBulkError] = useState(null);
+  // Versement effectué par l'encadreur pour un pèlerin de son groupe.
+  const [payForm, setPayForm] = useState({ bordereauId: '', method: VERSEMENT_METHODS[0], amount: '', reference: '' });
+  const [payError, setPayError] = useState(null);
+  const [payBusy, setPayBusy] = useState(false);
+
+  // Import des passeports déposés.
+  const [passportSummary, setPassportSummary] = useState(null);
+  const [passportImporting, setPassportImporting] = useState(false);
+  const passportFileInputRef = useRef(null);
 
   function reload() {
     setLoading(true);
@@ -110,12 +129,24 @@ export default function VisaEncadreurPortalPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.encadreurId]);
 
+  // Tableau de bord : encaissements, reste à verser et suivi des passeports.
   const stats = useMemo(() => {
     const collected = group.reduce((sum, b) => sum + b.amountPaid, 0);
     const target = group.reduce((sum, b) => sum + b.targetAmount, 0);
     const eligible = group.reduce((sum, b) => sum + b.eligiblePilgrims, 0);
-    const incomplete = group.filter((b) => !b.isComplete).length;
-    return { collected, target, eligible, incomplete };
+    const passportsTotal = group.reduce((sum, b) => sum + b.pilgrimCount, 0);
+    const passportsDeposited = group
+      .filter((b) => b.passportDeposited)
+      .reduce((sum, b) => sum + b.pilgrimCount, 0);
+    return {
+      collected,
+      target,
+      remaining: Math.max(target - collected, 0),
+      eligible,
+      passportsTotal,
+      passportsDeposited,
+      passportsRemaining: Math.max(passportsTotal - passportsDeposited, 0),
+    };
   }, [group]);
 
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(group);
@@ -140,7 +171,7 @@ export default function VisaEncadreurPortalPage() {
       {
         season: CURRENT_SEASON,
         totalCollected: stats.collected,
-        totalPilgrims: group.reduce((sum, b) => sum + b.pilgrimCount, 0),
+        totalPilgrims: stats.passportsTotal,
         eligiblePilgrims: stats.eligible,
         bordereauxCount: group.length,
         avgAmount: group.length ? Math.round(stats.collected / group.length) : 0,
@@ -154,7 +185,6 @@ export default function VisaEncadreurPortalPage() {
   function updateForm(field, value) {
     setForm((prev) => {
       const next = { ...prev, [field]: value };
-      // Repasser sur un type non-encadreur ramène le bordereau à un seul pèlerin.
       if (field === 'pilgrimType' && !isEncadreurPilgrimType(value)) next.pilgrimCount = 1;
       return next;
     });
@@ -195,8 +225,35 @@ export default function VisaEncadreurPortalPage() {
     }
   }
 
-  function handleImportClick() {
-    fileInputRef.current?.click();
+  // --- Versement par l'encadreur (l'encadreur ne modifie jamais un statut) ---
+  async function handlePayment(e) {
+    e.preventDefault();
+    setPayError(null);
+    const target = group.find((b) => b.id === payForm.bordereauId);
+    if (!target) {
+      setPayError(t('encadreurPortal.payment.pilgrimRequired'));
+      return;
+    }
+    const amount = Number(payForm.amount);
+    if (!amount || amount <= 0) {
+      setPayError(t('encadreurPortal.payment.amountRequired'));
+      return;
+    }
+    setPayBusy(true);
+    try {
+      await createVersementOnline(target.idNumber, target.phone, {
+        method: payForm.method,
+        amount,
+        reference: payForm.reference.trim(),
+      });
+      toast.success(t('encadreurPortal.payment.success'));
+      setPayForm({ bordereauId: '', method: VERSEMENT_METHODS[0], amount: '', reference: '' });
+      reload();
+    } catch {
+      setPayError(t('common.error'));
+    } finally {
+      setPayBusy(false);
+    }
   }
 
   async function handleFileChange(e) {
@@ -223,18 +280,12 @@ export default function VisaEncadreurPortalPage() {
   }
 
   function handleDownloadTemplate() {
-    // Les listes déroulantes portent les codes bruts (et non les libellés
-    // traduits) : c'est ce que l'import attend côté normalizeRow().
     exportTemplateToExcel(
       [{ pilgrimLastName: 'Nom', pilgrimFirstName: 'Prénom', phone: '699112233', idNumber: '1002345699', region: REGIONS[0], pilgrimType: 'PELERIN' }],
       'modele-pelerins.xlsx',
       'Pelerins',
       { region: REGIONS, pilgrimType: PILGRIM_TYPES }
     );
-  }
-
-  function handleGroupedImportClick() {
-    groupedFileInputRef.current?.click();
   }
 
   function handleDownloadGroupedTemplate() {
@@ -273,70 +324,38 @@ export default function VisaEncadreurPortalPage() {
     }
   }
 
-  function toggleSelected(id) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  function handleDownloadPassportTemplate() {
+    exportToExcel(
+      [{ idNumber: '1002345699', Depot: 'OUI' }],
+      'modele-depot-passeports.xlsx',
+      'DepotPasseports'
+    );
   }
 
-  function togglePageSelection() {
-    const pageIds = pageItems.map((b) => b.id);
-    const allSelected = pageIds.every((id) => selectedIds.has(id));
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      pageIds.forEach((id) => (allSelected ? next.delete(id) : next.add(id)));
-      return next;
-    });
-  }
+  async function handlePassportFileChange(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
 
-  async function handleApplyToSelection() {
-    setBulkError(null);
-    if (selectedIds.size === 0) {
-      setBulkError(t('encadreurPortal.selectionRequired'));
-      return;
-    }
-    setBulkBusy(true);
+    setPassportImporting(true);
+    setPassportSummary(null);
     try {
-      const result = await bulkChangeVisaStatus(
-        { bordereauIds: [...selectedIds], newStatus: bulkStatus, note: bulkNote },
-        user
-      );
-      toast.success(t('encadreurPortal.bulkSuccess', { count: result.updatedCount }));
-      setSelectedIds(new Set());
-      setBulkNote('');
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      const rows = rawRows.map(normalizePassportRow);
+      const summary = await importPassportDeposits(rows, CURRENT_SEASON, user);
+      setPassportSummary(summary);
       reload();
+    } catch {
+      setPassportSummary({ updated: [], notFound: [], invalid: [{ row: 0, reason: 'PARSE_ERROR' }] });
     } finally {
-      setBulkBusy(false);
-    }
-  }
-
-  async function handleApplyToGroup() {
-    setBulkError(null);
-    if (!window.confirm(t('encadreurPortal.applyToGroupConfirm', { status: t(`visa.statuses.${bulkStatus}`), count: group.length }))) {
-      return;
-    }
-    setBulkBusy(true);
-    try {
-      const result = await bulkChangeVisaStatus(
-        { encadreurId: user.encadreurId, newStatus: bulkStatus, note: bulkNote },
-        user
-      );
-      toast.success(t('encadreurPortal.bulkSuccess', { count: result.updatedCount }));
-      setSelectedIds(new Set());
-      setBulkNote('');
-      reload();
-    } finally {
-      setBulkBusy(false);
+      setPassportImporting(false);
     }
   }
 
   if (loading) return <p className="text-afriland-gray-600">{t('common.loading')}</p>;
-
-  const pageIds = pageItems.map((b) => b.id);
-  const pageAllSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
 
   return (
     <div className="space-y-6">
@@ -351,11 +370,66 @@ export default function VisaEncadreurPortalPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label={t('visa.collected')} value={formatCurrency(stats.collected)} accent="text-afriland-red" />
-        <StatCard label={t('visa.target')} value={formatCurrency(stats.target)} />
-        <StatCard label={t('visa.eligibleCount')} value={stats.eligible} accent="text-visa-granted" />
-        <StatCard label={t('visa.incompleteAlert')} value={stats.incomplete} accent={stats.incomplete > 0 ? 'text-visa-complement' : undefined} />
+      {/* Tableau de bord de suivi : encaissements / reste à verser / passeports. */}
+      <div>
+        <p className="mb-2 text-sm font-semibold text-afriland-black">{t('encadreurPortal.dashboardTitle')}</p>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard label={t('visa.collected')} value={formatCurrency(stats.collected)} accent="text-visa-granted" />
+          <StatCard label={t('visa.target')} value={formatCurrency(stats.target)} />
+          <StatCard label={t('encadreurPortal.remaining')} value={formatCurrency(stats.remaining)} accent="text-afriland-red" />
+          <StatCard label={t('visa.eligibleCount')} value={stats.eligible} />
+          <StatCard label={t('encadreurPortal.passportsTotal')} value={stats.passportsTotal} />
+          <StatCard label={t('encadreurPortal.passportsDeposited')} value={stats.passportsDeposited} accent="text-visa-granted" />
+          <StatCard
+            label={t('encadreurPortal.passportsRemaining')}
+            value={stats.passportsRemaining}
+            accent={stats.passportsRemaining > 0 ? 'text-visa-complement' : undefined}
+          />
+        </div>
+      </div>
+
+      {/* Versement effectué par l'encadreur pour un de ses pèlerins. */}
+      <div className="card space-y-3">
+        <p className="text-sm font-semibold text-afriland-black">{t('encadreurPortal.payment.title')}</p>
+        <p className="text-xs text-afriland-gray-600">{t('encadreurPortal.payment.help')}</p>
+        <form onSubmit={handlePayment} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <select
+            className="form-input lg:col-span-2"
+            value={payForm.bordereauId}
+            onChange={(e) => setPayForm((p) => ({ ...p, bordereauId: e.target.value }))}
+          >
+            <option value="">{t('encadreurPortal.payment.selectPilgrim')}</option>
+            {group.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.pilgrimFirstName} {b.pilgrimLastName} — {b.idNumber}
+              </option>
+            ))}
+          </select>
+          <select className="form-input" value={payForm.method} onChange={(e) => setPayForm((p) => ({ ...p, method: e.target.value }))}>
+            {VERSEMENT_METHODS.map((method) => (
+              <option key={method} value={method}>{t(`paymentPage.methods.${method}`)}</option>
+            ))}
+          </select>
+          <input
+            type="number"
+            min="1"
+            inputMode="numeric"
+            className="form-input"
+            placeholder={t('encadreurPortal.payment.amount')}
+            value={payForm.amount}
+            onChange={(e) => setPayForm((p) => ({ ...p, amount: e.target.value }))}
+          />
+          <input
+            className="form-input lg:col-span-3"
+            placeholder={t('paymentPage.reference')}
+            value={payForm.reference}
+            onChange={(e) => setPayForm((p) => ({ ...p, reference: e.target.value }))}
+          />
+          <button type="submit" className="btn-primary" disabled={payBusy}>
+            {payBusy ? t('common.loading') : t('encadreurPortal.payment.submit')}
+          </button>
+        </form>
+        {payError && <p className="form-error">{payError}</p>}
       </div>
 
       <div className="card space-y-4">
@@ -412,7 +486,6 @@ export default function VisaEncadreurPortalPage() {
           <select className="form-input" value={form.pilgrimType} onChange={(e) => updateForm('pilgrimType', e.target.value)}>
             {PILGRIM_TYPES.map((type) => <option key={type} value={type}>{t(`bordereau.pilgrimTypes.${type}`)}</option>)}
           </select>
-          {/* Le nombre de pèlerins n'a de sens que pour un bordereau d'encadreur. */}
           {isEncadreurPilgrimType(form.pilgrimType) && (
             <div>
               <input
@@ -452,7 +525,7 @@ export default function VisaEncadreurPortalPage() {
         <p className="text-xs text-afriland-gray-600">{t('encadreurPortal.importHelp')}</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-secondary" onClick={handleDownloadTemplate}>{t('adminEncadreurs.downloadTemplate')}</button>
-          <button type="button" className="btn-primary" onClick={handleImportClick} disabled={importing}>
+          <button type="button" className="btn-primary" onClick={() => fileInputRef.current?.click()} disabled={importing}>
             {importing ? t('common.loading') : t('adminEncadreurs.importFile')}
           </button>
           <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFileChange} />
@@ -518,7 +591,7 @@ export default function VisaEncadreurPortalPage() {
           <button type="button" className="btn-secondary" onClick={handleDownloadGroupedTemplate}>
             {t('adminEncadreurs.downloadTemplate')}
           </button>
-          <button type="button" className="btn-primary" onClick={handleGroupedImportClick} disabled={groupedImporting}>
+          <button type="button" className="btn-primary" onClick={() => groupedFileInputRef.current?.click()} disabled={groupedImporting}>
             {groupedImporting ? t('common.loading') : t('adminEncadreurs.importFile')}
           </button>
           <input ref={groupedFileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleGroupedFileChange} />
@@ -544,56 +617,59 @@ export default function VisaEncadreurPortalPage() {
         )}
       </div>
 
+      {/* Soumission de la liste des passeports déjà déposés. */}
       <div className="card space-y-3">
-        <p className="text-sm font-semibold text-afriland-black">{t('encadreurPortal.bulkValidationTitle')}</p>
-        <p className="text-xs text-afriland-gray-600">{t('encadreurPortal.bulkValidationHelp')}</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <select className="form-input" value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)}>
-            {VISA_STATUSES.map((status) => <option key={status} value={status}>{t(`visa.statuses.${status}`)}</option>)}
-          </select>
-          <input
-            className="form-input lg:col-span-2"
-            placeholder={t('encadreurPortal.notePlaceholder')}
-            value={bulkNote}
-            onChange={(e) => setBulkNote(e.target.value)}
-          />
-          <p className="flex items-center text-sm text-afriland-gray-600">{t('encadreurPortal.selectedCount', { count: selectedIds.size })}</p>
-        </div>
+        <p className="text-sm font-semibold text-afriland-black">{t('encadreurPortal.passports.title')}</p>
+        <p className="text-xs text-afriland-gray-600">{t('encadreurPortal.passports.help')}</p>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="btn-primary" onClick={handleApplyToSelection} disabled={bulkBusy}>
-            {t('encadreurPortal.applyToSelected')}
+          <button type="button" className="btn-secondary" onClick={handleDownloadPassportTemplate}>
+            {t('adminEncadreurs.downloadTemplate')}
           </button>
-          <button type="button" className="btn-secondary" onClick={handleApplyToGroup} disabled={bulkBusy}>
-            {t('encadreurPortal.applyToGroup')}
+          <button type="button" className="btn-primary" onClick={() => passportFileInputRef.current?.click()} disabled={passportImporting}>
+            {passportImporting ? t('common.loading') : t('adminEncadreurs.importFile')}
           </button>
+          <input ref={passportFileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handlePassportFileChange} />
         </div>
-        {bulkError && <p className="form-error">{bulkError}</p>}
+        {passportSummary && (
+          <div className="rounded-md bg-afriland-gray-50 p-3 text-sm">
+            <p className="font-medium text-visa-granted">{t('encadreurPortal.passports.imported', { count: passportSummary.updated.length })}</p>
+            {passportSummary.notFound?.length > 0 && (
+              <p className="text-afriland-gray-600">{t('encadreurPortal.passports.notFound', { count: passportSummary.notFound.length })}</p>
+            )}
+            {passportSummary.invalid?.length > 0 && (
+              <ul className="mt-1 list-disc pl-5 text-visa-refused">
+                {passportSummary.invalid.map((err, index) => (
+                  <li key={index}>{t('adminEncadreurs.importErrorRow', { row: err.row, reason: err.reason })}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
 
+      {/* Suivi (lecture seule) : l'encadreur consulte le statut visa de ses
+          pèlerins mais ne peut jamais le modifier, ni changer un statut de
+          paiement. */}
       <div className="card overflow-x-auto p-0">
-        <table className="w-full min-w-[680px] text-left text-sm">
+        <table className="w-full min-w-[620px] text-left text-sm">
           <thead className="bg-afriland-gray-50 text-xs uppercase text-afriland-gray-600">
             <tr>
-              <th className="px-4 py-3">
-                <input type="checkbox" checked={pageAllSelected} onChange={togglePageSelection} aria-label={t('encadreurPortal.selectAll')} />
-              </th>
               <th className="px-4 py-3">{t('bordereau.table.pilgrim')}</th>
               <th className="px-4 py-3">{t('visa.idNumber')}</th>
               <th className="px-4 py-3">{t('bordereau.table.amount')}</th>
               <th className="px-4 py-3">{t('visa.visaStatus')}</th>
+              <th className="px-4 py-3">{t('encadreurPortal.passportsDeposited')}</th>
               <th className="px-4 py-3">{t('visa.eligibility')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
             {pageItems.map((b) => (
               <tr key={b.id}>
-                <td className="px-4 py-3">
-                  <input type="checkbox" checked={selectedIds.has(b.id)} onChange={() => toggleSelected(b.id)} aria-label={b.id} />
-                </td>
                 <td className="px-4 py-3">{b.pilgrimFirstName} {b.pilgrimLastName}</td>
                 <td className="px-4 py-3 font-mono text-xs">{b.idNumber}</td>
                 <td className="px-4 py-3">{formatCurrency(b.amountPaid)}</td>
                 <td className="px-4 py-3"><VisaStatusBadge status={b.visaStatus} /></td>
+                <td className="px-4 py-3">{b.passportDeposited ? t('common.yes') : t('common.no')}</td>
                 <td className="px-4 py-3">
                   {b.eligiblePilgrims >= b.pilgrimCount ? (
                     <span className="text-visa-granted font-semibold">{t('visa.eligible')}</span>

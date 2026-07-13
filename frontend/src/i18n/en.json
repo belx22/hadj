@@ -142,7 +142,8 @@
       "GUH": "GUH"
     },
     "includesEncadreurFees": "Cover the guide's fees",
-    "includesEncadreurFeesHelp": "Tick if the pilgrim pays the guide's fees on top of the Hajj price",
+    "includesEncadreurFeesHelp": "Choose whether the guide's fees are paid on top of the Hajj price",
+    "encadreurFees": "Guide's fees",
     "withEncadreurFees": "With guide's fees",
     "withoutEncadreurFees": "Without guide's fees",
     "pilgrimStatuses": {
@@ -269,6 +270,8 @@
     "subtitle": "Register online for Hadj / Umrah",
     "chooseEncadreur": "Choose your guide",
     "targetAmount": "Target amount to reach",
+    "personsToPay": "Number of persons to pay for",
+    "pilgrimsToManage": "Number of pilgrims to manage",
     "submit": "Register"
   },
   "paymentPage": {
@@ -559,6 +562,27 @@
       "help": "Did you make a single payment covering several pilgrims in your group? Choose the payment method and reference used, then import a file (last name, first name, phone, amount) to split that payment across each pilgrim's file.",
       "created": "{{count}} payment(s) recorded, awaiting validation",
       "notFound": "{{count}} row(s) with no matching pilgrim in your group"
+    },
+    "dashboardTitle": "Tracking dashboard",
+    "remaining": "Remaining to pay",
+    "passportsTotal": "Passports to deposit",
+    "passportsDeposited": "Passports deposited",
+    "passportsRemaining": "Passports remaining",
+    "payment": {
+      "title": "Make a payment",
+      "help": "As a guide, you can record a payment for one of your pilgrims. It will await validation by the bank.",
+      "selectPilgrim": "Pilgrim concerned",
+      "amount": "Amount to pay",
+      "submit": "Record the payment",
+      "success": "Payment recorded, awaiting validation",
+      "pilgrimRequired": "Please select a pilgrim",
+      "amountRequired": "Please enter a valid amount"
+    },
+    "passports": {
+      "title": "Passport deposits",
+      "help": "Import the list of passports already deposited (column \"idNumber\"; optional \"Depot\" column: YES/NO). Empty = deposited.",
+      "imported": "{{count}} deposit(s) updated",
+      "notFound": "{{count}} row(s) with no matching pilgrim"
     }
   },
   "adminSeasons": {
