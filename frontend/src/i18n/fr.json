@@ -317,7 +317,7 @@
     "otherDetails": "Précisez le moyen de paiement",
     "otherDetailsPlaceholder": "Ex : chèque, virement international...",
     "accountNumber": "Numéro de compte du versement",
-    "accountNumberPlaceholder": "Numéro de compte (facultatif)",
+    "accountNumberPlaceholder": "1005 0001 00000043207 68",
     "amount": "Montant à verser",
     "maxAmount": "Maximum : {{amount}}",
     "submit": "Envoyer mon versement",

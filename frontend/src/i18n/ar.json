@@ -317,7 +317,7 @@
     "otherDetails": "حدد وسيلة الدفع",
     "otherDetailsPlaceholder": "مثال: شيك، تحويل دولي...",
     "accountNumber": "رقم حساب الدفعة",
-    "accountNumberPlaceholder": "رقم الحساب (اختياري)",
+    "accountNumberPlaceholder": "1005 0001 00000043207 68",
     "amount": "المبلغ المراد دفعه",
     "maxAmount": "الحد الأقصى: {{amount}}",
     "submit": "إرسال دفعتي",

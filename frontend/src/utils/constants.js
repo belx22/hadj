@@ -64,14 +64,6 @@ export function canCreateRole(actorRole, targetRole) {
   return getCreatableRoles(actorRole).includes(targetRole);
 }
 
-// Les « clients » (pèlerins) sont créés par le gestionnaire, l'agent, l'encadreur
-// (via son portail) et l'admin — mais pas par le superviseur, qui supervise.
-export const ROLES_CREATING_CLIENTS = ['ADMIN_DSI', 'GESTIONNAIRE_HADJ', 'OPERATEUR_HADJ', 'ENCADREUR'];
-
-export function canCreateClients(actorRole) {
-  return ROLES_CREATING_CLIENTS.includes(actorRole);
-}
-
 // Page d'accueil par rôle une fois connecté (utilisé par le routeur et par le
 // clic sur le logo dans le header).
 export const ROLE_HOME = {
@@ -100,8 +92,6 @@ export const VERSEMENT_METHODS = [
   'AGENCE',
   'AUTRE',
 ];
-
-export const VERSEMENT_STATUSES = ['PENDING', 'VALIDE', 'REJETE'];
 
 export const VERSEMENT_STATUS_COLORS = {
   PENDING: { bg: 'bg-visa-pending/15', text: 'text-yellow-800', dot: 'bg-visa-pending' },

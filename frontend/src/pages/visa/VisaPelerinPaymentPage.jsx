@@ -12,7 +12,7 @@ import PaymentCodeCard from '../../components/ui/PaymentCodeCard';
 import QrScannerModal from '../../components/ui/QrScannerModal';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import { formatCurrency, formatDate, formatAccountNumber, normalizeAccountNumber } from '../../utils/formatters';
 import { AGENCIES, VERSEMENT_METHODS, VERSEMENT_STATUS_COLORS, getAgencyByCode } from '../../utils/constants';
 import { parseVersementQrCode } from '../../utils/qrcode';
 
@@ -347,10 +347,13 @@ export default function VisaPelerinPaymentPage() {
               <label className="form-label">
                 {t('paymentPage.accountNumber')} <span className="text-afriland-gray-400">({t('common.optional')})</span>
               </label>
+              {/* Saisi/affiché groupé (1005 0001 00000043207 68) mais stocké en
+                  chiffres seuls (100500010000004320768) côté système. */}
               <input
-                className="form-input"
-                value={form.accountNumber}
-                onChange={(e) => update('accountNumber', e.target.value)}
+                className="form-input font-mono"
+                inputMode="numeric"
+                value={formatAccountNumber(form.accountNumber)}
+                onChange={(e) => update('accountNumber', normalizeAccountNumber(e.target.value))}
                 placeholder={t('paymentPage.accountNumberPlaceholder')}
               />
             </div>

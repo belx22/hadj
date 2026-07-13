@@ -1,6 +1,11 @@
 node_modules/
 dist/
+coverage/
 .env
 *.local
 npm-debug.log*
 .DS_Store
+
+# Artefacts d'export generes localement (PDF/Excel)
+*.pdf
+*.xlsx
