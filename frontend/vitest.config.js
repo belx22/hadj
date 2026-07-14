@@ -10,6 +10,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
     css: false,
+    // Les tests unitaires exercent la couche mock (pas de backend ni de réseau
+    // en CI) : on l'active explicitement ici, puisque l'application, elle,
+    // consomme le backend réel par défaut.
+    env: { VITE_USE_MOCK: 'true' },
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'lcov', 'json-summary'],

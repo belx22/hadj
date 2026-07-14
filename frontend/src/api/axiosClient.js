@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-export const USE_MOCK = String(import.meta.env.VITE_USE_MOCK ?? 'true') === 'true';
+// Le backend Spring Boot est la source de vérité : le mock est une option de
+// repli explicite (VITE_USE_MOCK=true), jamais le comportement par défaut.
+// Sans cela, tout environnement qui oublie la variable (dev local, build Docker
+// sans build-arg) retomberait silencieusement en mode démonstration.
+export const USE_MOCK = String(import.meta.env.VITE_USE_MOCK ?? 'false') === 'true';
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',

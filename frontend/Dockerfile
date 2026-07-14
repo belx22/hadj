@@ -9,7 +9,9 @@ COPY . .
 
 # Variables d'environnement injectées au build (Vite les fige dans le bundle).
 ARG VITE_API_BASE_URL=/api/v1
-ARG VITE_USE_MOCK=true
+# Le backend est déployé avec le frontend (docker compose) : on consomme l'API
+# réelle. Le mock reste une option de démo autonome (build-arg à "true").
+ARG VITE_USE_MOCK=false
 ARG VITE_DEFAULT_LOCALE=fr
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_USE_MOCK=$VITE_USE_MOCK
