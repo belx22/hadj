@@ -1,0 +1,1573 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Copilote Hadj — Dossier d'architecture fonctionnelle</title>
+
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  /* ---------- Tokens ---------- */
+  :root{
+    --bg:#FAF9F9;
+    --surface:#FFFFFF;
+    --surface-2:#F2F0EF;
+    --line:#E2DCDB;
+    --line-strong:#C9C1BF;
+    --ink:#16100F;
+    --ink-2:#463C3A;
+    --muted:#6E6260;
+    --accent:#C8102E;
+    --accent-ink:#C8102E;
+    --accent-soft:#FBEBED;
+    --s-pending:#B98A00;
+    --s-progress:#2563EB;
+    --s-granted:#16A34A;
+    --s-refused:#DC2626;
+    --s-complement:#E5670B;
+    --s-pending-bg:#FDF6DF;
+    --s-progress-bg:#E8EFFE;
+    --s-granted-bg:#E4F5EA;
+    --s-refused-bg:#FBE9E9;
+    --s-complement-bg:#FDEEE1;
+    --shadow:0 1px 2px rgba(22,16,15,.05), 0 8px 24px -16px rgba(22,16,15,.18);
+    --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,"SF Mono",Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#141010;
+      --surface:#1C1817;
+      --surface-2:#252020;
+      --line:#332C2B;
+      --line-strong:#4A4140;
+      --ink:#F2EDEB;
+      --ink-2:#CBC1BE;
+      --muted:#9C908D;
+      --accent:#FF5B6E;
+      --accent-ink:#FF7C8B;
+      --accent-soft:#38191E;
+      --s-pending:#E9C445;
+      --s-progress:#7AA5FF;
+      --s-granted:#4FCE84;
+      --s-refused:#FF7676;
+      --s-complement:#FFA35C;
+      --s-pending-bg:#33290C;
+      --s-progress-bg:#17233F;
+      --s-granted-bg:#12301F;
+      --s-refused-bg:#3A1919;
+      --s-complement-bg:#3A2410;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#FAF9F9;--surface:#FFFFFF;--surface-2:#F2F0EF;--line:#E2DCDB;--line-strong:#C9C1BF;
+    --ink:#16100F;--ink-2:#463C3A;--muted:#6E6260;--accent:#C8102E;--accent-ink:#C8102E;--accent-soft:#FBEBED;
+    --s-pending:#B98A00;--s-progress:#2563EB;--s-granted:#16A34A;--s-refused:#DC2626;--s-complement:#E5670B;
+    --s-pending-bg:#FDF6DF;--s-progress-bg:#E8EFFE;--s-granted-bg:#E4F5EA;--s-refused-bg:#FBE9E9;--s-complement-bg:#FDEEE1;
+    --shadow:0 1px 2px rgba(22,16,15,.05), 0 8px 24px -16px rgba(22,16,15,.18);
+  }
+  :root[data-theme="dark"]{
+    --bg:#141010;--surface:#1C1817;--surface-2:#252020;--line:#332C2B;--line-strong:#4A4140;
+    --ink:#F2EDEB;--ink-2:#CBC1BE;--muted:#9C908D;--accent:#FF5B6E;--accent-ink:#FF7C8B;--accent-soft:#38191E;
+    --s-pending:#E9C445;--s-progress:#7AA5FF;--s-granted:#4FCE84;--s-refused:#FF7676;--s-complement:#FFA35C;
+    --s-pending-bg:#33290C;--s-progress-bg:#17233F;--s-granted-bg:#12301F;--s-refused-bg:#3A1919;--s-complement-bg:#3A2410;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.7);
+  }
+
+  /* ---------- Base ---------- */
+  html{scroll-behavior:smooth;scroll-padding-top:24px}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none !important;transition:none !important}}
+  body{
+    background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px 96px}
+  a{color:var(--accent-ink);text-decoration:none;border-bottom:1px solid transparent}
+  a:hover{border-bottom-color:currentColor}
+  a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+
+  /* ---------- Masthead ---------- */
+  .masthead{border-bottom:2px solid var(--ink);padding:40px 0 20px;margin-bottom:36px}
+  .rule-accent{height:3px;background:var(--accent);width:64px;margin-bottom:22px}
+  .brand{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+  .brand .dot{width:4px;height:4px;background:var(--accent);border-radius:50%;display:inline-block}
+  h1{font-family:var(--serif);font-size:clamp(30px,5vw,46px);line-height:1.12;letter-spacing:-.015em;margin:14px 0 10px;text-wrap:balance;font-weight:400}
+  h1 em{font-style:normal;color:var(--accent-ink)}
+  .lede{font-size:18px;color:var(--ink-2);max-width:62ch;line-height:1.62}
+  .meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .chip{font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;padding:5px 9px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:3px}
+
+  /* ---------- Layout ---------- */
+  .cols{display:grid;grid-template-columns:210px minmax(0,1fr);gap:52px;align-items:start}
+  @media (max-width:960px){.cols{grid-template-columns:1fr;gap:0}}
+  nav.toc{position:sticky;top:24px;font-family:var(--mono);font-size:12px;line-height:1.5}
+  @media (max-width:960px){
+    nav.toc{position:static;margin-bottom:40px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 14px}
+  }
+  nav.toc .toc-title{text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-size:10.5px;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:12px}
+  @media (max-width:960px){nav.toc .toc-title{display:none}}
+  nav.toc ol{list-style:none;display:flex;flex-direction:column;gap:9px}
+  @media (max-width:960px){nav.toc ol{flex-direction:row;flex-wrap:wrap;gap:6px 16px;padding:12px 0}}
+  nav.toc a{display:flex;gap:9px;color:var(--muted);border:0}
+  nav.toc a:hover{color:var(--accent-ink)}
+  nav.toc .n{color:var(--line-strong);font-variant-numeric:tabular-nums}
+
+  main{display:flex;flex-direction:column;gap:64px;min-width:0}
+  section{scroll-margin-top:24px;display:flex;flex-direction:column;gap:20px;min-width:0}
+  .sec-head{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--ink);padding-top:14px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink)}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(24px,3.2vw,32px);line-height:1.2;letter-spacing:-.01em;text-wrap:balance}
+  h3{font-family:var(--sans);font-weight:650;font-size:15px;letter-spacing:.01em;margin-top:4px}
+  p{max-width:68ch}
+  .note{font-size:14.5px;color:var(--muted);max-width:68ch}
+  strong{font-weight:650}
+  code,.k{font-family:var(--mono);font-size:.88em;background:var(--surface-2);border:1px solid var(--line);padding:1px 5px;border-radius:3px;color:var(--ink-2);white-space:nowrap}
+
+  /* ---------- Cards / grids ---------- */
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .g3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+  .g4{grid-template-columns:repeat(auto-fit,minmax(126px,1fr))}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+  .card h3{margin:0}
+  .card p{font-size:14.5px;color:var(--muted);margin:0}
+  .card .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:2px}
+  .stat .v{font-family:var(--serif);font-size:32px;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .stat .l{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+  /* ---------- Figures ---------- */
+  figure{background:var(--surface);border:1px solid var(--line);border-radius:6px;box-shadow:var(--shadow);overflow:hidden}
+  .fig-body{overflow-x:auto;padding:18px}
+  figure svg{display:block;min-width:640px;height:auto;width:100%}
+  figcaption{font-family:var(--mono);font-size:11.5px;color:var(--muted);padding:11px 18px;border-top:1px solid var(--line);background:var(--surface-2);letter-spacing:.02em}
+  figcaption b{color:var(--ink-2);font-weight:650}
+
+  /* SVG theming */
+  .sv-surface{fill:var(--surface)}
+  .sv-panel{fill:var(--surface-2)}
+  .sv-line{stroke:var(--line-strong);fill:none}
+  .sv-hair{stroke:var(--line);fill:none}
+  .sv-ink{fill:var(--ink)}
+  .sv-muted{fill:var(--muted)}
+  .sv-accent{fill:var(--accent)}
+  .sv-accent-s{stroke:var(--accent);fill:none}
+  .t{font-family:var(--sans);font-size:12.5px;fill:var(--ink)}
+  .t-s{font-family:var(--sans);font-size:11px;fill:var(--muted)}
+  .t-m{font-family:var(--mono);font-size:10.5px;fill:var(--muted);letter-spacing:.08em}
+  .t-b{font-family:var(--sans);font-size:13px;font-weight:650;fill:var(--ink)}
+  .t-c{font-family:var(--mono);font-size:11px;fill:var(--ink-2)}
+  .box{fill:var(--surface);stroke:var(--line-strong);stroke-width:1}
+  .box-f{fill:var(--surface-2);stroke:var(--line-strong);stroke-width:1}
+  .arw{stroke:var(--line-strong);stroke-width:1.4;fill:none}
+  .arw-a{stroke:var(--accent);stroke-width:1.6;fill:none}
+  .dash{stroke-dasharray:4 4}
+
+  /* ---------- Tables ---------- */
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;min-width:600px;font-size:14px}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);white-space:nowrap;border-bottom:1px solid var(--line-strong)}
+  tbody tr:last-child td{border-bottom:0}
+  td.num{font-variant-numeric:tabular-nums;font-family:var(--mono);white-space:nowrap}
+  td.mono,th.mono{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+  .yes{color:var(--s-granted);font-weight:700}
+  .no{color:var(--line-strong)}
+  .ro{color:var(--s-progress);font-weight:700;font-size:11px;font-family:var(--mono)}
+
+  /* ---------- Pills ---------- */
+  .pill{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;letter-spacing:.05em;padding:3px 8px;border-radius:999px;border:1px solid;white-space:nowrap}
+  .p-pending{color:var(--s-pending);background:var(--s-pending-bg);border-color:var(--s-pending)}
+  .p-progress{color:var(--s-progress);background:var(--s-progress-bg);border-color:var(--s-progress)}
+  .p-granted{color:var(--s-granted);background:var(--s-granted-bg);border-color:var(--s-granted)}
+  .p-refused{color:var(--s-refused);background:var(--s-refused-bg);border-color:var(--s-refused)}
+  .p-complement{color:var(--s-complement);background:var(--s-complement-bg);border-color:var(--s-complement)}
+
+  /* ---------- Callouts ---------- */
+  .callout{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);border-radius:0 6px 6px 0;padding:14px 18px;display:flex;flex-direction:column;gap:6px}
+  .callout .h{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink)}
+  .callout p{font-size:14.5px;color:var(--ink-2);margin:0;max-width:70ch}
+
+  /* ---------- Steps ---------- */
+  ol.steps{list-style:none;display:flex;flex-direction:column;gap:0;counter-reset:s}
+  ol.steps li{display:grid;grid-template-columns:34px 1fr;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+  ol.steps li:last-child{border-bottom:0}
+  ol.steps li::before{
+    counter-increment:s;content:counter(s,decimal-leading-zero);
+    font-family:var(--mono);font-size:11px;color:var(--accent-ink);padding-top:3px;font-variant-numeric:tabular-nums
+  }
+  ol.steps .st-t{font-weight:650;font-size:14.5px}
+  ol.steps .st-d{font-size:14px;color:var(--muted);max-width:68ch}
+
+  ul.bul{list-style:none;display:flex;flex-direction:column;gap:7px}
+  ul.bul li{position:relative;padding-left:16px;font-size:14.5px;color:var(--ink-2);max-width:70ch}
+  ul.bul li::before{content:"";position:absolute;left:0;top:9px;width:5px;height:5px;background:var(--line-strong);border-radius:1px}
+
+  footer{margin-top:80px;padding-top:20px;border-top:2px solid var(--ink);font-family:var(--mono);font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-between}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="rule-accent"></div>
+    <div class="brand">
+      <span>Afriland First Bank</span><span class="dot"></span>
+      <span>Fenêtre Islamique</span><span class="dot"></span>
+      <span>Dossier d'architecture fonctionnelle</span>
+    </div>
+    <h1>Copilote Hadj — souscription, paiement et <em>suivi du visa</em> des pèlerins</h1>
+    <p class="lede">
+      Chaîne complète de la souscription au pèlerinage : le pèlerin s'inscrit, verse le prix officiel, la banque
+      valide l'encaissement, collecte le passeport et suit la décision de visa — un remboursement s'ouvre
+      automatiquement en cas de refus. Ce document décrit les acteurs, le modèle de données, les machines à états
+      et les cas d'utilisation, tels qu'ils sont réellement implémentés.
+    </p>
+    <div class="meta-row">
+      <span class="chip">React 18 + Vite</span>
+      <span class="chip">Spring Boot 3 · Java 17</span>
+      <span class="chip">PostgreSQL 16</span>
+      <span class="chip">JWT · BCrypt</span>
+      <span class="chip">Docker Compose</span>
+      <span class="chip">i18n FR / EN / AR (RTL)</span>
+    </div>
+  </header>
+
+  <div class="cols">
+
+    <nav class="toc" aria-label="Sommaire">
+      <div class="toc-title">Sommaire</div>
+      <ol>
+        <li><a href="#panorama"><span class="n">01</span><span>Panorama</span></a></li>
+        <li><a href="#architecture"><span class="n">02</span><span>Architecture</span></a></li>
+        <li><a href="#acteurs"><span class="n">03</span><span>Acteurs &amp; rôles</span></a></li>
+        <li><a href="#modules"><span class="n">04</span><span>Fonctionnalités</span></a></li>
+        <li><a href="#droits"><span class="n">05</span><span>Matrice des droits</span></a></li>
+        <li><a href="#workflow"><span class="n">06</span><span>Workflow métier</span></a></li>
+        <li><a href="#canaux"><span class="n">07</span><span>Canaux d'inscription</span></a></li>
+        <li><a href="#etats"><span class="n">08</span><span>Machines à états</span></a></li>
+        <li><a href="#classes"><span class="n">09</span><span>Diagramme de classes</span></a></li>
+        <li><a href="#uc-front"><span class="n">10</span><span>Cas d'utilisation — front</span></a></li>
+        <li><a href="#uc-back"><span class="n">11</span><span>Cas d'utilisation — back</span></a></li>
+        <li><a href="#regles"><span class="n">12</span><span>Règles de gestion</span></a></li>
+        <li><a href="#api"><span class="n">13</span><span>API REST</span></a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+      <!-- ================= 01 PANORAMA ================= -->
+      <section id="panorama">
+        <div class="sec-head">
+          <span class="eyebrow">01 — Panorama</span>
+          <h2>Ce que fait l'application</h2>
+        </div>
+        <p>
+          La banque encaisse les fonds des pèlerins camerounais, suit le remplissage de chaque dossier, contrôle
+          l'éligibilité (montant versé ÷ prix officiel), pilote le dépôt des passeports puis la décision de visa
+          saoudienne, et calcule la commission des <strong>encadreurs</strong> — les guides religieux régionaux qui
+          regroupent les pèlerins. Le périmètre s'arrête au visa : ni vol ni hébergement ne sont modélisés.
+        </p>
+
+        <div class="grid g4">
+          <div class="stat"><span class="v">6</span><span class="l">Acteurs</span></div>
+          <div class="stat"><span class="v">22</span><span class="l">Écrans</span></div>
+          <div class="stat"><span class="v">10</span><span class="l">Entités</span></div>
+          <div class="stat"><span class="v">3</span><span class="l">Canaux d'entrée</span></div>
+          <div class="stat"><span class="v">7</span><span class="l">Imports Excel</span></div>
+          <div class="stat"><span class="v">5</span><span class="l">Statuts visa</span></div>
+        </div>
+
+        <div class="grid g3">
+          <div class="card">
+            <span class="tag">Entité pivot</span>
+            <h3>Le bordereau</h3>
+            <p>Un <code>Bordereau</code> est à la fois la souscription et le dossier du pèlerin : c'est l'agrégat
+              racine qui porte les versements, les notifications et l'historique du visa.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Identité</span>
+            <h3>Le pèlerin n'a pas de compte</h3>
+            <p>Il se connecte avec son numéro de passeport et son téléphone — ou le mot de passe à 6 caractères
+              généré par son encadreur. Aucun enregistrement dans la table des utilisateurs.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Argent</span>
+            <h3>Paiement total obligatoire</h3>
+            <p>Aucun paiement fractionné : le montant déclaré doit égaler le solde restant. Une même référence
+              bancaire ne peut être validée qu'une seule fois, tous dossiers confondus.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 02 ARCHITECTURE ================= -->
+      <section id="architecture">
+        <div class="sec-head">
+          <span class="eyebrow">02 — Architecture</span>
+          <h2>Trois conteneurs, un réseau privé</h2>
+        </div>
+        <p>
+          Le navigateur ne parle qu'à Nginx : celui-ci sert la SPA compilée et relaie <code>/api</code> vers l'API
+          Spring Boot, qui seule accède à PostgreSQL. Un mode <strong>mock</strong> (<code>VITE_USE_MOCK=true</code>)
+          court-circuite l'API et fait tourner le front en autonomie sur <code>localStorage</code> — c'est le mode de
+          démonstration.
+        </p>
+
+        <figure>
+          <div class="fig-body">
+            <svg viewBox="0 0 1060 430" role="img" aria-label="Schéma d'architecture technique en trois conteneurs Docker">
+              <defs>
+                <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,1 L9,5 L0,9 z" fill="var(--line-strong)"/>
+                </marker>
+                <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,1 L9,5 L0,9 z" fill="var(--accent)"/>
+                </marker>
+              </defs>
+
+              <!-- client -->
+              <rect x="14" y="60" width="216" height="200" rx="6" class="box"/>
+              <text x="30" y="86" class="t-m">CLIENT</text>
+              <text x="30" y="110" class="t-b">Navigateur</text>
+              <text x="30" y="130" class="t-s">React 18 · Vite · React Router</text>
+              <text x="30" y="147" class="t-s">TailwindCSS · Recharts</text>
+              <line x1="30" y1="162" x2="214" y2="162" class="sv-hair"/>
+              <text x="30" y="182" class="t-c">i18n fr / en / ar (RTL)</text>
+              <text x="30" y="202" class="t-c">AuthContext → localStorage</text>
+              <text x="30" y="222" class="t-c">PilgrimContext → session</text>
+              <text x="30" y="242" class="t-c">jsPDF · SheetJS · jsQR</text>
+
+              <!-- mock -->
+              <rect x="14" y="292" width="216" height="88" rx="6" class="box-f" stroke-dasharray="5 4"/>
+              <text x="30" y="316" class="t-m">MODE DÉMO</text>
+              <text x="30" y="338" class="t-b">mockApi.js</text>
+              <text x="30" y="357" class="t-s">Base simulée en localStorage,</text>
+              <text x="30" y="372" class="t-s">contourne l'API. 1 800 lignes.</text>
+              <path d="M122 292 L122 262" class="arw dash" marker-end="url(#ah)"/>
+
+              <!-- docker boundary -->
+              <rect x="286" y="30" width="758" height="358" rx="8" class="sv-hair" stroke-dasharray="6 5"/>
+              <text x="302" y="52" class="t-m">DOCKER COMPOSE — RÉSEAU copilote-hadj-network</text>
+
+              <!-- nginx -->
+              <rect x="308" y="82" width="200" height="164" rx="6" class="box"/>
+              <text x="324" y="108" class="t-m">CONTENEUR 1</text>
+              <text x="324" y="132" class="t-b">Nginx</text>
+              <text x="324" y="152" class="t-s">Sert le build statique</text>
+              <text x="324" y="169" class="t-s">Proxy /api → backend:8080</text>
+              <line x1="324" y1="184" x2="492" y2="184" class="sv-hair"/>
+              <text x="324" y="205" class="t-c">exposé :4456 → :80</text>
+              <text x="324" y="225" class="t-c">SPA fallback index.html</text>
+
+              <!-- backend -->
+              <rect x="556" y="82" width="230" height="272" rx="6" class="box"/>
+              <text x="572" y="108" class="t-m">CONTENEUR 2</text>
+              <text x="572" y="132" class="t-b">API Spring Boot</text>
+              <text x="572" y="151" class="t-s">Java 17 · port 8080</text>
+              <line x1="572" y1="166" x2="770" y2="166" class="sv-hair"/>
+              <rect x="572" y="178" width="198" height="30" rx="4" class="box-f"/>
+              <text x="584" y="198" class="t-c">JwtAuthFilter · SecurityConfig</text>
+              <rect x="572" y="214" width="198" height="30" rx="4" class="box-f"/>
+              <text x="584" y="234" class="t-c">6 × @RestController</text>
+              <rect x="572" y="250" width="198" height="30" rx="4" class="box-f"/>
+              <text x="584" y="270" class="t-c">11 × @Service (métier)</text>
+              <rect x="572" y="286" width="198" height="30" rx="4" class="box-f"/>
+              <text x="584" y="306" class="t-c">8 × JpaRepository</text>
+              <text x="572" y="338" class="t-s">Stateless · CORS liste blanche</text>
+
+              <!-- db -->
+              <rect x="834" y="82" width="188" height="164" rx="6" class="box"/>
+              <text x="850" y="108" class="t-m">CONTENEUR 3</text>
+              <text x="850" y="132" class="t-b">PostgreSQL 16</text>
+              <text x="850" y="152" class="t-s">Volume persistant</text>
+              <line x1="850" y1="167" x2="1006" y2="167" class="sv-hair"/>
+              <text x="850" y="188" class="t-c">10 tables + season_price</text>
+              <text x="850" y="208" class="t-c">healthcheck pg_isready</text>
+              <text x="850" y="228" class="t-c">DataSeeder au démarrage</text>
+
+              <!-- arrows -->
+              <path d="M230 150 L306 150" class="arw-a" marker-end="url(#ahr)"/>
+              <text x="238" y="141" class="t-m" fill="var(--accent)">HTTPS</text>
+              <path d="M508 164 L554 164" class="arw" marker-end="url(#ah)"/>
+              <text x="500" y="152" class="t-m">/api/v1</text>
+              <path d="M786 164 L832 164" class="arw" marker-end="url(#ah)"/>
+              <text x="782" y="152" class="t-m">JDBC</text>
+
+              <text x="308" y="290" class="t-m">SÉCURITÉ</text>
+              <rect x="308" y="302" width="200" height="52" rx="4" class="box-f"/>
+              <text x="320" y="322" class="t-c">JWT porteur (Authorization)</text>
+              <text x="320" y="340" class="t-c">Mots de passe BCrypt</text>
+            </svg>
+          </div>
+          <figcaption><b>Fig. 1</b> — Architecture de déploiement. Seul le port 4456 est exposé sur l'hôte ; l'API et la base restent internes au réseau Docker.</figcaption>
+        </figure>
+
+        <div class="callout">
+          <span class="h">Endpoints publics</span>
+          <p>
+            Sept routes échappent au filtre JWT car elles servent le self-service du pèlerin :
+            <code>/auth/**</code>, <code>/visa/pelerin/login</code>, <code>/bordereaux/inscription-en-ligne</code>,
+            <code>/versements</code>, <code>/versements/groupe</code>, <code>/versements/beneficiaire/**</code>,
+            <code>/encadreurs</code>, <code>/saisons</code> et <code>/parametrage/prix-officiel</code>.
+            Tout le reste exige un jeton valide.
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= 03 ACTEURS ================= -->
+      <section id="acteurs">
+        <div class="sec-head">
+          <span class="eyebrow">03 — Acteurs</span>
+          <h2>Cinq rôles agents, un acteur sans compte</h2>
+        </div>
+        <p>
+          Les cinq rôles <code>AppUser.role</code> couvrent le personnel de la banque et les encadreurs.
+          Le <strong>pèlerin</strong>, lui, n'est pas un utilisateur : il s'authentifie sur son propre dossier.
+          Un pèlerin dont le <code>pilgrimType</code> vaut <code>ENCADREUR</code> obtient en plus un espace de gestion
+          de groupe — c'est le seul cas où le type de pèlerin confère des droits.
+        </p>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Acteur</th><th class="mono">Code</th><th>Authentification</th><th>Page d'accueil</th><th>Peut créer des comptes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Pèlerin</strong></td><td class="mono">—</td>
+                <td>N° passeport + téléphone <em>ou</em> mot de passe encadreur (6 car.)</td>
+                <td class="mono">/visa/pelerin/dossier</td><td class="no">aucun</td>
+              </tr>
+              <tr>
+                <td><strong>Encadreur</strong></td><td class="mono">ENCADREUR</td>
+                <td>Compte staff (JWT)</td><td class="mono">/visa/encadreur</td><td class="no">aucun</td>
+              </tr>
+              <tr>
+                <td><strong>Opérateur Hadj</strong></td><td class="mono">OPERATEUR_HADJ</td>
+                <td>Compte staff (JWT)</td><td class="mono">/bordereaux</td><td>Encadreur</td>
+              </tr>
+              <tr>
+                <td><strong>Gestionnaire Hadj</strong></td><td class="mono">GESTIONNAIRE_HADJ</td>
+                <td>Compte staff (JWT)</td><td class="mono">/dashboard</td><td>Opérateur, Encadreur</td>
+              </tr>
+              <tr>
+                <td><strong>Superviseur</strong></td><td class="mono">SUPERVISEUR</td>
+                <td>Compte staff (JWT)</td><td class="mono">/dashboard</td><td>Gestionnaire, Opérateur</td>
+              </tr>
+              <tr>
+                <td><strong>Administrateur DSI</strong></td><td class="mono">ADMIN_DSI</td>
+                <td>Compte staff (JWT)</td><td class="mono">/dashboard</td><td>Tous les rôles</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="note">
+          La hiérarchie de création est contrôlée deux fois : l'interface masque les rôles interdits et le serveur
+          rejette la requête (<code>FORBIDDEN_ROLE</code>), y compris lors d'une <em>modification</em> de rôle — ce qui
+          bloque l'escalade de privilèges par édition d'un compte existant.
+        </p>
+      </section>
+
+      <!-- ================= 04 MODULES ================= -->
+      <section id="modules">
+        <div class="sec-head">
+          <span class="eyebrow">04 — Fonctionnalités</span>
+          <h2>Neuf modules</h2>
+        </div>
+
+        <div class="grid g2">
+          <div class="card">
+            <span class="tag">Espace pèlerin — public</span>
+            <h3>Inscription &amp; suivi de dossier</h3>
+            <p>Auto-inscription avec contrôle anti-doublon en direct, connexion par passeport, dossier avec
+              <em>stepper</em> visa reconstruit depuis l'historique, KPI de solde, notifications, reçu et attestation PDF.
+              Navigation mobile par barre d'onglets basse.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Espace pèlerin — paiement</span>
+            <h3>Versement &amp; paiement groupé</h3>
+            <p>Sept moyens de paiement, référence bancaire, scan du QR code du bordereau papier (caméra arrière,
+              format positionnel de 50 caractères) et photo du reçu. Un payeur peut régler pour plusieurs
+              bénéficiaires : chaque part est écrite sur le bordereau du bon pèlerin.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Portail encadreur</span>
+            <h3>Gestion de groupe</h3>
+            <p>Tableau de bord à 7 indicateurs, inscription unitaire ou import Excel de pèlerins (avec export des
+              identifiants générés), versement pour un pèlerin, import de paiement groupé, pointage des dépôts de
+              passeport. Les statuts visa sont visibles mais <span class="ro">EN LECTURE SEULE</span>.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Guichet</span>
+            <h3>Bordereaux</h3>
+            <p>Création au guichet — le versement encaissé en caisse naît directement <span class="pill p-granted">VALIDE</span>.
+              Liste filtrable, pagination, exports PDF paysage et Excel.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Back-office</span>
+            <h3>Validation des paiements</h3>
+            <p>File d'attente des versements, validation unitaire ou en masse, rejet motivé, rapprochement bancaire
+              par import de références, onglet remboursements. Historique complet.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Back-office</span>
+            <h3>Suivi visa &amp; clients</h3>
+            <p>Changement de statut unitaire ou en masse, import de statuts par encadreur, détection d'anomalies
+              (« payé mais toujours en attente », « versement en attente depuis plus de 3 jours »).</p>
+          </div>
+          <div class="card">
+            <span class="tag">Back-office</span>
+            <h3>Attestations de dépôt</h3>
+            <p>Pointage des passeports reçus, import en masse, agrégats total / déposés / restants et génération de
+              l'attestation de dépôt en PDF.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Pilotage</span>
+            <h3>Tableau de bord &amp; Power BI</h3>
+            <p>Collecte, encours, pèlerins éligibles, ventilation par encadreur / région / type, comparaison de
+              saisons, onglet paiements groupés. Export d'un dataset à la granularité du versement (17 colonnes)
+              pour Power BI Desktop.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Administration</span>
+            <h3>Référentiels &amp; audit</h3>
+            <p>Utilisateurs (avec import), encadreurs et leurs codes à 3 caractères, saisons et grille tarifaire,
+              commissions des encadreurs, paramètres SMTP, journal d'audit — 30 types d'actions tracées.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 05 DROITS ================= -->
+      <section id="droits">
+        <div class="sec-head">
+          <span class="eyebrow">05 — Habilitations</span>
+          <h2>Matrice des droits par écran</h2>
+        </div>
+        <p class="note">Droits tels que déclarés dans le routeur applicatif. L'encadreur ne dispose que de son portail ; le pèlerin est hors de cette matrice.</p>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Écran</th><th class="mono">Route</th>
+                <th>Opérateur</th><th>Gestionnaire</th><th>Superviseur</th><th>Admin DSI</th><th>Encadreur</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Bordereaux (liste + création)</td><td class="mono">/bordereaux</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Tableau de bord</td><td class="mono">/dashboard</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Clients &amp; statuts visa</td><td class="mono">/clients</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Validation des paiements</td><td class="mono">/paiements</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Attestations de dépôt</td><td class="mono">/attestations</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Connecteur Power BI</td><td class="mono">/parametrage/powerbi</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Utilisateurs</td><td class="mono">/parametrage/utilisateurs</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Encadreurs</td><td class="mono">/parametrage/encadreurs</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Saisons &amp; tarifs</td><td class="mono">/parametrage/saisons</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Commissions encadreurs</td><td class="mono">/parametrage/commissions</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Journal d'audit</td><td class="mono">/audit</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Paramètres SMTP</td><td class="mono">/parametrage/smtp</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td><td class="no">—</td></tr>
+              <tr><td>Portail encadreur</td><td class="mono">/visa/encadreur</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="no">—</td><td class="yes">✓</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= 06 WORKFLOW ================= -->
+      <section id="workflow">
+        <div class="sec-head">
+          <span class="eyebrow">06 — Workflow</span>
+          <h2>Le parcours, de l'inscription au visa</h2>
+        </div>
+        <p>
+          Trois canaux d'entrée convergent vers un même bordereau. À partir de là, le dossier avance par validation
+          d'argent, puis par collecte de passeport, puis par décision de visa. Le refus est la seule transition qui
+          déclenche une action financière automatique.
+        </p>
+
+        <figure>
+          <div class="fig-body">
+            <svg viewBox="0 0 1220 560" role="img" aria-label="Diagramme de flux en couloirs du parcours métier, de l'inscription au visa">
+              <defs>
+                <marker id="w-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,1 L9,5 L0,9 z" fill="var(--line-strong)"/>
+                </marker>
+                <marker id="w-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,1 L9,5 L0,9 z" fill="var(--accent)"/>
+                </marker>
+              </defs>
+
+              <!-- lanes -->
+              <rect x="0" y="46" width="1220" height="96" class="sv-panel" opacity=".45"/>
+              <rect x="0" y="238" width="1220" height="96" class="sv-panel" opacity=".45"/>
+              <rect x="0" y="430" width="1220" height="96" class="sv-panel" opacity=".45"/>
+              <line x1="0" y1="46" x2="1220" y2="46" class="sv-hair"/>
+              <line x1="0" y1="142" x2="1220" y2="142" class="sv-hair"/>
+              <line x1="0" y1="238" x2="1220" y2="238" class="sv-hair"/>
+              <line x1="0" y1="334" x2="1220" y2="334" class="sv-hair"/>
+              <line x1="0" y1="430" x2="1220" y2="430" class="sv-hair"/>
+              <line x1="0" y1="526" x2="1220" y2="526" class="sv-hair"/>
+              <line x1="150" y1="20" x2="150" y2="526" class="sv-line"/>
+
+              <!-- column headers -->
+              <text x="176" y="34" class="t-m">1 · INSCRIPTION</text>
+              <text x="392" y="34" class="t-m">2 · VERSEMENT</text>
+              <text x="616" y="34" class="t-m">3 · VALIDATION</text>
+              <text x="836" y="34" class="t-m">4 · PASSEPORT</text>
+              <text x="1024" y="34" class="t-m">5 · VISA</text>
+
+              <!-- lane labels -->
+              <text x="16" y="88" class="t-b">Pèlerin</text>
+              <text x="16" y="106" class="t-s">sans compte</text>
+              <text x="16" y="184" class="t-b">Encadreur</text>
+              <text x="16" y="202" class="t-s">guide régional</text>
+              <text x="16" y="280" class="t-b">Opérateur</text>
+              <text x="16" y="298" class="t-s">guichet</text>
+              <text x="16" y="376" class="t-b">Gestionnaire</text>
+              <text x="16" y="394" class="t-s">&amp; Superviseur</text>
+              <text x="16" y="472" class="t-b">Système</text>
+              <text x="16" y="490" class="t-s">automatique</text>
+
+              <!-- Pèlerin lane -->
+              <rect x="170" y="62" width="176" height="64" rx="5" class="box"/>
+              <text x="182" y="84" class="t">S'inscrire en ligne</text>
+              <text x="182" y="102" class="t-s">source ONLINE ·</text>
+              <text x="182" y="117" class="t-s">priorité ticket forcée</text>
+
+              <rect x="386" y="62" width="176" height="64" rx="5" class="box"/>
+              <text x="398" y="84" class="t">Déclarer un versement</text>
+              <text x="398" y="102" class="t-s">montant = solde exact,</text>
+              <text x="398" y="117" class="t-s">scan QR, reçu, groupé</text>
+
+              <rect x="988" y="62" width="196" height="64" rx="5" class="box"/>
+              <text x="1000" y="84" class="t">Suivre son dossier</text>
+              <text x="1000" y="102" class="t-s">stepper visa, reçu PDF,</text>
+              <text x="1000" y="117" class="t-s">notifications</text>
+
+              <!-- Encadreur lane -->
+              <rect x="170" y="158" width="176" height="64" rx="5" class="box"/>
+              <text x="182" y="180" class="t">Inscrire / importer</text>
+              <text x="182" y="198" class="t-s">Excel · mot de passe</text>
+              <text x="182" y="213" class="t-s">6 car. généré</text>
+
+              <rect x="386" y="158" width="176" height="64" rx="5" class="box"/>
+              <text x="398" y="180" class="t">Verser pour un pèlerin</text>
+              <text x="398" y="198" class="t-s">ou import d'un</text>
+              <text x="398" y="213" class="t-s">versement groupé</text>
+
+              <rect x="806" y="158" width="176" height="64" rx="5" class="box"/>
+              <text x="818" y="180" class="t">Pointer les dépôts</text>
+              <text x="818" y="198" class="t-s">de passeport</text>
+              <text x="818" y="213" class="t-s">de son groupe</text>
+
+              <rect x="988" y="158" width="196" height="64" rx="5" class="box-f" stroke-dasharray="5 4"/>
+              <text x="1000" y="180" class="t">Consulter les statuts</text>
+              <text x="1000" y="200" class="t-s" fill="var(--s-progress)">LECTURE SEULE —</text>
+              <text x="1000" y="215" class="t-s" fill="var(--s-progress)">ne peut jamais modifier</text>
+
+              <!-- Opérateur lane -->
+              <rect x="170" y="254" width="176" height="64" rx="5" class="box"/>
+              <text x="182" y="276" class="t">Saisir au guichet</text>
+              <text x="182" y="294" class="t-s">source AGENT · le</text>
+              <text x="182" y="309" class="t-s">versement naît VALIDE</text>
+
+              <!-- Gestionnaire lane -->
+              <rect x="596" y="350" width="176" height="64" rx="5" class="box"/>
+              <text x="608" y="372" class="t">Valider ou rejeter</text>
+              <text x="608" y="390" class="t-s">unitaire, en masse, ou</text>
+              <text x="608" y="405" class="t-s">rapprochement bancaire</text>
+
+              <rect x="806" y="350" width="176" height="64" rx="5" class="box"/>
+              <text x="818" y="372" class="t">Enregistrer le dépôt</text>
+              <text x="818" y="390" class="t-s">du passeport</text>
+              <text x="818" y="405" class="t-s">→ attestation PDF</text>
+
+              <rect x="988" y="350" width="196" height="64" rx="5" class="box"/>
+              <text x="1000" y="372" class="t">Décider du visa</text>
+              <text x="1000" y="390" class="t-s">EN_COURS → ACCORDÉ,</text>
+              <text x="1000" y="405" class="t-s">REFUSÉ ou COMPLÉMENT</text>
+
+              <!-- Système lane -->
+              <rect x="386" y="446" width="176" height="64" rx="5" class="box-f"/>
+              <text x="398" y="468" class="t">Créer le bordereau</text>
+              <text x="398" y="488" class="t-c">BOR-0007-AB5</text>
+              <text x="398" y="504" class="t-s">code de paiement notifié</text>
+
+              <rect x="596" y="446" width="176" height="64" rx="5" class="box-f"/>
+              <text x="608" y="468" class="t">Contrôler la référence</text>
+              <text x="608" y="486" class="t-s">unique parmi tous les</text>
+              <text x="608" y="501" class="t-s">versements validés</text>
+
+              <rect x="806" y="446" width="176" height="64" rx="5" class="box-f"/>
+              <text x="818" y="468" class="t">Notifier le pèlerin</text>
+              <text x="818" y="486" class="t-s">SMS + WhatsApp + e-mail,</text>
+              <text x="818" y="501" class="t-s">+ historique de statut</text>
+
+              <rect x="988" y="446" width="196" height="64" rx="5" class="box" stroke="var(--accent)"/>
+              <text x="1000" y="468" class="t" fill="var(--accent)">Si REFUSÉ :</text>
+              <text x="1000" y="486" class="t-s" fill="var(--accent)">versements validés →</text>
+              <text x="1000" y="501" class="t-s" fill="var(--accent)">À REMBOURSER</text>
+
+              <!-- les 3 canaux d'inscription convergent vers la création du bordereau -->
+              <path d="M346 94 L366 94 L366 462 L384 462" class="arw" marker-end="url(#w-a)"/>
+              <path d="M346 190 L366 190 L366 478 L384 478" class="arw" marker-end="url(#w-a)"/>
+              <path d="M346 286 L366 286 L366 494 L384 494" class="arw" marker-end="url(#w-a)"/>
+
+              <!-- le bordereau ouvre la déclaration de versement -->
+              <path d="M450 444 L450 128" class="arw" marker-end="url(#w-a)"/>
+              <path d="M500 444 L500 224" class="arw" marker-end="url(#w-a)"/>
+
+              <!-- les versements remontent vers la validation -->
+              <path d="M562 94 L578 94 L578 382 L594 382" class="arw" marker-end="url(#w-a)"/>
+              <path d="M562 190 L578 190 L578 382 L594 382" class="arw" marker-end="url(#w-a)"/>
+              <path d="M684 414 L684 444" class="arw dash" marker-end="url(#w-a)"/>
+
+              <!-- validation → passeport -->
+              <path d="M772 382 L804 382" class="arw" marker-end="url(#w-a)"/>
+              <path d="M894 350 L894 226" class="arw dash" marker-end="url(#w-a)"/>
+              <path d="M894 414 L894 444" class="arw dash" marker-end="url(#w-a)"/>
+
+              <!-- passeport → visa, puis effets -->
+              <path d="M982 382 L986 382" class="arw" marker-end="url(#w-a)"/>
+              <path d="M1086 414 L1086 444" class="arw-a" marker-end="url(#w-r)"/>
+              <path d="M1086 350 L1086 226" class="arw dash" marker-end="url(#w-a)"/>
+              <path d="M1160 350 L1160 128" class="arw" marker-end="url(#w-a)"/>
+            </svg>
+          </div>
+          <figcaption><b>Fig. 2</b> — Couloirs d'activité. Les flèches pleines portent le dossier ; les pointillées sont des lectures ou des effets de bord. Le trait rouge est la seule automatisation financière.</figcaption>
+        </figure>
+
+        <ol class="steps">
+          <li>
+            <div>
+              <div class="st-t">Inscription</div>
+              <div class="st-d">Nom, téléphone, passeport, région, encadreur, type de pèlerin. Le doublon
+                <code>(passeport, saison)</code> est détecté dès la sortie du champ.</div>
+            </div>
+          </li>
+          <li>
+            <div>
+              <div class="st-t">Création du bordereau et du code de paiement</div>
+              <div class="st-d">Le système génère <code>BOR-0007-AB5</code> — identifiant du bordereau suffixé du code
+                à 3 caractères de l'encadreur — et le notifie au pèlerin par SMS, WhatsApp et e-mail.</div>
+            </div>
+          </li>
+          <li>
+            <div>
+              <div class="st-t">Versement</div>
+              <div class="st-d">Le pèlerin (ou son encadreur, ou un payeur tiers) déclare le paiement.
+                Le montant doit couvrir <strong>la totalité</strong> du solde restant. Le versement naît
+                <span class="pill p-pending">PENDING</span> — sauf saisie au guichet, où il est validé d'office.</div>
+            </div>
+          </li>
+          <li>
+            <div>
+              <div class="st-t">Validation par la banque</div>
+              <div class="st-d">Le back-office valide ou rejette, à l'unité, en masse, ou par import du relevé
+                bancaire. Une référence déjà validée ailleurs est refusée.</div>
+            </div>
+          </li>
+          <li>
+            <div>
+              <div class="st-t">Dépôt du passeport</div>
+              <div class="st-d">Pointage manuel ou import en masse, puis génération de l'attestation de dépôt en PDF.</div>
+            </div>
+          </li>
+          <li>
+            <div>
+              <div class="st-t">Décision de visa</div>
+              <div class="st-d">Chaque transition inscrit une ligne d'historique — c'est elle qui alimente le
+                <em>stepper</em> affiché au pèlerin — et déclenche une notification multicanal.</div>
+            </div>
+          </li>
+          <li>
+            <div>
+              <div class="st-t">Remboursement</div>
+              <div class="st-d">Un visa refusé bascule automatiquement tous les versements validés en
+                <span class="pill p-refused">À REMBOURSER</span>, alimentant l'onglet dédié du back-office.</div>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <!-- ================= 07 CANAUX ================= -->
+      <section id="canaux">
+        <div class="sec-head">
+          <span class="eyebrow">07 — Canaux</span>
+          <h2>Quatre façons d'entrer dans le système</h2>
+        </div>
+        <p class="note">Le champ <code>source</code> du bordereau conserve le canal d'origine, et il conditionne le comportement initial du dossier.</p>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr><th class="mono">source</th><th>Qui</th><th>Versement initial</th><th>Mot de passe généré</th><th>Priorité</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono">AGENT</td><td>Opérateur, au guichet</td>
+                <td>Un versement <span class="pill p-granted">VALIDE</span> du montant total</td>
+                <td class="no">non — pas de suivi à distance</td><td>au choix de l'agent</td>
+              </tr>
+              <tr>
+                <td class="mono">ONLINE</td><td>Le pèlerin lui-même</td>
+                <td class="no">aucun</td>
+                <td class="no">non — le téléphone fait office de secret</td>
+                <td class="yes">forcée</td>
+              </tr>
+              <tr>
+                <td class="mono">ENCADREUR</td><td>Encadreur, à l'unité</td>
+                <td class="no">aucun</td>
+                <td class="yes">oui — 6 caractères</td><td class="no">non</td>
+              </tr>
+              <tr>
+                <td class="mono">ENCADREUR_IMPORT</td><td>Encadreur, import Excel</td>
+                <td class="no">aucun</td>
+                <td class="yes">oui — 6 caractères, exportables</td><td class="no">non</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= 08 ÉTATS ================= -->
+      <section id="etats">
+        <div class="sec-head">
+          <span class="eyebrow">08 — Machines à états</span>
+          <h2>Deux cycles de vie parallèles</h2>
+        </div>
+        <p>
+          Un bordereau porte deux états indépendants : celui de son <strong>visa</strong> et, pour chacun de ses
+          <strong>versements</strong>, celui de l'encaissement. Ils ne se croisent qu'en un point — le refus du visa,
+          qui ouvre le remboursement.
+        </p>
+
+        <figure>
+          <div class="fig-body">
+            <svg viewBox="0 0 1100 340" role="img" aria-label="Machine à états du visa">
+              <defs>
+                <marker id="s-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,1 L9,5 L0,9 z" fill="var(--line-strong)"/>
+                </marker>
+                <marker id="s-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,1 L9,5 L0,9 z" fill="var(--s-refused)"/>
+                </marker>
+                <marker id="s-o" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,1 L9,5 L0,9 z" fill="var(--s-complement)"/>
+                </marker>
+              </defs>
+
+              <text x="20" y="28" class="t-m">CYCLE DE VIE DU VISA — Bordereau.visaStatus</text>
+
+              <!-- initial -->
+              <circle cx="42" cy="120" r="8" fill="var(--ink)"/>
+              <path d="M54 120 L86 120" class="arw" marker-end="url(#s-a)"/>
+              <text x="42" y="150" class="t-s">création</text>
+
+              <!-- EN_ATTENTE -->
+              <rect x="90" y="92" width="176" height="56" rx="8" fill="var(--s-pending-bg)" stroke="var(--s-pending)" stroke-width="1.5"/>
+              <text x="106" y="118" class="t-b" fill="var(--s-pending)">EN_ATTENTE</text>
+              <text x="106" y="137" class="t-s" fill="var(--s-pending)">dossier reçu</text>
+
+              <!-- EN_COURS -->
+              <rect x="336" y="92" width="176" height="56" rx="8" fill="var(--s-progress-bg)" stroke="var(--s-progress)" stroke-width="1.5"/>
+              <text x="352" y="118" class="t-b" fill="var(--s-progress)">EN_COURS</text>
+              <text x="352" y="137" class="t-s" fill="var(--s-progress)">instruction saoudienne</text>
+
+              <!-- COMPLEMENT -->
+              <rect x="336" y="236" width="176" height="56" rx="8" fill="var(--s-complement-bg)" stroke="var(--s-complement)" stroke-width="1.5"/>
+              <text x="352" y="262" class="t-b" fill="var(--s-complement)">COMPLEMENT_REQUIS</text>
+              <text x="352" y="281" class="t-s" fill="var(--s-complement)">pièce manquante</text>
+
+              <!-- ACCORDE -->
+              <rect x="582" y="52" width="176" height="56" rx="8" fill="var(--s-granted-bg)" stroke="var(--s-granted)" stroke-width="1.5"/>
+              <text x="598" y="78" class="t-b" fill="var(--s-granted)">ACCORDE</text>
+              <text x="598" y="97" class="t-s" fill="var(--s-granted)">visa délivré</text>
+
+              <!-- REFUSE -->
+              <rect x="582" y="152" width="176" height="56" rx="8" fill="var(--s-refused-bg)" stroke="var(--s-refused)" stroke-width="1.5"/>
+              <text x="598" y="178" class="t-b" fill="var(--s-refused)">REFUSE</text>
+              <text x="598" y="197" class="t-s" fill="var(--s-refused)">demande rejetée</text>
+
+              <!-- transitions -->
+              <path d="M266 120 L332 120" class="arw" marker-end="url(#s-a)"/>
+              <text x="264" y="84" class="t-s">prise en charge</text>
+
+              <path d="M424 148 L424 232" stroke="var(--s-complement)" stroke-width="1.4" fill="none" marker-end="url(#s-o)"/>
+              <text x="432" y="196" class="t-s" fill="var(--s-complement)">pièce manquante</text>
+              <path d="M336 264 L300 264 L300 148" class="arw" marker-end="url(#s-a)"/>
+              <text x="180" y="212" class="t-s">complément fourni</text>
+
+              <path d="M512 106 L578 84" stroke="var(--s-granted)" stroke-width="1.4" fill="none" marker-end="url(#s-a)"/>
+              <text x="512" y="70" class="t-s" fill="var(--s-granted)">accord</text>
+
+              <path d="M512 134 L578 172" stroke="var(--s-refused)" stroke-width="1.4" fill="none" marker-end="url(#s-r)"/>
+              <text x="512" y="158" class="t-s" fill="var(--s-refused)">refus</text>
+
+              <!-- terminal -->
+              <circle cx="800" cy="80" r="9" fill="none" stroke="var(--ink)" stroke-width="1.5"/>
+              <circle cx="800" cy="80" r="5" fill="var(--ink)"/>
+              <path d="M758 80 L786 80" class="arw" marker-end="url(#s-a)"/>
+
+              <!-- side effect -->
+              <rect x="812" y="140" width="268" height="80" rx="6" fill="var(--s-refused-bg)" stroke="var(--s-refused)" stroke-dasharray="4 4"/>
+              <text x="828" y="164" class="t-b" fill="var(--s-refused)">Effet de bord automatique</text>
+              <text x="828" y="184" class="t-s" fill="var(--s-refused)">Tous les versements VALIDE passent</text>
+              <text x="828" y="200" class="t-s" fill="var(--s-refused)">en refundStatus = A_REMBOURSER</text>
+              <path d="M758 180 L808 180" stroke="var(--s-refused)" stroke-width="1.4" stroke-dasharray="4 4" fill="none" marker-end="url(#s-r)"/>
+
+              <!-- note -->
+              <line x1="20" y1="316" x2="1080" y2="316" class="sv-hair"/>
+              <text x="20" y="333" class="t-s">Chaque transition écrit une ligne dans statusHistory et notifie le pèlerin par SMS, WhatsApp et e-mail. Aucune transition n'est techniquement interdite : le parcours ci-dessus est le parcours métier attendu.</text>
+            </svg>
+          </div>
+          <figcaption><b>Fig. 3</b> — Cycle de vie du visa. Les couleurs sont celles de l'interface.</figcaption>
+        </figure>
+
+        <figure>
+          <div class="fig-body">
+            <svg viewBox="0 0 1100 300" role="img" aria-label="Machine à états d'un versement">
+              <defs>
+                <marker id="v-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,1 L9,5 L0,9 z" fill="var(--line-strong)"/>
+                </marker>
+                <marker id="v-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,1 L9,5 L0,9 z" fill="var(--s-granted)"/>
+                </marker>
+                <marker id="v-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M0,1 L9,5 L0,9 z" fill="var(--s-refused)"/>
+                </marker>
+              </defs>
+
+              <text x="20" y="28" class="t-m">CYCLE DE VIE D'UN VERSEMENT — Versement.status / refundStatus</text>
+
+              <circle cx="42" cy="112" r="8" fill="var(--ink)"/>
+              <path d="M54 112 L86 112" class="arw" marker-end="url(#v-a)"/>
+
+              <rect x="90" y="84" width="160" height="56" rx="8" fill="var(--s-pending-bg)" stroke="var(--s-pending)" stroke-width="1.5"/>
+              <text x="106" y="110" class="t-b" fill="var(--s-pending)">PENDING</text>
+              <text x="106" y="129" class="t-s" fill="var(--s-pending)">déclaré, non encaissé</text>
+
+              <rect x="330" y="84" width="160" height="56" rx="8" fill="var(--s-granted-bg)" stroke="var(--s-granted)" stroke-width="1.5"/>
+              <text x="346" y="110" class="t-b" fill="var(--s-granted)">VALIDE</text>
+              <text x="346" y="129" class="t-s" fill="var(--s-granted)">encaissement confirmé</text>
+
+              <rect x="330" y="200" width="160" height="56" rx="8" fill="var(--s-refused-bg)" stroke="var(--s-refused)" stroke-width="1.5"/>
+              <text x="346" y="226" class="t-b" fill="var(--s-refused)">REJETE</text>
+              <text x="346" y="245" class="t-s" fill="var(--s-refused)">motif obligatoire</text>
+
+              <rect x="596" y="84" width="180" height="56" rx="8" class="box" stroke="var(--s-complement)"/>
+              <text x="612" y="110" class="t-b" fill="var(--s-complement)">A_REMBOURSER</text>
+              <text x="612" y="129" class="t-s" fill="var(--s-complement)">déclenché par visa REFUSE</text>
+
+              <rect x="866" y="84" width="180" height="56" rx="8" class="box-f"/>
+              <text x="882" y="110" class="t-b">REMBOURSE</text>
+              <text x="882" y="129" class="t-s">moyen + référence saisis</text>
+
+              <path d="M250 112 L326 112" stroke="var(--s-granted)" stroke-width="1.4" fill="none" marker-end="url(#v-g)"/>
+              <text x="252" y="104" class="t-s" fill="var(--s-granted)">valider</text>
+
+              <path d="M170 140 L170 228 L326 228" stroke="var(--s-refused)" stroke-width="1.4" fill="none" marker-end="url(#v-r)"/>
+              <text x="182" y="222" class="t-s" fill="var(--s-refused)">rejeter (motif)</text>
+
+              <path d="M490 112 L592 112" class="arw" marker-end="url(#v-a)"/>
+              <text x="492" y="104" class="t-s">visa refusé</text>
+
+              <path d="M776 112 L862 112" class="arw" marker-end="url(#v-a)"/>
+              <text x="778" y="104" class="t-s">rembourser</text>
+
+              <circle cx="1076" cy="112" r="9" fill="none" stroke="var(--ink)" stroke-width="1.5"/>
+              <circle cx="1076" cy="112" r="5" fill="var(--ink)"/>
+
+              <!-- guichet shortcut -->
+              <path d="M170 84 L170 56 L410 56 L410 80" class="arw dash" marker-end="url(#v-a)"/>
+              <text x="182" y="48" class="t-s">saisie au guichet : le versement naît directement VALIDE (l'agent a encaissé en caisse)</text>
+
+              <line x1="20" y1="278" x2="1080" y2="278" class="sv-hair"/>
+              <text x="20" y="294" class="t-s">Garde-fou : une même référence bancaire ne peut être validée qu'une seule fois, tous bordereaux confondus — erreur REFERENCE_ALREADY_USED.</text>
+            </svg>
+          </div>
+          <figcaption><b>Fig. 4</b> — Cycle de vie d'un versement, remboursement compris.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ================= 09 CLASSES ================= -->
+      <section id="classes">
+        <div class="sec-head">
+          <span class="eyebrow">09 — Modèle de données</span>
+          <h2>Diagramme de classes</h2>
+        </div>
+        <p>
+          <code>Bordereau</code> est l'agrégat racine : il compose ses versements, ses notifications et son historique
+          de statut (suppression en cascade). Il référence l'encadreur et la saison, mais ne les possède pas.
+          Les attributs précédés d'un <code>/</code> sont <strong>dérivés</strong> — calculés à la lecture, jamais stockés.
+        </p>
+
+        <figure>
+          <div class="fig-body">
+            <svg viewBox="0 0 1240 900" role="img" aria-label="Diagramme de classes UML du domaine">
+              <defs>
+                <marker id="c-arrow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+                  <path d="M1,1 L11,6 L1,11" fill="none" stroke="var(--line-strong)" stroke-width="1.3"/>
+                </marker>
+              </defs>
+
+              <!-- ======= Bordereau ======= -->
+              <rect x="404" y="40" width="316" height="404" rx="4" class="box" stroke-width="1.6"/>
+              <rect x="404" y="40" width="316" height="46" rx="4" fill="var(--accent-soft)" stroke="var(--line-strong)" stroke-width="1.6"/>
+              <text x="420" y="62" class="t-b" fill="var(--accent-ink)">Bordereau</text>
+              <text x="420" y="78" class="t-m" fill="var(--accent-ink)">«AGRÉGAT RACINE» · table bordereau</text>
+
+              <text x="420" y="106" class="t-c">- id : String          « BOR-0001 »</text>
+              <text x="420" y="124" class="t-c">- source : Source</text>
+              <text x="420" y="142" class="t-c">- pilgrimFirstName / LastName : String</text>
+              <text x="420" y="160" class="t-c">- idNumber : String   « clé métier »</text>
+              <text x="420" y="178" class="t-c">- phone / email : String</text>
+              <text x="420" y="196" class="t-c">- region : Region · agency : Agency</text>
+              <text x="420" y="214" class="t-c">- pilgrimType : PilgrimType</text>
+              <text x="420" y="232" class="t-c">- pilgrimStatus : NOUVEAU | RECURRENT</text>
+              <text x="420" y="250" class="t-c">- includesEncadreurFees : boolean</text>
+              <text x="420" y="268" class="t-c">- pilgrimCount : int</text>
+              <text x="420" y="286" class="t-c">- season : int · receiptNumber : String</text>
+              <text x="420" y="304" class="t-c">- onlinePriority : boolean</text>
+              <text x="420" y="322" class="t-c">- visaStatus : VisaStatus</text>
+              <text x="420" y="340" class="t-c">- pilgrimPassword : String(6)</text>
+              <text x="420" y="358" class="t-c">- passportDeposited : boolean</text>
+              <text x="420" y="376" class="t-c">- passportDepositedAt : LocalDate</text>
+              <line x1="404" y1="390" x2="720" y2="390" class="sv-line"/>
+              <text x="420" y="410" class="t-c" fill="var(--accent-ink)">/ amountPaid  / pendingAmount</text>
+              <text x="420" y="428" class="t-c" fill="var(--accent-ink)">/ targetAmount  / balance  / isEligible</text>
+
+              <!-- ======= Versement ======= -->
+              <rect x="820" y="40" width="300" height="300" rx="4" class="box"/>
+              <rect x="820" y="40" width="300" height="30" rx="4" class="box-f"/>
+              <text x="836" y="61" class="t-b">Versement</text>
+              <text x="836" y="90" class="t-c">- id : String  « VER-0001 »</text>
+              <text x="836" y="108" class="t-c">- amount : long (FCFA)</text>
+              <text x="836" y="126" class="t-c">- method : PaymentMethod</text>
+              <text x="836" y="144" class="t-c">- reference : String  « unique si VALIDE »</text>
+              <text x="836" y="162" class="t-c">- accountNumber : String(22)</text>
+              <text x="836" y="180" class="t-c">- receiptImage : text (dataURL)</text>
+              <text x="836" y="198" class="t-c">- qrData : text</text>
+              <text x="836" y="216" class="t-c">- status : PENDING|VALIDE|REJETE</text>
+              <text x="836" y="234" class="t-c">- validatedAt / validatedBy</text>
+              <text x="836" y="252" class="t-c">- note : String  « motif de rejet »</text>
+              <line x1="820" y1="264" x2="1120" y2="264" class="sv-line"/>
+              <text x="836" y="284" class="t-c">- refundStatus : A_REMBOURSER|REMBOURSE</text>
+              <text x="836" y="302" class="t-c">- refundMethod / refundReference</text>
+              <text x="836" y="320" class="t-c">- groupPaymentId · payerIdNumber · payerName</text>
+
+              <!-- ======= Notification ======= -->
+              <rect x="820" y="376" width="300" height="86" rx="4" class="box"/>
+              <rect x="820" y="376" width="300" height="30" rx="4" class="box-f"/>
+              <text x="836" y="397" class="t-b">Notification</text>
+              <text x="836" y="426" class="t-c">- date : String</text>
+              <text x="836" y="444" class="t-c">- message : text</text>
+
+              <!-- ======= StatusHistory ======= -->
+              <rect x="820" y="498" width="300" height="86" rx="4" class="box"/>
+              <rect x="820" y="498" width="300" height="30" rx="4" class="box-f"/>
+              <text x="836" y="519" class="t-b">StatusHistory</text>
+              <text x="836" y="548" class="t-c">- status : VisaStatus</text>
+              <text x="836" y="566" class="t-c">- date : String   « alimente le stepper »</text>
+
+              <!-- ======= Encadreur ======= -->
+              <rect x="40" y="60" width="288" height="122" rx="4" class="box"/>
+              <rect x="40" y="60" width="288" height="30" rx="4" class="box-f"/>
+              <text x="56" y="81" class="t-b">Encadreur</text>
+              <text x="56" y="110" class="t-c">- id : String  « ENC-001 »</text>
+              <text x="56" y="128" class="t-c">- name · region : Region</text>
+              <text x="56" y="146" class="t-c">- code : String(3)  « unique »</text>
+              <text x="56" y="164" class="t-c">- active : boolean</text>
+
+              <!-- ======= Season ======= -->
+              <rect x="40" y="228" width="288" height="158" rx="4" class="box"/>
+              <rect x="40" y="228" width="288" height="30" rx="4" class="box-f"/>
+              <text x="56" y="249" class="t-b">Season</text>
+              <text x="56" y="278" class="t-c">- season : int (PK)  « 2027 »</text>
+              <text x="56" y="296" class="t-c">- month · year : int</text>
+              <text x="56" y="314" class="t-c">- isOpen : boolean</text>
+              <text x="56" y="332" class="t-c">- prices : Map&lt;PilgrimType, long&gt;</text>
+              <text x="56" y="350" class="t-c">- officialPriceExcludingCommission</text>
+              <text x="56" y="368" class="t-c">- commissionPerPilgrim : long</text>
+
+              <!-- ======= AppUser ======= -->
+              <rect x="40" y="432" width="288" height="158" rx="4" class="box"/>
+              <rect x="40" y="432" width="288" height="30" rx="4" class="box-f"/>
+              <text x="56" y="453" class="t-b">AppUser</text>
+              <text x="56" y="482" class="t-c">- id · username  « unique »</text>
+              <text x="56" y="500" class="t-c">- password : String  « BCrypt »</text>
+              <text x="56" y="518" class="t-c">- role : Role</text>
+              <text x="56" y="536" class="t-c">- name · email</text>
+              <text x="56" y="554" class="t-c">- agency : Agency   ⊕ exclusif</text>
+              <text x="56" y="572" class="t-c">- encadreurId : String  ⊕ exclusif</text>
+
+              <!-- ======= Enums ======= -->
+              <rect x="404" y="500" width="316" height="352" rx="4" class="box" stroke-dasharray="4 3"/>
+              <rect x="404" y="500" width="316" height="46" rx="4" class="box-f"/>
+              <text x="420" y="522" class="t-b">Énumérations</text>
+              <text x="420" y="538" class="t-m">TYPES DU DOMAINE</text>
+
+              <text x="420" y="568" class="t-c" fill="var(--accent-ink)">«enum» VisaStatus</text>
+              <text x="420" y="586" class="t-c">EN_ATTENTE · EN_COURS · ACCORDE</text>
+              <text x="420" y="602" class="t-c">REFUSE · COMPLEMENT_REQUIS</text>
+
+              <text x="420" y="634" class="t-c" fill="var(--accent-ink)">«enum» PaymentMethod</text>
+              <text x="420" y="652" class="t-c">MOBILE_MONEY_ORANGE · MOBILE_MONEY_MTN</text>
+              <text x="420" y="668" class="t-c">SARA · E_FIRST · VIREMENT · AGENCE · AUTRE</text>
+
+              <text x="420" y="700" class="t-c" fill="var(--accent-ink)">«enum» PilgrimType</text>
+              <text x="420" y="718" class="t-c">PELERIN · ENCADREUR · OFFICIEL · GUH</text>
+
+              <text x="420" y="750" class="t-c" fill="var(--accent-ink)">«enum» Source</text>
+              <text x="420" y="768" class="t-c">AGENT · ONLINE · ENCADREUR</text>
+              <text x="420" y="784" class="t-c">ENCADREUR_IMPORT</text>
+
+              <text x="420" y="816" class="t-c" fill="var(--accent-ink)">«enum» Role</text>
+              <text x="420" y="834" class="t-c">SUPERVISEUR · GESTIONNAIRE_HADJ</text>
+              <text x="420" y="848" class="t-c">OPERATEUR_HADJ · ENCADREUR · ADMIN_DSI</text>
+
+              <!-- ======= Support ======= -->
+              <rect x="820" y="640" width="300" height="94" rx="4" class="box"/>
+              <rect x="820" y="640" width="300" height="30" rx="4" class="box-f"/>
+              <text x="836" y="661" class="t-b">AuditLog</text>
+              <text x="836" y="690" class="t-c">- action · target · user</text>
+              <text x="836" y="708" class="t-c">- timestamp : Instant</text>
+              <text x="836" y="726" class="t-s">30 types d'actions tracées</text>
+
+              <rect x="820" y="758" width="142" height="94" rx="4" class="box"/>
+              <rect x="820" y="758" width="142" height="30" rx="4" class="box-f"/>
+              <text x="834" y="779" class="t-b">SmtpSettings</text>
+              <text x="834" y="806" class="t-c">singleton</text>
+              <text x="834" y="824" class="t-c">otpTtlMinutes</text>
+
+              <rect x="978" y="758" width="142" height="94" rx="4" class="box"/>
+              <rect x="978" y="758" width="142" height="30" rx="4" class="box-f"/>
+              <text x="992" y="779" class="t-b">PasswordReset</text>
+              <text x="992" y="806" class="t-c">otp · expiresAt</text>
+              <text x="992" y="824" class="t-c">attempts ≤ 5</text>
+
+              <!-- ======= Relations ======= -->
+              <!-- Bordereau ◆— Versement -->
+              <path d="M720 130 L760 130 L760 168 L816 168" class="sv-line" stroke-width="1.4"/>
+              <path d="M720 122 L732 130 L720 138 L708 130 z" fill="var(--ink)" stroke="var(--ink)"/>
+              <text x="744" y="122" class="t-m">1</text>
+              <text x="782" y="160" class="t-m">0..*</text>
+              <text x="736" y="150" class="t-s">versements</text>
+
+              <!-- Bordereau ◆— Notification -->
+              <path d="M720 250 L768 250 L768 412 L816 412" class="sv-line" stroke-width="1.4"/>
+              <path d="M720 242 L732 250 L720 258 L708 250 z" fill="var(--ink)" stroke="var(--ink)"/>
+              <text x="782" y="404" class="t-m">0..*</text>
+              <text x="726" y="242" class="t-s">notifications</text>
+
+              <!-- Bordereau ◆— StatusHistory -->
+              <path d="M720 360 L776 360 L776 534 L816 534" class="sv-line" stroke-width="1.4"/>
+              <path d="M720 352 L732 360 L720 368 L708 360 z" fill="var(--ink)" stroke="var(--ink)"/>
+              <text x="782" y="526" class="t-m">0..*</text>
+              <text x="722" y="352" class="t-s">statusHistory</text>
+
+              <!-- Bordereau → Encadreur -->
+              <path d="M404 140 L366 140 L366 120 L330 120" class="sv-line" stroke-width="1.4" marker-end="url(#c-arrow)"/>
+              <text x="342" y="112" class="t-m">1</text>
+              <text x="376" y="132" class="t-m">0..*</text>
+              <text x="336" y="160" class="t-s">encadreurId</text>
+
+              <!-- Bordereau → Season -->
+              <path d="M404 290 L368 290 L368 300 L332 300" class="sv-line" stroke-width="1.4" marker-end="url(#c-arrow)"/>
+              <text x="344" y="292" class="t-m">1</text>
+              <text x="376" y="282" class="t-m">0..*</text>
+              <text x="336" y="322" class="t-s">season</text>
+
+              <!-- AppUser → Encadreur : contourne Season par la gauche -->
+              <path d="M40 500 L20 500 L20 122 L36 122" class="sv-line dash" stroke-width="1.3" marker-end="url(#c-arrow)"/>
+              <text x="44" y="616" class="t-s">un compte de rôle ENCADREUR pointe son encadreurId</text>
+
+              <!-- Season → prices -->
+              <path d="M328 340 L360 340 L360 660 L404 660" class="sv-line dash" stroke-width="1.2"/>
+              <text x="366" y="654" class="t-s">typé par</text>
+
+              <!-- Bordereau → enums -->
+              <path d="M562 444 L562 496" class="sv-line dash" stroke-width="1.2" marker-end="url(#c-arrow)"/>
+            </svg>
+          </div>
+          <figcaption><b>Fig. 5</b> — Diagramme de classes. Losange plein = composition (cascade + orphanRemoval) ; flèche simple = association ; pointillés = dépendance de type.</figcaption>
+        </figure>
+
+        <div class="callout">
+          <span class="h">Attributs dérivés</span>
+          <p>
+            <code>targetAmount = pilgrimCount × prix(saison, type, fraisEncadreur)</code> ·
+            <code>amountPaid = Σ versements VALIDE</code> ·
+            <code>balance = targetAmount − amountPaid</code> ·
+            <code>eligiblePilgrims = ⌊amountPaid ÷ officialPrice⌋</code> ·
+            <code>paymentCode = id + code encadreur</code>, par exemple <code>BOR-0007-AB5</code>.
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= 10 UC FRONT ================= -->
+      <section id="uc-front">
+        <div class="sec-head">
+          <span class="eyebrow">10 — Cas d'utilisation</span>
+          <h2>Front-office : pèlerin et encadreur</h2>
+        </div>
+        <p>
+          Deux acteurs sans back-office. Le pèlerin agit sur son seul dossier ; l'encadreur agit sur tout son groupe,
+          mais reste en lecture seule sur le visa — la décision appartient à la banque.
+        </p>
+
+        <figure>
+          <div class="fig-body">
+            <svg viewBox="0 0 1240 760" role="img" aria-label="Diagramme de cas d'utilisation du front-office">
+              <defs>
+                <marker id="u-inc" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+                  <path d="M1,1 L11,6 L1,11" fill="none" stroke="var(--muted)" stroke-width="1.2"/>
+                </marker>
+              </defs>
+              <rect x="300" y="20" width="780" height="700" rx="6" class="sv-hair" stroke-width="1.4"/>
+              <text x="318" y="44" class="t-m">SYSTÈME — ESPACE PÈLERIN &amp; PORTAIL ENCADREUR</text>
+              <ellipse cx="545" cy="90" rx="178" ry="26" class="box"/>
+              <text x="545" y="95" class="t" text-anchor="middle">S'inscrire en ligne</text>
+              <ellipse cx="545" cy="152" rx="178" ry="26" class="box"/>
+              <text x="545" y="150" class="t" text-anchor="middle">Se connecter avec son passeport</text>
+              <text x="545" y="166" class="t-s" text-anchor="middle">ou le mot de passe de son encadreur</text>
+              <ellipse cx="545" cy="224" rx="178" ry="26" class="box"/>
+              <text x="545" y="222" class="t" text-anchor="middle">Consulter son dossier</text>
+              <text x="545" y="238" class="t-s" text-anchor="middle">stepper visa · solde · notifications</text>
+              <ellipse cx="545" cy="286" rx="178" ry="26" class="box"/>
+              <text x="545" y="284" class="t" text-anchor="middle">Déclarer un versement</text>
+              <text x="545" y="300" class="t-s" text-anchor="middle">montant = solde restant</text>
+              <ellipse cx="545" cy="348" rx="178" ry="26" class="box"/>
+              <text x="545" y="353" class="t" text-anchor="middle">Télécharger reçu et attestation</text>
+              <ellipse cx="545" cy="410" rx="178" ry="26" class="box"/>
+              <text x="545" y="408" class="t" text-anchor="middle">Inscrire ou importer ses pèlerins</text>
+              <text x="545" y="424" class="t-s" text-anchor="middle">Excel · identifiants générés</text>
+              <ellipse cx="545" cy="472" rx="178" ry="26" class="box"/>
+              <text x="545" y="470" class="t" text-anchor="middle">Verser pour un pèlerin</text>
+              <text x="545" y="486" class="t-s" text-anchor="middle">ou importer un paiement groupé</text>
+              <ellipse cx="545" cy="534" rx="178" ry="26" class="box"/>
+              <text x="545" y="532" class="t" text-anchor="middle">Piloter son groupe</text>
+              <text x="545" y="548" class="t-s" text-anchor="middle">7 indicateurs · commissions</text>
+              <ellipse cx="545" cy="596" rx="178" ry="26" class="box"/>
+              <text x="545" y="601" class="t" text-anchor="middle">Pointer les passeports déposés</text>
+              <ellipse cx="545" cy="658" rx="178" ry="26" class="box-f"/>
+              <text x="545" y="656" class="t" text-anchor="middle">Consulter les statuts visa</text>
+              <text x="545" y="672" class="t-s" text-anchor="middle">LECTURE SEULE — jamais de modification</text>
+              <text x="545" y="672" class="t-s" text-anchor="middle" fill="var(--s-progress)">LECTURE SEULE — jamais de modification</text>
+              <ellipse cx="930" cy="210" rx="115" ry="26" class="box" stroke-dasharray="4 3"/>
+              <text x="930" y="208" class="t-s" text-anchor="middle">Payer pour</text>
+              <text x="930" y="223" class="t-s" text-anchor="middle">plusieurs bénéficiaires</text>
+              <ellipse cx="930" cy="292" rx="115" ry="26" class="box" stroke-dasharray="4 3"/>
+              <text x="930" y="290" class="t-s" text-anchor="middle">Scanner le QR code</text>
+              <text x="930" y="305" class="t-s" text-anchor="middle">du bordereau papier</text>
+              <path d="M815 218 L727 274" class="sv-line dash" marker-end="url(#u-inc)"/>
+              <text x="760" y="238" class="t-m">«extend»</text>
+              <path d="M815 292 L727 290" class="sv-line dash" marker-end="url(#u-inc)"/>
+              <text x="756" y="308" class="t-m">«extend»</text>
+              <path d="M545 198 L545 182" class="sv-line dash" marker-end="url(#u-inc)"/>
+              <text x="557" y="196" class="t-m">«include»</text>
+              <g>
+                <circle cx="140" cy="200" r="16" fill="none" stroke="var(--ink)" stroke-width="1.6"/>
+                <path d="M140 216 L140 268 M117 232 L163 232 M140 268 L120 294 M140 268 L160 294" stroke="var(--ink)" stroke-width="1.6" fill="none"/>
+                <text x="140" y="318" class="t-b" text-anchor="middle">Pèlerin</text>
+                <text x="140" y="334" class="t-s" text-anchor="middle">sans compte</text>
+              </g>
+              <g>
+                <circle cx="1160" cy="500" r="14" fill="none" stroke="var(--ink)" stroke-width="1.6"/>
+                <path d="M1160 514 L1160 566 M1139 530 L1181 530 M1160 566 L1142 592 M1160 566 L1178 592" stroke="var(--ink)" stroke-width="1.6" fill="none"/>
+                <text x="1160" y="616" class="t-b" text-anchor="middle">Encadreur</text>
+                <text x="1160" y="632" class="t-s" text-anchor="middle">compte staff</text>
+              </g>
+              <path d="M172 232 L364 90" class="sv-line"/>
+              <path d="M172 232 L364 152" class="sv-line"/>
+              <path d="M172 232 L364 224" class="sv-line"/>
+              <path d="M172 232 L364 286" class="sv-line"/>
+              <path d="M172 232 L364 348" class="sv-line"/>
+              <path d="M1130 530 L726 410" class="sv-line"/>
+              <path d="M1130 530 L726 472" class="sv-line"/>
+              <path d="M1130 530 L726 534" class="sv-line"/>
+              <path d="M1130 530 L726 596" class="sv-line"/>
+              <path d="M1130 530 L726 658" class="sv-line"/>
+            </svg>
+          </div>
+          <figcaption><b>Fig. 6</b> — Cas d'utilisation du front-office. Ellipses en pointillés = extensions optionnelles du cas de base.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ================= 11 UC BACK ================= -->
+      <section id="uc-back">
+        <div class="sec-head">
+          <span class="eyebrow">11 — Cas d'utilisation</span>
+          <h2>Back-office : les agents de la banque</h2>
+        </div>
+        <p>
+          Les quatre rôles se lisent sur deux niveaux d'héritage. <em>Agent bancaire</em> porte ce que tout le
+          personnel peut faire : s'authentifier, tenir les bordereaux, créer des comptes. <em>Agent back-office</em>
+          en hérite et y ajoute le traitement de l'argent, du visa et du pilotage — c'est ce que partagent le
+          gestionnaire, le superviseur et l'administrateur, mais pas l'opérateur de guichet. Les cas rattachés
+          directement à un rôle lui sont propres. Le détail écran par écran est dans la
+          <a href="#droits">matrice des droits</a>.
+        </p>
+
+        <figure>
+          <div class="fig-body">
+            <svg viewBox="0 0 1220 1080" role="img" aria-label="Diagramme de cas d'utilisation du back-office">
+              <defs>
+                <marker id="b-gen" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="13" markerHeight="13" orient="auto-start-reverse">
+                  <path d="M1,1 L11,6 L1,11 z" fill="var(--surface)" stroke="var(--line-strong)" stroke-width="1.2"/>
+                </marker>
+                <marker id="b-inc" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+                  <path d="M1,1 L11,6 L1,11" fill="none" stroke="var(--muted)" stroke-width="1.2"/>
+                </marker>
+              </defs>
+              <rect x="330" y="10" width="480" height="1040" rx="6" class="sv-hair" stroke-width="1.4"/>
+              <text x="346" y="34" class="t-m">SYSTÈME — BACK-OFFICE COPILOTE HADJ</text>
+              <ellipse cx="570" cy="90" rx="178" ry="24" class="box"/>
+              <text x="570" y="88" class="t" text-anchor="middle">S'authentifier</text>
+              <text x="570" y="104" class="t-s" text-anchor="middle">mot de passe oublié par OTP e-mail</text>
+              <ellipse cx="570" cy="148" rx="178" ry="24" class="box"/>
+              <text x="570" y="153" class="t" text-anchor="middle">Créer un bordereau au guichet</text>
+              <ellipse cx="570" cy="206" rx="178" ry="24" class="box"/>
+              <text x="570" y="211" class="t" text-anchor="middle">Consulter et exporter les bordereaux</text>
+              <ellipse cx="570" cy="264" rx="178" ry="24" class="box"/>
+              <text x="570" y="262" class="t" text-anchor="middle">Gérer les comptes utilisateurs</text>
+              <text x="570" y="278" class="t-s" text-anchor="middle">dans la limite de son rang</text>
+              <ellipse cx="570" cy="322" rx="178" ry="24" class="box"/>
+              <text x="570" y="327" class="t" text-anchor="middle">Valider ou rejeter un versement</text>
+              <ellipse cx="570" cy="438" rx="178" ry="24" class="box"/>
+              <text x="570" y="443" class="t" text-anchor="middle">Rembourser un versement</text>
+              <ellipse cx="570" cy="496" rx="178" ry="24" class="box"/>
+              <text x="570" y="501" class="t" text-anchor="middle">Changer le statut visa</text>
+              <ellipse cx="570" cy="612" rx="178" ry="24" class="box"/>
+              <text x="570" y="610" class="t" text-anchor="middle">Enregistrer un dépôt de passeport</text>
+              <text x="570" y="626" class="t-s" text-anchor="middle">→ attestation PDF</text>
+              <ellipse cx="570" cy="670" rx="178" ry="24" class="box"/>
+              <text x="570" y="668" class="t" text-anchor="middle">Suivre le tableau de bord</text>
+              <text x="570" y="684" class="t-s" text-anchor="middle">collecte · éligibles · saisons</text>
+              <ellipse cx="570" cy="728" rx="178" ry="24" class="box"/>
+              <text x="570" y="726" class="t" text-anchor="middle">Détecter les anomalies</text>
+              <text x="570" y="742" class="t-s" text-anchor="middle">payé mais en attente · retard 3 j</text>
+              <ellipse cx="570" cy="786" rx="178" ry="24" class="box"/>
+              <text x="570" y="784" class="t" text-anchor="middle">Exporter le dataset Power BI</text>
+              <text x="570" y="800" class="t-s" text-anchor="middle">17 colonnes, au versement</text>
+              <ellipse cx="570" cy="844" rx="178" ry="24" class="box"/>
+              <text x="570" y="842" class="t" text-anchor="middle">Gérer les encadreurs</text>
+              <text x="570" y="858" class="t-s" text-anchor="middle">et leurs codes à 3 caractères</text>
+              <ellipse cx="570" cy="902" rx="178" ry="24" class="box"/>
+              <text x="570" y="900" class="t" text-anchor="middle">Gérer les saisons et les tarifs</text>
+              <text x="570" y="916" class="t-s" text-anchor="middle">+ commissions des encadreurs</text>
+              <ellipse cx="570" cy="960" rx="178" ry="24" class="box"/>
+              <text x="570" y="965" class="t" text-anchor="middle">Consulter le journal d'audit</text>
+              <ellipse cx="570" cy="1018" rx="178" ry="24" class="box"/>
+              <text x="570" y="1023" class="t" text-anchor="middle">Configurer le SMTP</text>
+              <ellipse cx="190" cy="380" rx="118" ry="26" class="box" stroke-dasharray="4 3"/>
+              <text x="190" y="378" class="t-s" text-anchor="middle">Valider en masse</text>
+              <text x="190" y="393" class="t-s" text-anchor="middle">ou par rapprochement bancaire</text>
+              <path d="M308 372 L394 342" class="sv-line dash" marker-end="url(#b-inc)"/>
+              <text x="316" y="360" class="t-m">«extend»</text>
+              <ellipse cx="190" cy="554" rx="118" ry="26" class="box" stroke-dasharray="4 3"/>
+              <text x="190" y="552" class="t-s" text-anchor="middle">Changer en masse</text>
+              <text x="190" y="567" class="t-s" text-anchor="middle">ou importer les statuts</text>
+              <path d="M308 546 L394 516" class="sv-line dash" marker-end="url(#b-inc)"/>
+              <text x="316" y="534" class="t-m">«extend»</text>
+              <g>
+                <circle cx="150" cy="120" r="15" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+                <path d="M150 135 L150 187 M129 151 L171 151 M150 187 L132 213 M150 187 L168 213" stroke="var(--accent)" stroke-width="1.6" fill="none"/>
+                <text x="150" y="237" class="t-b" text-anchor="middle" fill="var(--accent-ink)">Agent bancaire</text>
+                <text x="150" y="253" class="t-m" text-anchor="middle" fill="var(--accent-ink)">«ABSTRAIT»</text>
+              </g>
+              <g>
+                <circle cx="150" cy="660" r="13" fill="none" stroke="var(--ink)" stroke-width="1.6"/>
+                <path d="M150 673 L150 725 M131 689 L169 689 M150 725 L134 751 M150 725 L166 751" stroke="var(--ink)" stroke-width="1.6" fill="none"/>
+                <text x="150" y="775" class="t-b" text-anchor="middle">Opérateur</text>
+                <text x="150" y="791" class="t-s" text-anchor="middle">guichet</text>
+              </g>
+              <g>
+                <circle cx="920" cy="110" r="15" fill="none" stroke="var(--accent)" stroke-width="1.6"/>
+                <path d="M920 125 L920 177 M899 141 L941 141 M920 177 L902 203 M920 177 L938 203" stroke="var(--accent)" stroke-width="1.6" fill="none"/>
+                <text x="920" y="227" class="t-b" text-anchor="middle" fill="var(--accent-ink)">Agent back-office</text>
+                <text x="920" y="243" class="t-m" text-anchor="middle" fill="var(--accent-ink)">«ABSTRAIT»</text>
+              </g>
+              <g>
+                <circle cx="1110" cy="360" r="13" fill="none" stroke="var(--ink)" stroke-width="1.6"/>
+                <path d="M1110 373 L1110 425 M1091 389 L1129 389 M1110 425 L1094 451 M1110 425 L1126 451" stroke="var(--ink)" stroke-width="1.6" fill="none"/>
+                <text x="1110" y="475" class="t-b" text-anchor="middle">Gestionnaire</text>
+                
+              </g>
+              <g>
+                <circle cx="1110" cy="560" r="13" fill="none" stroke="var(--ink)" stroke-width="1.6"/>
+                <path d="M1110 573 L1110 625 M1091 589 L1129 589 M1110 625 L1094 651 M1110 625 L1126 651" stroke="var(--ink)" stroke-width="1.6" fill="none"/>
+                <text x="1110" y="675" class="t-b" text-anchor="middle">Superviseur</text>
+                
+              </g>
+              <g>
+                <circle cx="1110" cy="800" r="13" fill="none" stroke="var(--ink)" stroke-width="1.6"/>
+                <path d="M1110 813 L1110 865 M1091 829 L1129 829 M1110 865 L1094 891 M1110 865 L1126 891" stroke="var(--ink)" stroke-width="1.6" fill="none"/>
+                <text x="1110" y="915" class="t-b" text-anchor="middle">Admin DSI</text>
+                <text x="1110" y="931" class="t-s" text-anchor="middle">accès complet</text>
+              </g>
+              <path d="M178 152 L390 90" class="sv-line"/>
+              <path d="M178 152 L390 148" class="sv-line"/>
+              <path d="M178 152 L390 206" class="sv-line"/>
+              <path d="M178 152 L390 264" class="sv-line"/>
+              <path d="M886 148 L750 322" class="sv-line"/>
+              <path d="M886 148 L750 438" class="sv-line"/>
+              <path d="M886 148 L750 496" class="sv-line"/>
+              <path d="M886 148 L750 612" class="sv-line"/>
+              <path d="M886 148 L750 670" class="sv-line"/>
+              <path d="M886 148 L750 728" class="sv-line"/>
+              <path d="M886 148 L750 786" class="sv-line"/>
+              <path d="M180 700 L390 844" class="sv-line"/>
+              <path d="M1076 386 L750 844" class="sv-line"/>
+              <path d="M1076 394 L750 902" class="sv-line"/>
+              <path d="M1076 590 L750 960" class="sv-line"/>
+              <path d="M1076 828 L750 1018" class="sv-line"/>
+              <path d="M118 672 L30 672 L30 128 L114 128" class="sv-line" stroke-width="1.3" marker-end="url(#b-gen)"/>
+              <path d="M1092 342 L944 148" class="sv-line" stroke-width="1.3" marker-end="url(#b-gen)"/>
+              <path d="M1092 542 L946 158" class="sv-line" stroke-width="1.3" marker-end="url(#b-gen)"/>
+              <path d="M1126 782 L1186 782 L1186 96 L942 96 L942 116" class="sv-line" stroke-width="1.3" marker-end="url(#b-gen)"/>
+              <text x="960" y="196" class="t-m">généralisation</text>
+              <text x="44" y="300" class="t-m">généralisation</text>
+            </svg>
+          </div>
+          <figcaption><b>Fig. 7</b> — Cas d'utilisation du back-office. Le triangle creux marque la généralisation : Opérateur et Agent back-office héritent d'Agent bancaire, dont ils reprennent les cas partagés.</figcaption>
+        </figure>
+      </section>
+
+      <!-- ================= 12 RÈGLES ================= -->
+      <section id="regles">
+        <div class="sec-head">
+          <span class="eyebrow">12 — Règles</span>
+          <h2>Règles de gestion et calculs</h2>
+        </div>
+
+        <div class="grid g2">
+          <div class="card">
+            <span class="tag">Argent</span>
+            <h3>Paiement total, jamais fractionné</h3>
+            <p>Le montant déclaré doit être exactement égal au solde restant. Un montant inférieur est rejeté
+              (<code>PARTIAL_NOT_ALLOWED</code>). Le versement du guichet couvre d'emblée la totalité.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Argent</span>
+            <h3>Référence bancaire unique</h3>
+            <p>Une référence déjà portée par un versement validé ne peut pas être validée ailleurs
+              (<code>REFERENCE_ALREADY_USED</code>) — le garde-fou contre le double encaissement d'un même virement.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Identité</span>
+            <h3>Unicité du pèlerin</h3>
+            <p>Un couple <code>(passeport, saison)</code> ne peut exister qu'une fois (<code>DUPLICATE_PILGRIM</code>),
+              et deux pèlerins d'une même saison ne peuvent pas partager un numéro de téléphone.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Éligibilité</span>
+            <h3>Places acquises</h3>
+            <p><code>eligiblePilgrims = ⌊amountPaid ÷ officialPrice⌋</code>. Le dossier est éligible quand ce nombre
+              atteint <code>pilgrimCount</code> — un encadreur peut inscrire plusieurs personnes sur un même bordereau.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Rémunération</span>
+            <h3>Commission de l'encadreur</h3>
+            <p>Calculée sur les seuls bordereaux qui portent <code>includesEncadreurFees</code> :
+              <code>totalCommissionDue = pèlerins avec frais × commissionPerPilgrim</code>. Le
+              <em>reliquat</em> est le solde résiduel après achat des places entières.</p>
+          </div>
+          <div class="card">
+            <span class="tag">Contrôle</span>
+            <h3>Anomalies détectées</h3>
+            <p>Dossier soldé mais visa toujours <span class="pill p-pending">EN_ATTENTE</span> ; versement
+              <span class="pill p-pending">PENDING</span> depuis plus de 3 jours ; visa
+              <span class="pill p-granted">ACCORDÉ</span> alors que le solde est incomplet.</p>
+          </div>
+        </div>
+
+        <h3>Notifications et traçabilité</h3>
+        <ul class="bul">
+          <li>Chaque changement de statut déclenche simultanément un SMS, un message WhatsApp et un e-mail au pèlerin.</li>
+          <li>Trente types d'actions sont journalisés (<code>VALIDATION_PAIEMENT</code>, <code>CHANGEMENT_STATUT_VISA</code>,
+            <code>MODIFICATION_UTILISATEUR</code>…), avec l'auteur et l'horodatage.</li>
+          <li>La réinitialisation de mot de passe utilise un OTP à 6 chiffres, expirant après un délai paramétrable,
+            limité à 5 tentatives, avec une réponse identique que le compte existe ou non — pour empêcher l'énumération des comptes.</li>
+        </ul>
+      </section>
+
+      <!-- ================= 13 API ================= -->
+      <section id="api">
+        <div class="sec-head">
+          <span class="eyebrow">13 — Interface</span>
+          <h2>API REST — <code>/api/v1</code></h2>
+        </div>
+
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr><th>Domaine</th><th class="mono">Endpoints</th><th>Accès</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Authentification</strong></td>
+                <td class="mono">POST /auth/login<br>POST /auth/mot-de-passe-oublie<br>POST /auth/reinitialiser-mot-de-passe</td>
+                <td>public</td>
+              </tr>
+              <tr>
+                <td><strong>Bordereaux</strong></td>
+                <td class="mono">GET /bordereaux<br>GET /bordereaux/check-duplicate<br>POST /bordereaux<br>POST /bordereaux/inscription-en-ligne</td>
+                <td>JWT — sauf l'inscription en ligne</td>
+              </tr>
+              <tr>
+                <td><strong>Versements</strong></td>
+                <td class="mono">POST /versements · /versements/groupe<br>GET /versements/beneficiaire/{idNumber}<br>GET /versements/en-attente · /historique · /groupes · /remboursements<br>PUT /versements/{id}/valider · /rejeter · /rembourser<br>PUT /versements/valider-en-masse<br>POST /versements/import-statuts</td>
+                <td>déclaration publique,<br>validation sous JWT</td>
+              </tr>
+              <tr>
+                <td><strong>Visa &amp; espace pèlerin</strong></td>
+                <td class="mono">POST /visa/pelerin/login<br>GET /visa/encadreur/{id}/groupe<br>POST /visa/encadreur/inscription · /{id}/import<br>POST /visa/encadreur/{id}/import-versement-groupe<br>PUT /visa/{bordereauId}/statut · /statut-en-masse<br>POST /visa/import-statuts<br>GET /visa/verification-bi</td>
+                <td>JWT — sauf la connexion pèlerin</td>
+              </tr>
+              <tr>
+                <td><strong>Attestations</strong></td>
+                <td class="mono">GET /attestations/depots-passeports<br>PUT /attestations/depots-passeports/{bordereauId}<br>POST /attestations/depots-passeports/import</td>
+                <td>JWT</td>
+              </tr>
+              <tr>
+                <td><strong>Référentiels</strong></td>
+                <td class="mono">GET POST PUT /encadreurs · /saisons · /utilisateurs<br>POST /encadreurs/import · /utilisateurs/import<br>GET /encadreurs/commissions<br>GET /parametrage/prix-officiel<br>GET PUT /parametrage/smtp</td>
+                <td>lecture partiellement publique,<br>écriture sous JWT</td>
+              </tr>
+              <tr>
+                <td><strong>Pilotage</strong></td>
+                <td class="mono">GET /reporting<br>GET /audit</td>
+                <td>JWT</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <span class="h">Point d'attention</span>
+          <p>
+            La sécurité est aujourd'hui posée au niveau de la <em>route</em> : le filtre JWT distingue les endpoints
+            publics des endpoints authentifiés, mais aucune annotation de rôle (<code>@PreAuthorize</code>) ne restreint
+            les méthodes. La matrice des droits présentée en section 05 est donc appliquée <strong>côté interface</strong> ;
+            son portage côté serveur reste à faire.
+          </p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <footer>
+    <span>Copilote Hadj — Afriland First Bank · Fenêtre Islamique</span>
+    <span>Dossier d'architecture fonctionnelle · saison 2027</span>
+  </footer>
+
+</div>
+
+</body>
+</html>
