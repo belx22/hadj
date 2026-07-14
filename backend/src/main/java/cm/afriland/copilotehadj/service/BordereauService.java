@@ -62,11 +62,23 @@ public class BordereauService {
         return repo.existsByIdNumberAndSeason(idNumber, season);
     }
 
+    /**
+     * Un passeport ne peut être inscrit qu'une fois par saison, et deux pèlerins
+     * ne peuvent pas partager le même numéro de téléphone (celui-ci sert aussi
+     * d'identifiant de connexion au dossier).
+     */
+    private void assertUniquePilgrim(String idNumber, String phone, Integer season) {
+        if (repo.existsByIdNumberAndSeason(idNumber, season)) throw new ApiException(409, "DUPLICATE_PILGRIM");
+        if (phone != null && !phone.isBlank() && repo.existsByPhoneAndSeason(phone, season)) {
+            throw new ApiException(409, "DUPLICATE_PHONE");
+        }
+    }
+
     @Transactional
     public Map<String, Object> createByAgent(Map<String, Object> payload, String actor) {
         String idNumber = str(payload.get("idNumber"));
         Integer season = intVal(payload.get("season"));
-        if (repo.existsByIdNumberAndSeason(idNumber, season)) throw new ApiException(409, "DUPLICATE_PILGRIM");
+        assertUniquePilgrim(idNumber, str(payload.get("phone")), season);
 
         Bordereau b = base(payload);
         b.setSource("AGENT");
@@ -97,7 +109,7 @@ public class BordereauService {
     public Map<String, Object> registerOnline(Map<String, Object> payload) {
         String idNumber = str(payload.get("idNumber"));
         Integer season = intVal(payload.get("season"));
-        if (repo.existsByIdNumberAndSeason(idNumber, season)) throw new ApiException(409, "DUPLICATE_PILGRIM");
+        assertUniquePilgrim(idNumber, str(payload.get("phone")), season);
 
         Bordereau b = base(payload);
         b.setSource("ONLINE");
@@ -115,7 +127,7 @@ public class BordereauService {
         String idNumber = str(payload.get("idNumber"));
         Integer season = intVal(payload.get("season"));
         if (season == null) season = defaultSeason();
-        if (repo.existsByIdNumberAndSeason(idNumber, season)) throw new ApiException(409, "DUPLICATE_PILGRIM");
+        assertUniquePilgrim(idNumber, str(payload.get("phone")), season);
 
         payload.put("season", season);
         Bordereau b = base(payload);
@@ -151,6 +163,12 @@ public class BordereauService {
             }
             if (repo.existsByIdNumberAndSeason(idNumber, season)) {
                 skipped.add(Map.of("row", index, "idNumber", idNumber));
+                continue;
+            }
+            // Deux pèlerins ne peuvent pas partager le même numéro de téléphone.
+            String phone = str(row.get("phone"));
+            if (phone != null && !phone.isBlank() && repo.existsByPhoneAndSeason(phone, season)) {
+                skipped.add(Map.of("row", index, "idNumber", idNumber, "reason", "DUPLICATE_PHONE", "phone", phone));
                 continue;
             }
             Map<String, Object> payload = new HashMap<>(row);

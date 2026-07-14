@@ -23,6 +23,12 @@ axiosClient.interceptors.response.use(
       localStorage.removeItem('copilote-hadj-user');
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
+    // Le backend renvoie un code applicatif ({ code, message }) : on l'expose sur
+    // `error.code` pour que les écrans le traitent exactement comme en mode mock
+    // (DUPLICATE_PILGRIM, DUPLICATE_PHONE, PARTIAL_NOT_ALLOWED...). Sans cela,
+    // `error.code` porterait le code interne d'axios (ERR_BAD_REQUEST).
+    const backendCode = error.response?.data?.code;
+    if (backendCode) error.code = backendCode;
     return Promise.reject(error);
   }
 );

@@ -161,7 +161,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
     exportToExcel(
       group.map((b) => ({
         Pelerin: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
-        CNI: b.idNumber,
+        Passeport: b.idNumber,
         Telephone: b.phone,
         Montant: b.amountPaid,
         StatutVisa: b.visaStatus,
@@ -223,6 +223,8 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
     } catch (err) {
       if (err.code === 'DUPLICATE_PILGRIM') {
         setFormError(t('bordereau.errors.duplicate', { season: CURRENT_SEASON }));
+      } else if (err.code === 'DUPLICATE_PHONE') {
+        setFormError(t('bordereau.errors.duplicatePhone'));
       } else {
         setFormError(t('common.error'));
       }
@@ -558,7 +560,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
                     exportToExcel(
                       importSummary.created.map((c) => ({
                         Pelerin: c.pilgrimName,
-                        CNI_Passeport: c.idNumber,
+                        Passeport: c.idNumber,
                         Telephone: c.phone,
                         MotDePasse: c.password,
                       })),

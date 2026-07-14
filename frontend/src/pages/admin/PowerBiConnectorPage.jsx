@@ -32,7 +32,7 @@ export default function PowerBiConnectorPage() {
         rows.push({
           BordereauId: b.id,
           Pelerin: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
-          CNI_Passeport: b.idNumber,
+          Passeport: b.idNumber,
           Region: b.region,
           Agence: b.agency || '',
           Encadreur: encadreurName(b.encadreurId),

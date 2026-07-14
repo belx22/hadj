@@ -76,7 +76,7 @@ export function generateBordereauReceipt(bordereau) {
     body: [
       ['Référence', bordereau.reference],
       ['Pèlerin', `${bordereau.pilgrimFirstName} ${bordereau.pilgrimLastName}`],
-      ['N° CNI / Passeport', bordereau.idNumber],
+      ['N° de passeport', bordereau.idNumber],
       ['Téléphone', bordereau.phone],
       ['Région', bordereau.region],
       ['Agence', bordereau.agency],
@@ -141,7 +141,7 @@ export function generatePilgrimAttestation(dossier) {
 
   doc.setFontSize(11);
   doc.text(
-    `Nous attestons que ${dossier.pilgrimFirstName} ${dossier.pilgrimLastName} (CNI/Passeport n° ${dossier.idNumber})`,
+    `Nous attestons que ${dossier.pilgrimFirstName} ${dossier.pilgrimLastName} (passeport n° ${dossier.idNumber})`,
     14,
     45,
     { maxWidth: 180 }
@@ -170,7 +170,7 @@ export function generatePassportDepositCertificate(deposit) {
 
   doc.setFontSize(11);
   doc.text(
-    `Nous attestons que le passeport de ${deposit.pilgrimName} (CNI/Passeport n° ${deposit.idNumber})`,
+    `Nous attestons que le passeport de ${deposit.pilgrimName} (passeport n° ${deposit.idNumber})`,
     14,
     45,
     { maxWidth: 180 }

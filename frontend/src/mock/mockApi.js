@@ -224,14 +224,32 @@ export async function mockCheckDuplicate(idNumber, season) {
   return db.bordereaux.some((b) => b.idNumber === idNumber && b.season === season);
 }
 
-export async function mockCreateBordereau(payload, actor) {
-  await delay(600);
-  const isDuplicate = db.bordereaux.some((b) => b.idNumber === payload.idNumber && b.season === payload.season);
-  if (isDuplicate) {
+// Deux pèlerins ne peuvent pas partager le même numéro de téléphone sur une
+// même saison (le téléphone sert aussi d'identifiant de connexion au dossier).
+function phoneAlreadyUsed(phone, season, excludeIdNumber = null) {
+  const normalized = String(phone || '').trim();
+  if (!normalized) return false;
+  return db.bordereaux.some(
+    (b) => b.phone === normalized && b.season === season && b.idNumber !== excludeIdNumber
+  );
+}
+
+function assertUniquePilgrim(payload) {
+  if (db.bordereaux.some((b) => b.idNumber === payload.idNumber && b.season === payload.season)) {
     const error = new Error('DUPLICATE_PILGRIM');
     error.code = 'DUPLICATE_PILGRIM';
     throw error;
   }
+  if (phoneAlreadyUsed(payload.phone, payload.season, payload.idNumber)) {
+    const error = new Error('DUPLICATE_PHONE');
+    error.code = 'DUPLICATE_PHONE';
+    throw error;
+  }
+}
+
+export async function mockCreateBordereau(payload, actor) {
+  await delay(600);
+  assertUniquePilgrim(payload);
 
   const price = getPrice(payload.season, payload.pilgrimType, payload.includesEncadreurFees);
   const amount = Number(payload.pilgrimCount) * price;
@@ -345,12 +363,7 @@ export async function mockGetReporting(filters = {}) {
 // ---------------------------------------------------------------------------
 export async function mockRegisterPilgrimOnline(payload) {
   await delay(600);
-  const isDuplicate = db.bordereaux.some((b) => b.idNumber === payload.idNumber && b.season === payload.season);
-  if (isDuplicate) {
-    const error = new Error('DUPLICATE_PILGRIM');
-    error.code = 'DUPLICATE_PILGRIM';
-    throw error;
-  }
+  assertUniquePilgrim(payload);
 
   const id = `BOR-${String(db.bordereaux.length + 1).padStart(4, '0')}`;
   const receiptNumber = `RC-${2000 + db.bordereaux.length}`;
@@ -431,12 +444,7 @@ function buildEncadreurBordereau(payload, encadreurId, offset = 0) {
 export async function mockRegisterPilgrimByEncadreur(payload, encadreurId, actor) {
   await delay(600);
   const season = payload.season || CURRENT_SEASON;
-  const isDuplicate = db.bordereaux.some((b) => b.idNumber === payload.idNumber && b.season === season);
-  if (isDuplicate) {
-    const error = new Error('DUPLICATE_PILGRIM');
-    error.code = 'DUPLICATE_PILGRIM';
-    throw error;
-  }
+  assertUniquePilgrim({ ...payload, season });
   const record = buildEncadreurBordereau({ ...payload, season }, encadreurId);
   db.bordereaux = [record, ...db.bordereaux];
   addAudit('INSCRIPTION_ENCADREUR', record.id, actor?.username || encadreurId);
@@ -452,7 +460,7 @@ export async function mockRegisterPilgrimByEncadreur(payload, encadreurId, actor
 
 // Import en masse de pèlerins pour un encadreur depuis un fichier Excel/CSV.
 // Colonnes attendues : pilgrimLastName, pilgrimFirstName, phone, idNumber,
-// region (facultatif), pilgrimType (facultatif). Les doublons CNI/Passeport sur
+// region (facultatif), pilgrimType (facultatif). Les doublons passeport sur
 // la saison courante sont ignorés.
 export async function mockImportPilgrims(rows, encadreurId, actor) {
   await delay(700);
@@ -461,6 +469,7 @@ export async function mockImportPilgrims(rows, encadreurId, actor) {
   const errors = [];
   const season = CURRENT_SEASON;
   const seenInBatch = new Set();
+  const seenPhonesInBatch = new Set();
 
   rows.forEach((row, index) => {
     const pilgrimLastName = String(row.pilgrimLastName || '').trim();
@@ -490,8 +499,14 @@ export async function mockImportPilgrims(rows, encadreurId, actor) {
       skipped.push({ row: index + 1, idNumber });
       return;
     }
+    // Deux pèlerins ne peuvent pas partager le même numéro de téléphone.
+    if (seenPhonesInBatch.has(phone) || phoneAlreadyUsed(phone, season)) {
+      skipped.push({ row: index + 1, idNumber, reason: 'DUPLICATE_PHONE', phone });
+      return;
+    }
 
     seenInBatch.add(idNumber);
+    seenPhonesInBatch.add(phone);
     const record = buildEncadreurBordereau(
       { pilgrimLastName, pilgrimFirstName, phone, idNumber, region, pilgrimType, season },
       encadreurId,
@@ -1117,7 +1132,7 @@ export async function mockBulkChangeVisaStatus({ bordereauIds, encadreurId, newS
 // (colonnes attendues : idNumber, status, note facultative). Réutilise la même
 // logique de notification/audit que le changement de statut unitaire.
 // `encadreurId` restreint l'import aux seuls pèlerins de cet encadreur : toute
-// ligne dont le CNI/Passeport correspond à un pèlerin d'un AUTRE encadreur est
+// ligne dont le passeport correspond à un pèlerin d'un AUTRE encadreur est
 // rejetée (wrongEncadreur) plutôt qu'appliquée, pour éviter qu'un import
 // destiné à un encadreur ne modifie par erreur le dossier d'un autre groupe.
 export async function mockImportVisaStatuses(rows, actor, encadreurId = null) {
@@ -1749,7 +1764,7 @@ function parseDepositFlag(raw) {
 
 // ---------------------------------------------------------------------------
 // Import en masse des dépôts de passeports (Module Superviseur — Attestations).
-// Chaque ligne cible un pèlerin par son numéro CNI/Passeport ; la colonne
+// Chaque ligne cible un pèlerin par son numéro de passeport ; la colonne
 // « Depot » (optionnelle) permet aussi d'annuler un dépôt.
 // ---------------------------------------------------------------------------
 export async function mockImportPassportDeposits(rows, season, actor) {

@@ -65,6 +65,21 @@ describe('bordereaux', () => {
     await expect(api.mockCreateBordereau(payload, ADMIN)).rejects.toThrow('DUPLICATE_PILGRIM');
   });
 
+  it('refuse deux pèlerins avec le même numéro de téléphone', async () => {
+    const all = await api.mockGetBordereaux();
+    const existing = all[0];
+    await expect(
+      api.mockCreateBordereau(
+        {
+          pilgrimLastName: 'Tel', pilgrimFirstName: 'Double', phone: existing.phone,
+          idNumber: '9999000011', region: 'Centre', agency: 'Yaoundé - Siège',
+          encadreurId: 'ENC-001', pilgrimType: 'PELERIN', pilgrimCount: 1, season: existing.season,
+        },
+        ADMIN
+      )
+    ).rejects.toThrow('DUPLICATE_PHONE');
+  });
+
   it('majore le montant cible quand les frais encadreur sont pris en charge', async () => {
     const base = await api.mockGetOfficialPrice(2027, 'PELERIN', false);
     const withFees = await api.mockGetOfficialPrice(2027, 'PELERIN', true);

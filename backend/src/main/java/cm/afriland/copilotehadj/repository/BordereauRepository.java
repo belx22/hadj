@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface BordereauRepository extends JpaRepository<Bordereau, String> {
     boolean existsByIdNumberAndSeason(String idNumber, Integer season);
+    // Deux pèlerins ne peuvent pas partager le même téléphone sur une saison.
+    boolean existsByPhoneAndSeason(String phone, Integer season);
     List<Bordereau> findByEncadreurId(String encadreurId);
     List<Bordereau> findBySeason(Integer season);
     Optional<Bordereau> findByIdNumberAndPhone(String idNumber, String phone);

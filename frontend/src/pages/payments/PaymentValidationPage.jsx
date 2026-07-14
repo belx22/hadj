@@ -431,7 +431,7 @@ function HistoryTab() {
     return rows.map((v) => ({
       Date: v.validatedAt || v.createdAt,
       Client: v.pilgrimName,
-      CNI_Passeport: v.idNumber,
+      Passeport: v.idNumber,
       Region: v.region,
       Encadreur: v.encadreurName || '—',
       Moyen: v.method,

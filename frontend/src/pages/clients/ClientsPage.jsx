@@ -129,7 +129,7 @@ export default function ClientsPage() {
   function buildExportRows() {
     return filtered.map((b) => ({
       Pelerin: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
-      CNI_Passeport: b.idNumber,
+      Passeport: b.idNumber,
       Telephone: b.phone,
       Region: b.region,
       Encadreur: encadreurName(b.encadreurId),
