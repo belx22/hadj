@@ -5,7 +5,6 @@ import clsx from 'clsx';
 import Header from './Header';
 import Footer from './Footer';
 import { useAuth } from '../../context/AuthContext';
-import { USE_MOCK } from '../../api/axiosClient';
 
 const NAV_ITEMS = [
   { to: '/dashboard', key: 'nav.dashboard', roles: ['SUPERVISEUR', 'GESTIONNAIRE_HADJ', 'ADMIN_DSI'] },
@@ -75,12 +74,6 @@ export default function MainLayout() {
           </button>
         </div>
       </Header>
-
-      {USE_MOCK && (
-        <div className="bg-afriland-red/10 py-1.5 text-center text-xs font-medium text-afriland-red">
-          {t('common.mockBanner')}
-        </div>
-      )}
 
       {/* --- Tiroir de navigation mobile (coulissant) --- */}
       <div className={clsx('fixed inset-0 z-50 md:hidden', menuOpen ? '' : 'pointer-events-none')} aria-hidden={!menuOpen}>

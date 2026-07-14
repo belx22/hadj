@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { renderWithProviders } from '../test/renderWithProviders';
-import { resetMockDb } from '../mock/mockApi';
 
-import * as mock from '../mock/mockApi';
+import * as fake from '../test/fakeBackend/fakeBackend';
 import PaymentValidationPage from './payments/PaymentValidationPage';
 import UsersAdminPage from './admin/UsersAdminPage';
 import ClientsPage from './clients/ClientsPage';
@@ -43,7 +42,6 @@ function exercisePage(container) {
 }
 
 beforeEach(() => {
-  resetMockDb();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
   vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -75,15 +73,15 @@ describe('validation des paiements : onglets + validation (données semées)', (
   beforeEach(loginAdmin);
 
   async function seedPending() {
-    const all = await mock.mockGetBordereaux();
+    const all = await fake.getBordereaux();
     const d = all.find((b) => b.balance - b.pendingAmount > 100000);
     // Paiement en une fois : on verse la totalité du solde.
-    await mock.mockCreateVersementOnline(d.idNumber, d.phone, {
+    await fake.createVersementOnline(d.idNumber, d.phone, {
       method: 'MOBILE_MONEY_ORANGE', amount: d.balance - d.pendingAmount, reference: 'SEED-PENDING-1',
     });
     // Un versement à rembourser (visa refusé sur un dossier déjà payé).
     const paid = all.find((b) => b.amountPaid > 0);
-    if (paid) await mock.mockChangeVisaStatus(paid.id, 'REFUSE', 'refus test', admin);
+    if (paid) await fake.changeVisaStatus(paid.id, 'REFUSE', 'refus test', admin);
   }
 
   it('parcourt les onglets et valide un versement en attente', async () => {

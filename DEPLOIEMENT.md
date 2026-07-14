@@ -3,10 +3,10 @@
 Application React (Vite) servie par Nginx dans un conteneur Docker.
 Serveur cible : **http://62.169.26.178:4456**
 
-> Mode actuel : `VITE_USE_MOCK=true` — le frontend fonctionne sans backend
-> (données simulées + persistance `localStorage` côté navigateur). Le bloc
-> `/api/` de Nginx est prêt pour brancher le backend Spring Boot plus tard,
-> sans casser le démarrage tant que le service `backend` n'existe pas.
+> Le frontend consomme **exclusivement** le backend Spring Boot : `docker compose`
+> démarre PostgreSQL + backend + frontend, et Nginx proxifie `/api/` vers le
+> conteneur `backend`. Il n'existe aucun repli en mémoire côté navigateur — sans
+> backend joignable, l'interface remonte une erreur réseau.
 
 ---
 
@@ -37,7 +37,7 @@ git pull origin master
 
 ```bash
 cp .env.example .env
-# .env contient déjà FRONTEND_PORT=4456 — rien d'autre à changer en mode mock.
+# Penser à changer COPILOTE_JWT_SECRET (et le mot de passe PostgreSQL) en production.
 ```
 
 Variables (`.env`) :
@@ -46,8 +46,9 @@ Variables (`.env`) :
 |-----------------------|-------------------|--------------------------------------------------|
 | `FRONTEND_PORT`       | `4456`            | Port exposé sur l'hôte (Nginx écoute sur 80 dans le conteneur) |
 | `VITE_API_BASE_URL`   | `/api/v1`         | Base des appels API (figée au build)             |
-| `VITE_USE_MOCK`       | `true`            | Active le backend simulé                         |
 | `VITE_DEFAULT_LOCALE` | `fr`              | Langue par défaut (fr / en / ar)                 |
+| `COPILOTE_JWT_SECRET` | *(à changer)*     | Clé HMAC du JWT backend (≥ 32 caractères)        |
+| `COPILOTE_SEED_ENABLED` | `true`          | Injecte le jeu de données initial si la base est vide |
 
 ## 4. Build + lancement
 
@@ -89,7 +90,5 @@ docker image prune -f             # nettoyer les anciennes images de build
 - **Healthcheck** intégré : `wget http://localhost:80/` toutes les 30 s.
 - **SPA fallback** : toute route inconnue retombe sur `index.html` (React Router).
 - **Proxy `/api/`** : résolu au runtime via le resolver DNS interne de Docker
-  (`127.0.0.11`) — Nginx démarre même sans service `backend`.
-- Pour ajouter le backend plus tard : déclarer un service `backend` (port 8080)
-  dans `docker-compose.yml`, sur le réseau `copilote-hadj-network`, puis passer
-  `VITE_USE_MOCK=false` et rebuild.
+  (`127.0.0.11`) vers le service `backend` (port 8080) du réseau
+  `copilote-hadj-network` — Nginx démarre même si le backend n'est pas encore prêt.

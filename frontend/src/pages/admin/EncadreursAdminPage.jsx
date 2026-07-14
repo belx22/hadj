@@ -68,7 +68,7 @@ export default function EncadreursAdminPage() {
     if (!form.name.trim()) return;
     setSubmitting(true);
     try {
-      await createEncadreur(form, user);
+      await createEncadreur(form);
       toast.success(t('toasts.encadreurCreated'));
       setForm(EMPTY_FORM);
       reload();
@@ -88,7 +88,7 @@ export default function EncadreursAdminPage() {
   async function saveEdit(id) {
     setEditError(null);
     try {
-      await updateEncadreur(id, editValues, user);
+      await updateEncadreur(id, editValues);
       toast.success(t('toasts.encadreurUpdated'));
       setEditingId(null);
       reload();
@@ -98,7 +98,7 @@ export default function EncadreursAdminPage() {
   }
 
   async function toggleActive(enc) {
-    await updateEncadreur(enc.id, { active: !enc.active }, user);
+    await updateEncadreur(enc.id, { active: !enc.active });
     toast.info(t('toasts.encadreurStatusUpdated'));
     reload();
   }
@@ -153,7 +153,7 @@ export default function EncadreursAdminPage() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       const rows = rawRows.map(normalizeRow);
-      const summary = await importEncadreurs(rows, user);
+      const summary = await importEncadreurs(rows);
       setImportSummary(summary);
       reload();
     } catch {

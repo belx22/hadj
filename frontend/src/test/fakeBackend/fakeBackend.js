@@ -4,7 +4,7 @@ import {
   SEED_BORDEREAUX,
   SEED_AUDIT_LOGS,
   SEED_ENCADREURS,
-} from './seedData';
+} from './fixtures';
 import {
   AGENCIES,
   CURRENT_SEASON,
@@ -14,14 +14,14 @@ import {
   ROLES,
   VISA_STATUSES,
   canCreateRole,
-} from '../utils/constants';
+} from '../../utils/constants';
 
 const VISA_STATUSES_SET = new Set(VISA_STATUSES);
 const ROLE_VALUES = new Set(Object.values(ROLES));
 
 // v5 : ajout des collections `smtpSettings` et `passwordResets` — un cache v4
 // ne les contiendrait pas.
-const STORAGE_KEY = 'copilote-hadj-mock-db-v6';
+const STORAGE_KEY = 'copilote-hadj-fake-db-v6';
 const NETWORK_DELAY = 350;
 
 // Paramètres SMTP par défaut, modifiables par l'Admin DSI depuis son interface.
@@ -37,7 +37,7 @@ const DEFAULT_SMTP_SETTINGS = {
 
 // Clone profond des données de démonstration : sans cela, la base pointerait
 // directement sur les constantes SEED_* et toute mutation (nouveau versement,
-// changement de statut...) les altérerait de façon permanente — `resetMockDb`
+// changement de statut...) les altérerait de façon permanente — `resetDb`
 // ne réinitialiserait alors plus rien.
 const deepClone = (value) =>
   typeof structuredClone === 'function' ? structuredClone(value) : JSON.parse(JSON.stringify(value));
@@ -87,32 +87,32 @@ function addAudit(action, target, user) {
 
 function fakeJwt(user) {
   const payload = { sub: user.username, role: user.role, name: user.name };
-  return `mock.${btoa(unescape(encodeURIComponent(JSON.stringify(payload))))}.token`;
+  return `fake.${btoa(unescape(encodeURIComponent(JSON.stringify(payload))))}.token`;
 }
 
-// --- Services de notification mock : documentent le point de branchement vers de vrais ---
-// --- fournisseurs (SMS First, SMTP/SendGrid...) une fois le backend disponible.        ---
-function sendMockSms(phone, message) {
+// --- Notifications : le vrai NotificationService (SMS/SMTP) vit côté backend ; ---
+// --- ici on se contente de tracer l'appel pour que les tests l'observent.      ---
+function sendSms(phone, message) {
   // eslint-disable-next-line no-console
-  console.info(`[NotificationService:mock:SMS] -> ${phone} : ${message}`);
+  console.info(`[fakeBackend:SMS] -> ${phone} : ${message}`);
 }
 
-function sendMockEmail(email, subject, message) {
+function sendEmail(email, subject, message) {
   if (!email) return;
   // eslint-disable-next-line no-console
-  console.info(`[NotificationService:mock:EMAIL] -> ${email} | ${subject} : ${message}`);
+  console.info(`[fakeBackend:EMAIL] -> ${email} | ${subject} : ${message}`);
 }
 
-function sendMockWhatsApp(phone, message) {
+function sendWhatsApp(phone, message) {
   if (!phone) return;
   // eslint-disable-next-line no-console
-  console.info(`[NotificationService:mock:WHATSAPP] -> ${phone} : ${message}`);
+  console.info(`[fakeBackend:WHATSAPP] -> ${phone} : ${message}`);
 }
 
 function notifyPilgrim(bordereau, message, subject = 'Copilote Hadj') {
-  sendMockSms(bordereau.phone, message);
-  sendMockWhatsApp(bordereau.phone, message);
-  sendMockEmail(bordereau.email, subject, message);
+  sendSms(bordereau.phone, message);
+  sendWhatsApp(bordereau.phone, message);
+  sendEmail(bordereau.email, subject, message);
 }
 
 const VISA_STATUS_MESSAGES = {
@@ -179,21 +179,9 @@ function decorateBordereau(bordereau) {
 // ---------------------------------------------------------------------------
 // Auth
 // ---------------------------------------------------------------------------
-export async function mockLogin(username, password) {
+export async function login(username, password) {
   await delay();
   const user = db.users.find((u) => u.username === username && u.password === password);
-  if (!user || user.active === false) {
-    const error = new Error('INVALID_CREDENTIALS');
-    error.code = 'INVALID_CREDENTIALS';
-    throw error;
-  }
-  const { password: _pw, ...safeUser } = user;
-  return { token: fakeJwt(user), user: safeUser };
-}
-
-export async function mockEncadreurLogin(username, password) {
-  await delay(400);
-  const user = db.users.find((u) => u.username === username && u.password === password && u.role === 'ENCADREUR');
   if (!user || user.active === false) {
     const error = new Error('INVALID_CREDENTIALS');
     error.code = 'INVALID_CREDENTIALS';
@@ -206,7 +194,7 @@ export async function mockEncadreurLogin(username, password) {
 // ---------------------------------------------------------------------------
 // Bordereaux (Module 1 — saisie agent)
 // ---------------------------------------------------------------------------
-export async function mockGetBordereaux(filters = {}) {
+export async function getBordereaux(filters = {}) {
   await delay();
   let items = db.bordereaux.map(decorateBordereau);
   if (filters.region) items = items.filter((b) => b.region === filters.region);
@@ -219,7 +207,7 @@ export async function mockGetBordereaux(filters = {}) {
   return items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
-export async function mockCheckDuplicate(idNumber, season) {
+export async function checkDuplicate(idNumber, season) {
   await delay(200);
   return db.bordereaux.some((b) => b.idNumber === idNumber && b.season === season);
 }
@@ -247,7 +235,7 @@ function assertUniquePilgrim(payload) {
   }
 }
 
-export async function mockCreateBordereau(payload, actor) {
+export async function createBordereau(payload, actor) {
   await delay(600);
   assertUniquePilgrim(payload);
 
@@ -294,9 +282,9 @@ export async function mockCreateBordereau(payload, actor) {
 // ---------------------------------------------------------------------------
 // Reporting (Module 2)
 // ---------------------------------------------------------------------------
-export async function mockGetReporting(filters = {}) {
+export async function getReporting(filters = {}) {
   await delay(400);
-  const items = await mockGetBordereaux(filters);
+  const items = await getBordereaux(filters);
   const season = filters.season || getSeason().season;
 
   const totalCollected = items.reduce((sum, b) => sum + b.amountPaid, 0);
@@ -361,7 +349,7 @@ export async function mockGetReporting(filters = {}) {
 // ---------------------------------------------------------------------------
 // Auto-inscription en ligne (Module 1 bis — le pèlerin s'inscrit lui-même)
 // ---------------------------------------------------------------------------
-export async function mockRegisterPilgrimOnline(payload) {
+export async function registerPilgrimOnline(payload) {
   await delay(600);
   assertUniquePilgrim(payload);
 
@@ -441,7 +429,7 @@ function buildEncadreurBordereau(payload, encadreurId, offset = 0) {
   };
 }
 
-export async function mockRegisterPilgrimByEncadreur(payload, encadreurId, actor) {
+export async function registerPilgrimByEncadreur(payload, encadreurId, actor) {
   await delay(600);
   const season = payload.season || CURRENT_SEASON;
   assertUniquePilgrim({ ...payload, season });
@@ -462,7 +450,7 @@ export async function mockRegisterPilgrimByEncadreur(payload, encadreurId, actor
 // Colonnes attendues : pilgrimLastName, pilgrimFirstName, phone, idNumber,
 // region (facultatif), pilgrimType (facultatif). Les doublons passeport sur
 // la saison courante sont ignorés.
-export async function mockImportPilgrims(rows, encadreurId, actor) {
+export async function importPilgrims(rows, encadreurId, actor) {
   await delay(700);
   const created = [];
   const skipped = [];
@@ -541,7 +529,7 @@ export async function mockImportPilgrims(rows, encadreurId, actor) {
 // ---------------------------------------------------------------------------
 // Versements en ligne (Mobile Money / référence agence) — au compte-goutte
 // ---------------------------------------------------------------------------
-export async function mockCreateVersementOnline(idNumber, phone, { method, amount, reference, agency, receiptImage, qrData, otherDetails, accountNumber }) {
+export async function createVersementOnline(idNumber, phone, { method, amount, reference, agency, receiptImage, qrData, otherDetails, accountNumber }) {
   await delay(700);
   const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber && b.phone === phone);
   if (!bordereau) {
@@ -600,7 +588,7 @@ export async function mockCreateVersementOnline(idNumber, phone, { method, amoun
 // encadreur dans le reporting), en conservant une référence commune
 // `groupPaymentId` et l'identité du payeur pour la traçabilité.
 // ---------------------------------------------------------------------------
-export async function mockLookupBeneficiary(idNumber, season) {
+export async function lookupBeneficiary(idNumber, season) {
   await delay(250);
   const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber && b.season === season);
   if (!bordereau) {
@@ -617,7 +605,7 @@ export async function mockLookupBeneficiary(idNumber, season) {
   };
 }
 
-export async function mockCreateGroupedVersementOnline(
+export async function createGroupedVersementOnline(
   payerIdNumber,
   payerPhone,
   { method, reference, agency, receiptImage, qrData, otherDetails, accountNumber, beneficiaries }
@@ -704,7 +692,7 @@ export async function mockCreateGroupedVersementOnline(
   };
 }
 
-export async function mockGetGroupedPayments() {
+export async function getGroupedPayments() {
   await delay(300);
   const groups = new Map();
   db.bordereaux.forEach((bordereau) => {
@@ -747,7 +735,7 @@ export async function mockGetGroupedPayments() {
 // le bordereau de chaque pèlerin concerné, chacun devant déjà être inscrit
 // dans son groupe.
 // ---------------------------------------------------------------------------
-export async function mockImportGroupedVersementsByEncadreur(rows, encadreurId, { method, reference }, actor) {
+export async function importGroupedVersementsByEncadreur(rows, encadreurId, { method, reference }, actor) {
   await delay(700);
   const encadreur = db.encadreurs.find((e) => e.id === encadreurId);
   const groupPaymentId = `GRP-${Date.now()}`;
@@ -804,7 +792,7 @@ export async function mockImportGroupedVersementsByEncadreur(rows, encadreurId, 
 // ---------------------------------------------------------------------------
 // Validation des paiements (Admin DSI / Gestionnaire / Superviseur)
 // ---------------------------------------------------------------------------
-export async function mockGetPendingVersements() {
+export async function getPendingVersements() {
   await delay(350);
   const rows = [];
   db.bordereaux.forEach((bordereau) => {
@@ -830,7 +818,7 @@ export async function mockGetPendingVersements() {
 
 // Historique des paiements déjà traités (validés ou rejetés), filtrable par
 // statut et par période (du/au, ou un jour précis en renseignant from = to).
-export async function mockGetVersementsHistory({ status, from, to, region, encadreurId } = {}) {
+export async function getVersementsHistory({ status, from, to, region, encadreurId } = {}) {
   await delay(350);
   const rows = [];
   db.bordereaux.forEach((bordereau) => {
@@ -875,7 +863,7 @@ function isReferenceAlreadyValidated(reference, excludeVersementId) {
   );
 }
 
-export async function mockValidateVersement(bordereauId, versementId, actor) {
+export async function validateVersement(bordereauId, versementId, actor) {
   await delay(400);
   const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
   if (!bordereau) throw new Error('NOT_FOUND');
@@ -899,7 +887,7 @@ export async function mockValidateVersement(bordereauId, versementId, actor) {
 // Validation en masse d'une sélection de versements en attente. Chaque
 // versement dont la référence a déjà été comptabilisée ailleurs est ignoré
 // (skipped) au lieu de bloquer toute l'opération.
-export async function mockBulkValidateVersements(items, actor) {
+export async function bulkValidateVersements(items, actor) {
   await delay(700);
   const validated = [];
   const skipped = [];
@@ -947,7 +935,7 @@ function normalizeImportStatus(raw) {
   return 'VALIDE';
 }
 
-export async function mockImportPaymentStatusesByReference(rows, actor) {
+export async function importPaymentStatusesByReference(rows, actor) {
   await delay(700);
 
   // Construit la table référence -> statut souhaité à partir du fichier.
@@ -1008,7 +996,7 @@ export async function mockImportPaymentStatusesByReference(rows, actor) {
   return { updated, skipped, unmatched };
 }
 
-export async function mockRejectVersement(bordereauId, versementId, reason, actor) {
+export async function rejectVersement(bordereauId, versementId, reason, actor) {
   await delay(400);
   const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
   if (!bordereau) throw new Error('NOT_FOUND');
@@ -1028,7 +1016,7 @@ export async function mockRejectVersement(bordereauId, versementId, reason, acto
 // ensuite le moyen de restitution (par défaut celui du versement d'origine :
 // Orange Money, Mobile Money, virement, agence...) et une référence.
 // ---------------------------------------------------------------------------
-export async function mockGetRefunds() {
+export async function getRefunds() {
   await delay(350);
   const rows = [];
   db.bordereaux.forEach((bordereau) => {
@@ -1048,7 +1036,7 @@ export async function mockGetRefunds() {
   return rows.sort((a, b) => (a.refundStatus === b.refundStatus ? 0 : a.refundStatus === 'A_REMBOURSER' ? -1 : 1));
 }
 
-export async function mockProcessRefund(bordereauId, versementId, { refundMethod, refundReference }, actor) {
+export async function processRefund(bordereauId, versementId, { refundMethod, refundReference }, actor) {
   await delay(400);
   const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
   if (!bordereau) throw new Error('NOT_FOUND');
@@ -1090,7 +1078,7 @@ function applyVisaStatusChange(bordereau, newStatus, note, actorName) {
   }
 }
 
-export async function mockChangeVisaStatus(bordereauId, newStatus, note, actor) {
+export async function changeVisaStatus(bordereauId, newStatus, note, actor) {
   await delay(400);
   const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
   if (!bordereau) throw new Error('NOT_FOUND');
@@ -1102,7 +1090,7 @@ export async function mockChangeVisaStatus(bordereauId, newStatus, note, actor) 
 // Validation en masse du statut visa pour une liste de bordereaux (sélection
 // manuelle d'un groupe de pèlerins) ou pour tous les pèlerins d'un encadreur
 // donné (passer encadreurId sans bordereauIds pour cibler tout son groupe).
-export async function mockBulkChangeVisaStatus({ bordereauIds, encadreurId, newStatus, note }, actor) {
+export async function bulkChangeVisaStatus({ bordereauIds, encadreurId, newStatus, note }, actor) {
   await delay(700);
   if (!VISA_STATUSES_SET.has(newStatus)) {
     const error = new Error('INVALID_STATUS');
@@ -1135,7 +1123,7 @@ export async function mockBulkChangeVisaStatus({ bordereauIds, encadreurId, newS
 // ligne dont le passeport correspond à un pèlerin d'un AUTRE encadreur est
 // rejetée (wrongEncadreur) plutôt qu'appliquée, pour éviter qu'un import
 // destiné à un encadreur ne modifie par erreur le dossier d'un autre groupe.
-export async function mockImportVisaStatuses(rows, actor, encadreurId = null) {
+export async function importVisaStatuses(rows, actor, encadreurId = null) {
   await delay(600);
   const updated = [];
   const notFound = [];
@@ -1177,7 +1165,7 @@ export async function mockImportVisaStatuses(rows, actor, encadreurId = null) {
 // Vérification automatique des anomalies (équivalent d'un contrôle via le jeu de
 // données Power BI) : dossiers entièrement payés mais toujours en attente, et
 // versements déclarés en attente de validation depuis plus de 3 jours.
-export async function mockCheckStatusAnomalies() {
+export async function checkStatusAnomalies() {
   await delay(700);
   const now = Date.now();
   const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
@@ -1209,7 +1197,7 @@ export async function mockCheckStatusAnomalies() {
 // ---------------------------------------------------------------------------
 // Encadreurs (référentiel géré par Gestionnaire Hadj / Admin DSI)
 // ---------------------------------------------------------------------------
-export async function mockGetEncadreurs({ onlyActive = true, region } = {}) {
+export async function getEncadreurs({ onlyActive = true, region } = {}) {
   await delay(150);
   let items = [...db.encadreurs];
   if (onlyActive) items = items.filter((e) => e.active !== false);
@@ -1253,7 +1241,7 @@ function resolveEncadreurCode(rawCode, excludeId) {
   return code;
 }
 
-export async function mockCreateEncadreur(payload, actor) {
+export async function createEncadreur(payload, actor) {
   await delay(300);
   const id = `ENC-${String(db.encadreurs.length + 1).padStart(3, '0')}`;
   const code = resolveEncadreurCode(payload.code);
@@ -1264,7 +1252,7 @@ export async function mockCreateEncadreur(payload, actor) {
   return record;
 }
 
-export async function mockUpdateEncadreur(id, updates, actor) {
+export async function updateEncadreur(id, updates, actor) {
   await delay(300);
   const nextUpdates = { ...updates };
   if (updates.code !== undefined) {
@@ -1280,7 +1268,7 @@ export async function mockUpdateEncadreur(id, updates, actor) {
 // et éventuellement code). Les lignes dont le nom existe déjà (insensible à la
 // casse) sont ignorées ; celles dont la région ou le code sont invalides sont en
 // erreur ; un code manquant est généré automatiquement.
-export async function mockImportEncadreurs(rows, actor) {
+export async function importEncadreurs(rows, actor) {
   await delay(500);
   const created = [];
   const skipped = [];
@@ -1331,7 +1319,7 @@ export async function mockImportEncadreurs(rows, actor) {
 // ---------------------------------------------------------------------------
 // Utilisateurs (Admin DSI)
 // ---------------------------------------------------------------------------
-export async function mockGetUsers() {
+export async function getUsers() {
   await delay(250);
   return db.users.map(({ password: _pw, ...safe }) => safe);
 }
@@ -1346,7 +1334,7 @@ function assertCanCreateRole(actor, targetRole) {
   }
 }
 
-export async function mockCreateUser(payload, actor) {
+export async function createUser(payload, actor) {
   await delay(400);
   assertCanCreateRole(actor, payload.role);
   const exists = db.users.some((u) => u.username === payload.username);
@@ -1392,7 +1380,7 @@ function slugifyUsername(name) {
 // Le nom (et l'identifiant déduit) est contrôlé : une ligne dont le nom ou le
 // username existe déjà est ignorée plutôt que de créer un doublon.
 // ---------------------------------------------------------------------------
-export async function mockImportUsers(rows, actor) {
+export async function importUsers(rows, actor) {
   await delay(700);
   const created = [];
   const duplicates = [];
@@ -1461,7 +1449,7 @@ export async function mockImportUsers(rows, actor) {
   return { created, duplicates, forbidden, invalid };
 }
 
-export async function mockUpdateUser(id, updates, actor) {
+export async function updateUser(id, updates, actor) {
   await delay(350);
   const target = db.users.find((u) => u.id === id);
   if (!target) throw new Error('NOT_FOUND');
@@ -1483,12 +1471,12 @@ export async function mockUpdateUser(id, updates, actor) {
 // Paramètres SMTP (Admin DSI) — servent à l'envoi du code OTP de
 // réinitialisation de mot de passe.
 // ---------------------------------------------------------------------------
-export async function mockGetSmtpSettings() {
+export async function getSmtpSettings() {
   await delay(250);
   return { ...(db.smtpSettings || DEFAULT_SMTP_SETTINGS) };
 }
 
-export async function mockUpdateSmtpSettings(settings, actor) {
+export async function updateSmtpSettings(settings, actor) {
   await delay(400);
   if (actor?.role !== 'ADMIN_DSI') {
     const error = new Error('FORBIDDEN');
@@ -1523,7 +1511,7 @@ function findUserByIdentifier(identifier) {
   );
 }
 
-export async function mockRequestPasswordReset(identifier) {
+export async function requestPasswordReset(identifier) {
   await delay(600);
   const user = findUserByIdentifier(identifier);
   const settings = db.smtpSettings || DEFAULT_SMTP_SETTINGS;
@@ -1545,7 +1533,7 @@ export async function mockRequestPasswordReset(identifier) {
   db.passwordResets = [...(db.passwordResets || []).filter((r) => r.username !== user.username), reset];
   persist();
 
-  sendMockEmail(
+  sendEmail(
     user.email,
     `${settings.fromName} — Code de réinitialisation`,
     `Votre code de vérification est ${otp}. Il expire dans ${settings.otpTtlMinutes} minutes.`
@@ -1557,7 +1545,7 @@ export async function mockRequestPasswordReset(identifier) {
 
 const MAX_OTP_ATTEMPTS = 5;
 
-export async function mockResetPasswordWithOtp(identifier, otp, newPassword) {
+export async function resetPasswordWithOtp(identifier, otp, newPassword) {
   await delay(600);
   const user = findUserByIdentifier(identifier);
   const reset = (db.passwordResets || []).find((r) => r.username === user?.username);
@@ -1607,7 +1595,7 @@ export async function mockResetPasswordWithOtp(identifier, otp, newPassword) {
 // hors commission = nombre de places acquises ; le reste est soit un reliquat
 // disponible, soit (si nul) le complément à verser pour une place de plus.
 // ---------------------------------------------------------------------------
-export async function mockGetEncadreurCommissions(season) {
+export async function getEncadreurCommissions(season) {
   await delay(350);
   const seasonData = getSeason(season);
   const officialPrice = seasonData?.officialPriceExcludingCommission || DEFAULT_OFFICIAL_PRICE;
@@ -1643,17 +1631,17 @@ export async function mockGetEncadreurCommissions(season) {
 // ---------------------------------------------------------------------------
 // Paramétrage des saisons Hadj (mois/année + montant par type de pèlerin)
 // ---------------------------------------------------------------------------
-export async function mockGetSeasons() {
+export async function getSeasons() {
   await delay(150);
   return db.seasons;
 }
 
-export async function mockGetOfficialPrice(season, pilgrimType, includesEncadreurFees = false) {
+export async function getOfficialPrice(season, pilgrimType, includesEncadreurFees = false) {
   await delay(150);
   return getPrice(season, pilgrimType, includesEncadreurFees);
 }
 
-export async function mockCreateSeason(payload, actor) {
+export async function createSeason(payload, actor) {
   await delay(400);
   const exists = db.seasons.some((s) => s.season === payload.season);
   if (exists) {
@@ -1667,7 +1655,7 @@ export async function mockCreateSeason(payload, actor) {
   return payload;
 }
 
-export async function mockUpdateSeason(season, updates, actor) {
+export async function updateSeason(season, updates, actor) {
   await delay(350);
   db.seasons = db.seasons.map((s) => (s.season === season ? { ...s, ...updates, prices: { ...s.prices, ...(updates.prices || {}) } } : s));
   addAudit('MODIFICATION_SAISON', String(season), actor?.username || 'system');
@@ -1681,7 +1669,7 @@ export async function mockUpdateSeason(season, updates, actor) {
 // `secret` accepte soit le numéro de téléphone (auto-inscription), soit le mot
 // de passe temporaire remis par l'encadreur (inscription individuelle ou en
 // masse par l'encadreur) — un seul champ de connexion pour les deux cas.
-export async function mockPilgrimLogin(idNumber, secret) {
+export async function pilgrimLogin(idNumber, secret) {
   await delay(450);
   const record = db.bordereaux.find(
     (b) => b.idNumber === idNumber && (b.phone === secret || (b.password && b.password === secret))
@@ -1694,7 +1682,7 @@ export async function mockPilgrimLogin(idNumber, secret) {
   return decorateBordereau(record);
 }
 
-export async function mockGetEncadreurGroup(encadreurId) {
+export async function getEncadreurGroup(encadreurId) {
   await delay(400);
   const items = db.bordereaux.filter((b) => b.encadreurId === encadreurId);
   return items.map(decorateBordereau);
@@ -1706,7 +1694,7 @@ export async function mockGetEncadreurGroup(encadreurId) {
 // cumulé des bordereaux de la saison) ; le Superviseur pointe au fur et à
 // mesure les passeports physiquement déposés et suit le nombre restant.
 // ---------------------------------------------------------------------------
-export async function mockGetPassportDeposits(season) {
+export async function getPassportDeposits(season) {
   await delay(350);
   const items = db.bordereaux
     .filter((b) => b.season === season)
@@ -1736,7 +1724,7 @@ export async function mockGetPassportDeposits(season) {
   };
 }
 
-export async function mockTogglePassportDeposit(bordereauId, deposited, actor) {
+export async function togglePassportDeposit(bordereauId, deposited, actor) {
   await delay(300);
   const bordereau = db.bordereaux.find((b) => b.id === bordereauId);
   if (!bordereau) throw new Error('NOT_FOUND');
@@ -1767,7 +1755,7 @@ function parseDepositFlag(raw) {
 // Chaque ligne cible un pèlerin par son numéro de passeport ; la colonne
 // « Depot » (optionnelle) permet aussi d'annuler un dépôt.
 // ---------------------------------------------------------------------------
-export async function mockImportPassportDeposits(rows, season, actor) {
+export async function importPassportDeposits(rows, season, actor) {
   await delay(700);
   const updated = [];
   const notFound = [];
@@ -1813,12 +1801,12 @@ export async function mockImportPassportDeposits(rows, season, actor) {
 // ---------------------------------------------------------------------------
 // Audit
 // ---------------------------------------------------------------------------
-export async function mockGetAuditLogs() {
+export async function getAuditLogs() {
   await delay(250);
   return db.auditLogs;
 }
 
-export function resetMockDb() {
+export function resetDb() {
   db = seedDb();
   persist();
 }

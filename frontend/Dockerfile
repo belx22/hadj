@@ -8,13 +8,11 @@ RUN npm install
 COPY . .
 
 # Variables d'environnement injectées au build (Vite les fige dans le bundle).
+# Le frontend consomme exclusivement le backend Spring Boot : VITE_API_BASE_URL
+# est relative, Nginx proxifie /api vers le conteneur backend.
 ARG VITE_API_BASE_URL=/api/v1
-# Le backend est déployé avec le frontend (docker compose) : on consomme l'API
-# réelle. Le mock reste une option de démo autonome (build-arg à "true").
-ARG VITE_USE_MOCK=false
 ARG VITE_DEFAULT_LOCALE=fr
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-ENV VITE_USE_MOCK=$VITE_USE_MOCK
 ENV VITE_DEFAULT_LOCALE=$VITE_DEFAULT_LOCALE
 
 RUN npm run build

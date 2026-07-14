@@ -10,10 +10,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
     css: false,
-    // Les tests unitaires exercent la couche mock (pas de backend ni de réseau
-    // en CI) : on l'active explicitement ici, puisque l'application, elle,
-    // consomme le backend réel par défaut.
-    env: { VITE_USE_MOCK: 'true' },
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'lcov', 'json-summary'],
@@ -38,11 +34,13 @@ export default defineConfig({
         'src/components/layout/MainLayout.jsx',
       ],
       // Seuils = garde-fou de non-régression (légèrement sous le niveau actuel).
+      // Ils ne portent que sur le code applicatif : le faux backend des tests vit
+      // sous src/test/ (exclu ci-dessus), il ne gonfle donc plus la couverture.
       thresholds: {
-        statements: 65,
-        branches: 65,
-        functions: 58,
-        lines: 65,
+        statements: 62,
+        branches: 72,
+        functions: 50,
+        lines: 62,
       },
     },
   },

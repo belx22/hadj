@@ -1,6 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{js,jsx}'],
+  // Les fichiers de test (et le faux backend qui les alimente) ne doivent pas
+  // nourrir le scan Tailwind : leurs chaînes entre crochets étaient prises pour
+  // des classes utilitaires arbitraires et polluaient la CSS de production.
+  content: [
+    './index.html',
+    './src/**/*.{js,jsx}',
+    '!./src/test/**',
+    '!./src/**/*.test.{js,jsx}',
+  ],
   theme: {
     extend: {
       colors: {

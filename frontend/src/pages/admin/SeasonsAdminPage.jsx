@@ -44,18 +44,15 @@ export default function SeasonsAdminPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await createSeason(
-        {
-          season: Number(form.season),
-          month: Number(form.month),
-          year: Number(form.season),
-          isOpen: true,
-          prices: form.prices,
-          officialPriceExcludingCommission: Number(form.officialPriceExcludingCommission),
-          commissionPerPilgrim: Number(form.commissionPerPilgrim),
-        },
-        user
-      );
+      await createSeason({
+        season: Number(form.season),
+        month: Number(form.month),
+        year: Number(form.season),
+        isOpen: true,
+        prices: form.prices,
+        officialPriceExcludingCommission: Number(form.officialPriceExcludingCommission),
+        commissionPerPilgrim: Number(form.commissionPerPilgrim),
+      });
       toast.success(t('toasts.seasonCreated'));
       setForm(EMPTY_FORM);
       reload();
@@ -78,7 +75,7 @@ export default function SeasonsAdminPage() {
   }
 
   async function saveEdit(season) {
-    await updateSeason(season, editValues, user);
+    await updateSeason(season, editValues);
     toast.success(t('toasts.seasonUpdated'));
     setEditingSeason(null);
     reload();

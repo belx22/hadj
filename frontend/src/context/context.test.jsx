@@ -2,12 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '../i18n';
-import { resetMockDb } from '../mock/mockApi';
 import { AuthProvider, useAuth } from './AuthContext';
 import { PilgrimProvider, usePilgrim } from './PilgrimContext';
 import { ToastProvider, useToast } from './ToastContext';
 
-beforeEach(() => resetMockDb());
 
 const authWrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
 const pilgrimWrapper = ({ children }) => <PilgrimProvider>{children}</PilgrimProvider>;

@@ -137,7 +137,7 @@ function PendingTab() {
     setBusyId(row.id);
     setError(null);
     try {
-      await validateVersement(row.bordereauId, row.id, user);
+      await validateVersement(row.bordereauId, row.id);
       toast.success(t('toasts.paymentValidated'));
       reload();
     } catch (err) {
@@ -159,7 +159,7 @@ function PendingTab() {
       const items = rows
         .filter((r) => selectedIds.has(r.id))
         .map((r) => ({ bordereauId: r.bordereauId, versementId: r.id }));
-      const result = await bulkValidateVersements(items, user);
+      const result = await bulkValidateVersements(items);
       toast.success(t('paymentValidation.bulkValidated', { count: result.validated.length }));
       if (result.skipped.length > 0) {
         setError(t('paymentValidation.bulkSkipped', { count: result.skipped.length }));
@@ -213,7 +213,7 @@ function PendingTab() {
           status: pick(['statut', 'status', 'etat', 'état', 'الحالة']),
         };
       });
-      const summary = await importPaymentStatuses(parsed, user);
+      const summary = await importPaymentStatuses(parsed);
       setImportSummary(summary);
       reload();
     } catch {
@@ -228,7 +228,7 @@ function PendingTab() {
     if (reason === null) return;
     setBusyId(row.id);
     try {
-      await rejectVersement(row.bordereauId, row.id, reason, user);
+      await rejectVersement(row.bordereauId, row.id, reason);
       toast.info(t('toasts.paymentRejected'));
       reload();
     } finally {
@@ -611,7 +611,7 @@ function RefundsTab() {
     if (!activeRow) return;
     setBusy(true);
     try {
-      await processRefund(activeRow.bordereauId, activeRow.id, { refundMethod, refundReference }, user);
+      await processRefund(activeRow.bordereauId, activeRow.id, { refundMethod, refundReference });
       toast.success(t('paymentValidation.refunds.done'));
       setActiveRow(null);
       reload();

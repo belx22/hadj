@@ -3,9 +3,9 @@
 Frontend React de la plateforme **Copilote Hadj** : digitalisation de la souscription des
 pèlerins au Hadj/Oumra pour la Fenêtre Islamique d'Afriland First Bank Cameroun.
 
-> ⚠️ **Périmètre de cette livraison** : uniquement le frontend. Le backend Spring Boot
-> n'est pas encore développé — l'application tourne donc en **mode mock** (données
-> simulées en mémoire / `localStorage`), prête à être branchée sur l'API réelle plus tard.
+> **Source de données** : le backend Spring Boot (`../backend`), et lui seul. Toutes
+> les données affichées viennent de l'API `/api/v1` ; il n'y a plus aucun jeu de
+> données simulé embarqué dans l'application.
 
 ## Stack
 
@@ -64,24 +64,21 @@ docker run -p 8081:80 copilote-hadj-frontend
 Dans les deux cas, `nginx.conf` proxifie déjà `/api/` vers un service `backend:8080` —
 ce proxy sera actif dès que le service backend sera ajouté au `docker-compose.yml`.
 
-## Mode mock (backend non branché)
+## Source de données : le backend, et lui seul
 
-Tant que `VITE_USE_MOCK=true` (valeur par défaut, voir `.env.example`), toutes les
-fonctions de `src/api/*.js` répondent avec des données simulées définies dans
-`src/mock/seedData.js` et `src/mock/mockApi.js` (délai réseau simulé, persistance dans
-`localStorage`). Cela permet de démontrer l'ensemble des modules sans backend.
+`src/api/*.js` ne contient que des appels HTTP (Axios) vers le backend Spring Boot.
+Il n'existe aucun repli en mémoire : sans backend joignable, les écrans remontent
+l'erreur réseau. `VITE_API_BASE_URL` (défaut `/api/v1`) est relative — en dev, Vite
+proxifie `/api` vers `VITE_PROXY_TARGET` ; en production, Nginx proxifie vers le
+conteneur backend.
 
-Un lien **« Réinitialiser les données de démonstration »** est disponible en pied de
-page (mode mock uniquement) pour revenir au jeu de données initial à tout moment.
+Les tests, eux, n'ont pas de backend : `src/test/setup.js` remplace l'adaptateur de
+transport d'Axios par le faux backend en mémoire de `src/test/fakeBackend/`, qui
+respecte le contrat réel (mêmes URLs, mêmes réponses, mêmes erreurs
+`{ code, message }` et mêmes statuts HTTP). Le code applicatif testé est donc bien
+celui qui tourne en production, intercepteurs compris.
 
-**Pour brancher le vrai backend Spring Boot plus tard** :
-1. Mettre `VITE_USE_MOCK=false` dans `.env`.
-2. Renseigner `VITE_API_BASE_URL` (ex. `http://localhost:8080/api/v1`).
-3. Les fonctions de `src/api/*.js` basculeront automatiquement sur les appels Axios
-   réels — aucun changement de composant nécessaire, car les pages n'appellent que
-   les fonctions de `src/api/*.js`, jamais `mockApi.js` directement.
-
-## Comptes de démonstration
+## Comptes semés par le backend
 
 ### Espace agent / direction (`/login/staff`)
 
@@ -95,12 +92,12 @@ page (mode mock uniquement) pour revenir au jeu de données initial à tout mome
 
 ### Espace pèlerin (`/visa/pelerin`, ou auto-inscription via `/inscription`)
 
-Connexion sans mot de passe, par **CNI/Passeport + téléphone**. Exemple de dossier
-de démonstration :
-- CNI/Passeport : `1002345678`
+Connexion sans mot de passe, par **Passeport + téléphone**. Exemple de dossier semé :
+- Passeport : `1002345678`
 - Téléphone : `699112233`
 
-(Voir `src/mock/seedData.js` pour la liste complète des dossiers simulés.)
+Ces comptes proviennent du seed du backend (`DataSeeder`, actif si la base est vide
+et `COPILOTE_SEED_ENABLED=true`) — voir `backend/README.md`.
 
 ## Fonctionnalités
 
@@ -118,8 +115,9 @@ de démonstration :
 - **Suivi du parcours visa** : un stepper (`VisaJourneyStepper`) affiche au pèlerin
   chaque étape (En attente → En cours → Accordé, avec Refusé/Complément requis comme
   embranchements) et la date à laquelle elle a été atteinte.
-- **Notifications** : SMS, email et **WhatsApp** (mock, loggés en console) à chaque
-  inscription, versement validé/rejeté ou changement de statut visa.
+- **Notifications** : SMS, email et **WhatsApp** émis par le backend
+  (`NotificationService`) à chaque inscription, versement validé/rejeté ou
+  changement de statut visa.
 - **Module 2 — Reporting** (`/dashboard`) : KPIs, graphiques (Recharts), filtres,
   export Excel/PDF, alertes de solde insuffisant.
 - **Clients** (`/clients`) : liste de tous les pèlerins et leur statut, filtres
@@ -142,8 +140,7 @@ de démonstration :
 ```
 frontend/
 ├── src/
-│   ├── api/              # Couche d'accès API (bascule mock ↔ backend réel)
-│   ├── mock/              # Données de démo + implémentation mock des endpoints
+│   ├── api/              # Couche d'accès API : appels HTTP (Axios) vers le backend
 │   ├── i18n/              # fr.json, ar.json, initialisation i18next + RTL
 │   ├── assets/             # Logo Afriland (PNG) + icône (SVG) + illustrations
 │   ├── components/
@@ -164,6 +161,8 @@ frontend/
 │   │   ├── admin/              # Encadreurs, utilisateurs, saisons, Power BI
 │   │   └── audit/              # Journal d'audit
 │   ├── router/              # Déclaration des routes (lazy) + garde par rôle
+│   ├── test/                # Outillage de test uniquement (non embarqué dans le bundle)
+│   │   └── fakeBackend/     # Faux backend en mémoire + adaptateur axios (contrat réel)
 │   └── utils/                # Constantes métier, formatters, validateurs, PDF, Excel
 ```
 
@@ -195,10 +194,8 @@ police arabe (`font-arabic`, cf. `tailwind.config.js`).
 Le routage protège chaque page via `src/components/ui/ProtectedRoute.jsx` selon le
 rôle de l'utilisateur connecté (`src/router/AppRouter.jsx`).
 
-## Prochaines étapes (backend)
+## Prochaines étapes
 
-Ce frontend est conçu pour consommer une API REST `/api/v1/...` (Spring Boot) sans
-modification de composants : il suffit de désactiver le mode mock (voir plus haut).
-Les contrats attendus par page se déduisent des fonctions de `src/api/*.js`. Le
-connecteur Power BI (export manuel) sera remplacé par un flux live (API OData/REST)
-une fois le backend disponible.
+Le connecteur Power BI (export manuel) sera remplacé par un flux live (API
+OData/REST). Les contrats consommés par chaque page se lisent dans `src/api/*.js`,
+et leurs implémentations côté serveur dans `backend/src/main/java/.../controller/`.

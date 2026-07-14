@@ -47,10 +47,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
+        # Le frontend consomme le backend réel via le proxy Nginx (/api → backend:8080).
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
-        # Passe à "false" pour que le frontend consomme le backend réel via le
-        # proxy Nginx (/api → backend:8080). "true" garde le mock front autonome.
-        VITE_USE_MOCK: ${VITE_USE_MOCK:-false}
         VITE_DEFAULT_LOCALE: ${VITE_DEFAULT_LOCALE:-fr}
     image: copilote-hadj-frontend:latest
     container_name: copilote-hadj-frontend

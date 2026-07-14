@@ -1,4 +1,4 @@
-import { CURRENT_SEASON, DEFAULT_OFFICIAL_PRICE } from '../utils/constants';
+import { CURRENT_SEASON, DEFAULT_OFFICIAL_PRICE } from '../../utils/constants';
 
 // Comptes de démonstration — espace agent / direction (mot de passe simplifié pour la démo).
 // `email` sert à la réinitialisation du mot de passe par code OTP.

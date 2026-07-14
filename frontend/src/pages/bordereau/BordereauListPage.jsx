@@ -46,7 +46,7 @@ export default function BordereauListPage() {
   }, [filters]);
 
   async function handleStatusChange(bordereauId, newStatus) {
-    await changeVisaStatus(bordereauId, newStatus, null, user);
+    await changeVisaStatus(bordereauId, newStatus, null);
     toast.success(t('toasts.statusUpdated'));
     reload();
   }

@@ -94,10 +94,7 @@ export default function BordereauFormPage() {
 
     setSubmitting(true);
     try {
-      const record = await createBordereau(
-        { ...form, pilgrimCount: Number(form.pilgrimCount) },
-        user
-      );
+      const record = await createBordereau({ ...form, pilgrimCount: Number(form.pilgrimCount) });
       setCreatedBordereau(record);
       setForm({ ...EMPTY_FORM, agency: user?.agency || '' });
     } catch (err) {

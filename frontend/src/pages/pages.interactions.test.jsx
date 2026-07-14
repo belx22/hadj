@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { renderWithProviders } from '../test/renderWithProviders';
-import { resetMockDb } from '../mock/mockApi';
 
 import VisaEncadreurPortalPage from './visa/VisaEncadreurPortalPage';
 import VisaPelerinPaymentPage from './visa/VisaPelerinPaymentPage';
@@ -29,7 +28,6 @@ const admin = { id: 'U-5', username: 'admin', role: 'ADMIN_DSI', name: 'Admin', 
 const encadreur = { id: 'U-4', username: 'encadreur1', role: 'ENCADREUR', name: 'Guide', encadreurId: 'ENC-001' };
 
 beforeEach(() => {
-  resetMockDb();
   vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
 

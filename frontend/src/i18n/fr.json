@@ -39,10 +39,7 @@
     "select": "Sélectionner...",
     "total": "Total",
     "seeMore": "Voir plus",
-    "print": "Imprimer",
-    "mockBanner": "Mode démonstration — données simulées (backend non connecté)",
-    "resetDemoData": "Réinitialiser les données de démonstration",
-    "resetConfirm": "Cela va effacer toutes les données de démonstration créées localement (bordereaux, versements, utilisateurs, encadreurs...) et revenir au jeu de données initial. Continuer ?"
+    "print": "Imprimer"
   },
   "toasts": {
     "paymentValidated": "Versement validé et comptabilisé",
@@ -56,7 +53,6 @@
     "userStatusUpdated": "Statut de l'utilisateur mis à jour",
     "seasonCreated": "Saison créée avec succès",
     "seasonUpdated": "Saison mise à jour",
-    "resetDone": "Les données de démonstration ont été réinitialisées",
     "pilgrimRegisteredByEncadreur": "Pèlerin inscrit avec succès"
   },
   "pagination": {

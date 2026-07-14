@@ -11,9 +11,9 @@ import java.time.LocalDate;
 import java.util.*;
 
 /**
- * Injecte le jeu de données de démonstration au démarrage si la base est vide,
- * en miroir de `seedData.js` du frontend (comptes, encadreurs, saisons,
- * quelques bordereaux avec versements).
+ * Injecte le jeu de données initial au démarrage si la base est vide (comptes,
+ * encadreurs, saisons, quelques bordereaux avec versements). C'est la seule
+ * source de données de l'application : le frontend n'en embarque aucune.
  */
 @Component
 public class DataSeeder implements CommandLineRunner {

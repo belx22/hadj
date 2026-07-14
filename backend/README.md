@@ -20,17 +20,13 @@ L'API est servie sous `/api/v1` (context-path). Le frontend l'appelle via
 Depuis la racine du dépôt :
 
 ```bash
-docker compose up --build -d          # postgres + backend + frontend (mock OFF)
+docker compose up --build -d          # postgres + backend + frontend
 # Frontend :  http://localhost:4456
 # API :       http://localhost:4456/api/v1/...
 ```
 
-Le frontend est alors bâti avec `VITE_USE_MOCK=false` : il consomme le backend
-réel. Pour revenir à la démo autonome (mock front, sans backend) :
-
-```bash
-VITE_USE_MOCK=true docker compose up -d --no-deps --build frontend
-```
+Le frontend n'a pas d'autre source de données que cette API : il faut donc que le
+backend et PostgreSQL tournent pour que l'interface affiche quoi que ce soit.
 
 ## Lancer le backend seul (dev)
 
@@ -81,5 +77,5 @@ web/          Gestion des erreurs (ApiException + handler global)
 
 - `ddl-auto=update` : le schéma est créé/mis à jour automatiquement (démo). Pour
   la production, prévoir des migrations (Flyway/Liquibase).
-- Les envois SMS/WhatsApp/Email sont *mockés* (journalisés) — brancher les vrais
-  fournisseurs dans `NotificationService`.
+- Les envois SMS/WhatsApp/Email sont journalisés, pas réellement émis — brancher
+  les vrais fournisseurs dans `NotificationService`.

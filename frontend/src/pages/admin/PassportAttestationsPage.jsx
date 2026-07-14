@@ -48,7 +48,7 @@ export default function PassportAttestationsPage() {
   async function handleToggle(row) {
     setBusyId(row.bordereauId);
     try {
-      await togglePassportDeposit(row.bordereauId, !row.passportDeposited, user);
+      await togglePassportDeposit(row.bordereauId, !row.passportDeposited);
       toast.success(row.passportDeposited ? t('attestations.cancelledToast') : t('attestations.depositedToast'));
       reload();
     } finally {
@@ -98,7 +98,7 @@ export default function PassportAttestationsPage() {
         };
       });
 
-      const summary = await importPassportDeposits(rows, season, user);
+      const summary = await importPassportDeposits(rows, season);
       setImportSummary(summary);
       if (summary.updated.length > 0) {
         toast.success(t('attestations.import.successToast', { count: summary.updated.length }));

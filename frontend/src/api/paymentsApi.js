@@ -1,59 +1,41 @@
-import axiosClient, { USE_MOCK } from './axiosClient';
-import {
-  mockGetPendingVersements,
-  mockGetVersementsHistory,
-  mockValidateVersement,
-  mockBulkValidateVersements,
-  mockImportPaymentStatusesByReference,
-  mockRejectVersement,
-  mockGetRefunds,
-  mockProcessRefund,
-} from '../mock/mockApi';
+import axiosClient from './axiosClient';
 
 export async function getPendingVersements() {
-  if (USE_MOCK) return mockGetPendingVersements();
   const { data } = await axiosClient.get('/versements/en-attente');
   return data;
 }
 
 export async function getVersementsHistory(filters) {
-  if (USE_MOCK) return mockGetVersementsHistory(filters);
   const { data } = await axiosClient.get('/versements/historique', { params: filters });
   return data;
 }
 
-export async function validateVersement(bordereauId, versementId, actor) {
-  if (USE_MOCK) return mockValidateVersement(bordereauId, versementId, actor);
+export async function validateVersement(bordereauId, versementId) {
   const { data } = await axiosClient.put(`/versements/${versementId}/valider`, { bordereauId });
   return data;
 }
 
-export async function bulkValidateVersements(items, actor) {
-  if (USE_MOCK) return mockBulkValidateVersements(items, actor);
+export async function bulkValidateVersements(items) {
   const { data } = await axiosClient.put('/versements/valider-en-masse', { items });
   return data;
 }
 
-export async function importPaymentStatuses(rows, actor) {
-  if (USE_MOCK) return mockImportPaymentStatusesByReference(rows, actor);
+export async function importPaymentStatuses(rows) {
   const { data } = await axiosClient.post('/versements/import-statuts', { rows });
   return data;
 }
 
-export async function rejectVersement(bordereauId, versementId, reason, actor) {
-  if (USE_MOCK) return mockRejectVersement(bordereauId, versementId, reason, actor);
+export async function rejectVersement(bordereauId, versementId, reason) {
   const { data } = await axiosClient.put(`/versements/${versementId}/rejeter`, { bordereauId, reason });
   return data;
 }
 
 export async function getRefunds() {
-  if (USE_MOCK) return mockGetRefunds();
   const { data } = await axiosClient.get('/versements/remboursements');
   return data;
 }
 
-export async function processRefund(bordereauId, versementId, payload, actor) {
-  if (USE_MOCK) return mockProcessRefund(bordereauId, versementId, payload, actor);
+export async function processRefund(bordereauId, versementId, payload) {
   const { data } = await axiosClient.put(`/versements/${versementId}/rembourser`, { bordereauId, ...payload });
   return data;
 }

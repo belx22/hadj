@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import { renderWithProviders } from '../test/renderWithProviders';
-import { resetMockDb } from '../mock/mockApi';
 
 import NotFoundPage from './NotFoundPage';
 import LoginChoicePage from './auth/LoginChoicePage';
@@ -36,7 +35,6 @@ function loginAdmin() {
 }
 
 beforeEach(() => {
-  resetMockDb();
   // recharts (Dashboard/Clients) : jsdom n'a pas de layout, on neutralise le bruit.
   vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
@@ -81,7 +79,7 @@ describe('pages back-office (smoke, admin connecté)', () => {
 
   it.each(adminPages)('%s se rend sans planter', async (_name, ui) => {
     const { container } = renderWithProviders(ui);
-    // Laisse les effets asynchrones (fetch mock) se résoudre.
+    // Laisse les appels HTTP asynchrones se résoudre.
     await waitFor(() => expect(container.querySelector('*')).toBeTruthy());
   });
 });

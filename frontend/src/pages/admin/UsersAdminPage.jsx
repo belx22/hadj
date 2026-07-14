@@ -90,7 +90,7 @@ export default function UsersAdminPage() {
       } else {
         payload.agency = form.agency;
       }
-      await createUser(payload, actor);
+      await createUser(payload);
       toast.success(t('toasts.userCreated'));
       setForm({ ...EMPTY_FORM, role: creatableRoles[0] || '' });
       reload();
@@ -146,7 +146,7 @@ export default function UsersAdminPage() {
         };
       });
 
-      const summary = await importUsers(rows, actor);
+      const summary = await importUsers(rows);
       setImportSummary(summary);
       if (summary.created.length > 0) {
         toast.success(t('adminUsers.import.successToast', { count: summary.created.length }));
@@ -175,7 +175,7 @@ export default function UsersAdminPage() {
   }
 
   async function toggleActive(u) {
-    await updateUser(u.id, { active: !u.active }, actor);
+    await updateUser(u.id, { active: !u.active });
     toast.info(t('toasts.userStatusUpdated'));
     reload();
   }
@@ -216,7 +216,7 @@ export default function UsersAdminPage() {
       updates.password = editValues.newPassword.trim();
     }
     try {
-      await updateUser(id, updates, actor);
+      await updateUser(id, updates);
       toast.success(t('toasts.userUpdated'));
       setEditingId(null);
       reload();
@@ -247,7 +247,7 @@ export default function UsersAdminPage() {
         />
 
         {/* Séparation des rôles : on ne propose que les profils que l'utilisateur
-            connecté a le droit de créer (le mock refuse les autres de toute façon). */}
+            connecté a le droit de créer (le backend refuse les autres de toute façon). */}
         <select className="form-input" value={form.role} onChange={(e) => update('role', e.target.value)}>
           {creatableRoles.map((role) => <option key={role} value={role}>{t(`roles.${role}`)}</option>)}
         </select>

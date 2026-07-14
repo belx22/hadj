@@ -1,10 +1,20 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeEach, vi } from 'vitest';
+import axiosClient from '../api/axiosClient';
+import { fakeBackendAdapter } from './fakeBackend/adapter';
+import { resetDb } from './fakeBackend/fakeBackend';
+
+// L'application ne parle qu'au backend Spring Boot (src/api/* = HTTP pur). En
+// test, il n'y a pas de backend : on substitue l'adaptateur de transport d'axios
+// par un faux backend en mémoire qui respecte le même contrat (URLs, réponses,
+// erreurs { code, message }). Le reste de la chaîne — intercepteurs, jeton,
+// mapping des codes d'erreur — est bien celui de production.
+axiosClient.defaults.adapter = fakeBackendAdapter;
 
 // Node 25 injecte un `localStorage` global non fonctionnel (il exige un flag
 // --localstorage-file). On le remplace par une implémentation en mémoire, fiable
-// et réinitialisable, utilisée par le mock backend (mockApi persiste dedans).
+// et réinitialisable (le faux backend y persiste son état).
 function createMemoryStorage() {
   let store = new Map();
   return {
@@ -26,15 +36,17 @@ if (typeof window !== 'undefined') {
   Object.defineProperty(window, 'sessionStorage', { value: sessionMemoryStorage, configurable: true });
 }
 
-// Nettoyage du DOM et du localStorage entre chaque test pour éviter toute fuite
-// d'état (le mock backend persiste dans localStorage).
+// Nettoyage du DOM entre chaque test.
 afterEach(() => {
   cleanup();
 });
 
+// Chaque test repart d'un stockage vide et d'un faux backend fraîchement semé,
+// pour qu'aucun état ne fuite d'un test à l'autre.
 beforeEach(() => {
   memoryStorage.clear();
   sessionMemoryStorage.clear();
+  resetDb();
 });
 
 // jsdom ne fournit pas matchMedia ni scrollTo : on les stub pour les composants

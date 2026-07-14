@@ -29,14 +29,11 @@ export default function SmtpSettingsPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await updateSmtpSettings(
-        {
-          ...settings,
-          port: Number(settings.port),
-          otpTtlMinutes: Number(settings.otpTtlMinutes),
-        },
-        user
-      );
+      await updateSmtpSettings({
+        ...settings,
+        port: Number(settings.port),
+        otpTtlMinutes: Number(settings.otpTtlMinutes),
+      });
       toast.success(t('adminSmtp.savedToast'));
     } catch (err) {
       if (err.code === 'FORBIDDEN') setError(t('adminSmtp.errors.forbidden'));

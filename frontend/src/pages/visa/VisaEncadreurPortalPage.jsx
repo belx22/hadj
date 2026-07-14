@@ -211,7 +211,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
 
     setSubmitting(true);
     try {
-      const record = await registerPilgrimByEncadreur({ ...form, pilgrimCount: Number(form.pilgrimCount) }, encadreurId, actor);
+      const record = await registerPilgrimByEncadreur({ ...form, pilgrimCount: Number(form.pilgrimCount) }, encadreurId);
       toast.success(t('toasts.pilgrimRegisteredByEncadreur'));
       setRegisteredCredential({
         name: `${record.pilgrimFirstName} ${record.pilgrimLastName}`,
@@ -281,7 +281,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       const rows = rawRows.map(normalizeRow);
-      const summary = await importPilgrims(rows, encadreurId, actor);
+      const summary = await importPilgrims(rows, encadreurId);
       setImportSummary(summary);
       reload();
     } catch {
@@ -324,8 +324,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
       const summary = await importGroupedVersementsByEncadreur(
         rows,
         encadreurId,
-        { method: groupedMethod, reference: groupedReference },
-        actor
+        { method: groupedMethod, reference: groupedReference }
       );
       setGroupedSummary(summary);
       reload();
@@ -357,7 +356,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       const rows = rawRows.map(normalizePassportRow);
-      const summary = await importPassportDeposits(rows, CURRENT_SEASON, actor);
+      const summary = await importPassportDeposits(rows, CURRENT_SEASON);
       setPassportSummary(summary);
       reload();
     } catch {

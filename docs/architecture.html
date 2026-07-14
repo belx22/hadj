@@ -311,9 +311,9 @@
         </div>
         <p>
           Le navigateur ne parle qu'à Nginx : celui-ci sert la SPA compilée et relaie <code>/api</code> vers l'API
-          Spring Boot, qui seule accède à PostgreSQL. Un mode <strong>mock</strong> (<code>VITE_USE_MOCK=true</code>)
-          court-circuite l'API et fait tourner le front en autonomie sur <code>localStorage</code> — c'est le mode de
-          démonstration.
+          Spring Boot, qui seule accède à PostgreSQL. Le frontend n'a <strong>aucune autre source de données</strong> :
+          la couche <code>src/api/*.js</code> ne fait que des appels HTTP, et sans backend joignable l'interface
+          remonte une erreur réseau.
         </p>
 
         <figure>
@@ -340,13 +340,13 @@
               <text x="30" y="222" class="t-c">PilgrimContext → session</text>
               <text x="30" y="242" class="t-c">jsPDF · SheetJS · jsQR</text>
 
-              <!-- mock -->
-              <rect x="14" y="292" width="216" height="88" rx="6" class="box-f" stroke-dasharray="5 4"/>
-              <text x="30" y="316" class="t-m">MODE DÉMO</text>
-              <text x="30" y="338" class="t-b">mockApi.js</text>
-              <text x="30" y="357" class="t-s">Base simulée en localStorage,</text>
-              <text x="30" y="372" class="t-s">contourne l'API. 1 800 lignes.</text>
-              <path d="M122 292 L122 262" class="arw dash" marker-end="url(#ah)"/>
+              <!-- couche API -->
+              <rect x="14" y="292" width="216" height="88" rx="6" class="box-f"/>
+              <text x="30" y="316" class="t-m">COUCHE API</text>
+              <text x="30" y="338" class="t-b">src/api/*.js (Axios)</text>
+              <text x="30" y="357" class="t-s">Jeton JWT, codes d'erreur.</text>
+              <text x="30" y="372" class="t-s">Aucune donnée locale.</text>
+              <path d="M122 292 L122 262" class="arw" marker-end="url(#ah)"/>
 
               <!-- docker boundary -->
               <rect x="286" y="30" width="758" height="358" rx="8" class="sv-hair" stroke-dasharray="6 5"/>

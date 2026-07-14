@@ -105,7 +105,7 @@ export default function ClientsPage() {
           note: pick(['note', 'commentaire', 'ملاحظة']),
         };
       });
-      const summary = await importVisaStatuses(rows, user, importEncadreurId || null);
+      const summary = await importVisaStatuses(rows, importEncadreurId || null);
       setImportSummary(summary);
       reload();
     } catch {
