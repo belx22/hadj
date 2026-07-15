@@ -190,3 +190,60 @@ export function generatePassportDepositCertificate(deposit) {
 
   doc.save(`attestation-depot-${deposit.bordereauId}.pdf`);
 }
+
+/**
+ * Attestation de dépôt collective : un document unique récapitulant tous les
+ * passeports déposés d'un groupe d'encadreur (au lieu d'une attestation par
+ * pèlerin). Chaque ligne = un pèlerin dont le passeport a été déposé.
+ *
+ * @param {object}   options
+ * @param {string}   options.encadreurName  Nom de l'encadreur (en-tête).
+ * @param {string}   [options.encadreurId]  Code encadreur (nom de fichier).
+ * @param {number|string} [options.season]  Saison Hadj.
+ * @param {Array<{pilgrimName:string,idNumber:string,phone?:string,pilgrimCount?:number,passportDepositedAt?:string}>} options.deposits
+ *        Pèlerins dont le passeport est déposé.
+ */
+export function generateGroupPassportDepositCertificate({ encadreurName, encadreurId, season, deposits }) {
+  const doc = new jsPDF();
+  addHeader(doc, 'Attestation de dépôt de passeports — groupe');
+
+  const passportsTotal = deposits.reduce((sum, d) => sum + (d.pilgrimCount || 1), 0);
+
+  doc.setFontSize(11);
+  doc.setTextColor(17, 17, 17);
+  doc.text(`Encadreur : ${encadreurName || '—'}`, 14, 45);
+  if (season != null) doc.text(`Saison Hadj : ${season}`, 14, 52);
+  doc.text(
+    `Nous attestons que les passeports des pèlerins listés ci-dessous (${passportsTotal}) ont été`,
+    14,
+    season != null ? 60 : 53,
+    { maxWidth: 182 }
+  );
+  doc.text('déposés auprès de nos services en vue du traitement de leurs dossiers de visa.', 14, season != null ? 66 : 59);
+
+  autoTable(doc, {
+    startY: season != null ? 74 : 67,
+    head: [['N°', 'Pèlerin', 'N° de passeport', 'Téléphone', 'Pèlerins', 'Date de dépôt']],
+    headStyles: { fillColor: [200, 16, 46] },
+    styles: { fontSize: 9, cellPadding: 2 },
+    alternateRowStyles: { fillColor: [246, 246, 246] },
+    body: deposits.map((d, index) => [
+      String(index + 1),
+      d.pilgrimName,
+      d.idNumber,
+      d.phone || '—',
+      String(d.pilgrimCount || 1),
+      d.passportDepositedAt ? formatDate(d.passportDepositedAt) : '—',
+    ]),
+  });
+
+  doc.setFontSize(8);
+  doc.setTextColor(89, 89, 89);
+  doc.text(
+    `Document généré le ${formatDate(new Date().toISOString().slice(0, 10))} — Copilote Hadj.`,
+    14,
+    doc.lastAutoTable.finalY + 10
+  );
+
+  doc.save(`attestation-depot-groupe-${encadreurId || 'encadreur'}.pdf`);
+}

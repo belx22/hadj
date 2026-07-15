@@ -17,7 +17,7 @@ import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { formatCurrency } from '../../utils/formatters';
 import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
-import { generateReportingPdf } from '../../utils/pdf';
+import { generateReportingPdf, generateGroupPassportDepositCertificate } from '../../utils/pdf';
 import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, VERSEMENT_METHODS, isEncadreurPilgrimType } from '../../utils/constants';
 import { validateBordereau } from '../../utils/validators';
 
@@ -335,6 +335,26 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
     }
   }
 
+  // Attestation de dépôt collective : un seul document pour tous les passeports
+  // déposés du groupe (et non une attestation par pèlerin).
+  const depositedPilgrims = useMemo(() => group.filter((b) => b.passportDeposited), [group]);
+
+  function handleDownloadGroupCertificate() {
+    if (depositedPilgrims.length === 0) return;
+    generateGroupPassportDepositCertificate({
+      encadreurName,
+      encadreurId,
+      season: CURRENT_SEASON,
+      deposits: depositedPilgrims.map((b) => ({
+        pilgrimName: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
+        idNumber: b.idNumber,
+        phone: b.phone,
+        pilgrimCount: b.pilgrimCount,
+        passportDepositedAt: b.passportDepositedAt,
+      })),
+    });
+  }
+
   function handleDownloadPassportTemplate() {
     exportToExcel(
       [{ idNumber: '1002345699', Depot: 'OUI' }],
@@ -635,6 +655,14 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
             {passportImporting ? t('common.loading') : t('adminEncadreurs.importFile')}
           </button>
           <input ref={passportFileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handlePassportFileChange} />
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleDownloadGroupCertificate}
+            disabled={depositedPilgrims.length === 0}
+          >
+            {t('encadreurPortal.passports.downloadGroupCertificate', { count: depositedPilgrims.length })}
+          </button>
         </div>
         {passportSummary && (
           <div className="rounded-md bg-afriland-gray-50 p-3 text-sm">

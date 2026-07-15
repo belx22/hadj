@@ -15,6 +15,16 @@ import UsersAdminPage from './admin/UsersAdminPage';
 import EncadreursAdminPage from './admin/EncadreursAdminPage';
 import PaymentValidationPage from './payments/PaymentValidationPage';
 import BordereauListPage from './bordereau/BordereauListPage';
+import * as pdf from '../utils/pdf';
+import { getEncadreurGroup } from '../api/visaApi';
+import { togglePassportDeposit } from '../api/attestationsApi';
+
+// La génération PDF déclenche un download navigateur (indispo en jsdom) : on
+// isole la fonction d'attestation pour observer ses arguments sans écrire de fichier.
+vi.mock('../utils/pdf', async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, generateGroupPassportDepositCertificate: vi.fn() };
+});
 
 const USER_KEY = 'copilote-hadj-user';
 const TOKEN_KEY = 'copilote-hadj-token';
@@ -57,6 +67,29 @@ describe('portail encadreur (session encadreur)', () => {
     await screen.findByText(/effectuer un versement/i);
     expect(screen.queryByText(/validation des visas en masse/i)).toBeNull();
     expect(screen.queryByText(/appliquer à tout le groupe/i)).toBeNull();
+  });
+
+  it('télécharge UNE attestation de dépôt couvrant tout le groupe (pas une par pèlerin)', async () => {
+    loginAs(encadreur);
+    // On dépose au préalable les passeports de deux pèlerins du groupe via le
+    // vrai chemin API (axios → backend), pour activer le bouton d'attestation.
+    const group = await getEncadreurGroup('ENC-001');
+    await togglePassportDeposit(group[0].id, true);
+    await togglePassportDeposit(group[1].id, true);
+
+    renderWithProviders(<VisaEncadreurPortalPage />, { route: '/visa/encadreur' });
+    const btn = await screen.findByRole('button', { name: /attestation de dépôt du groupe/i });
+    await waitFor(() => expect(btn).toBeEnabled());
+    fireEvent.click(btn);
+
+    // Un seul appel = un document unique récapitulant les deux dépôts.
+    expect(pdf.generateGroupPassportDepositCertificate).toHaveBeenCalledTimes(1);
+    const arg = pdf.generateGroupPassportDepositCertificate.mock.calls[0][0];
+    expect(arg.encadreurId).toBe('ENC-001');
+    expect(arg.deposits).toHaveLength(2);
+    expect(arg.deposits.map((d) => d.idNumber).sort()).toEqual(
+      [group[0].idNumber, group[1].idNumber].sort()
+    );
   });
 });
 
