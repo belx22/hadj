@@ -59,10 +59,18 @@ public class SecurityConfig {
                                 "/saisons",
                                 "/parametrage/prix-officiel"
                         ).permitAll()
-                        // Espace pèlerin-encadreur : un encadreur de type pèlerin consulte son
-                        // groupe sans compte staff (identifié par sa session pèlerin, pas par un
-                        // JWT). Lecture seule — les mutations restent protégées.
+                        // Espace pèlerin-encadreur : un encadreur de type pèlerin gère son groupe
+                        // sans compte staff (identifié par sa session pèlerin, pas par un JWT). Ces
+                        // actions relèvent du self-service pèlerin, au même titre que l'inscription
+                        // en ligne et les versements déjà publics : consultation du groupe,
+                        // inscription (unité + import) et versements groupés. Le changement de
+                        // statut des passeports/visas reste réservé au staff.
                         .requestMatchers(HttpMethod.GET, "/visa/encadreur/*/groupe").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/visa/encadreur/inscription",
+                                "/visa/encadreur/*/import",
+                                "/visa/encadreur/*/import-versement-groupe"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                         // Tout le reste exige un jeton valide.
                         .anyRequest().authenticated()

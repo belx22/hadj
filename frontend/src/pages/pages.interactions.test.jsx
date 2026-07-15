@@ -116,6 +116,21 @@ describe('portail encadreur (session gestionnaire)', () => {
     // Le portail s'ouvre : inscription + versement pour le groupe de cet encadreur.
     await screen.findByText(/inscrire un pèlerin/i);
     await screen.findByText(/effectuer un versement/i);
+    // Le staff (gestionnaire) voit aussi la section dépôt des passeports.
+    expect(screen.getByText(/dépôt des passeports/i)).toBeInTheDocument();
+  });
+});
+
+describe('portail encadreur (montage pèlerin-encadreur, sans compte staff)', () => {
+  it('inscription visible mais dépôt des passeports masqué (réservé au staff)', async () => {
+    // Aucune session staff (useAuth().user null) : montage type pèlerin-encadreur.
+    renderWithProviders(
+      <VisaEncadreurPortalPage encadreurId="ENC-001" encadreurName="Guide" />,
+      { route: '/visa/pelerin/encadreur' }
+    );
+    await screen.findByText(/inscrire un pèlerin/i);
+    // Le dépôt des passeports (changement de statut) reste réservé au gestionnaire.
+    expect(screen.queryByText(/dépôt des passeports/i)).toBeNull();
   });
 });
 

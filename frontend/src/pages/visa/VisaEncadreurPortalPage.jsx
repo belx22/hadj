@@ -734,7 +734,10 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
         )}
       </div>
 
-      {/* Soumission de la liste des passeports déjà déposés. */}
+      {/* Dépôt des passeports : réservé au staff (gestionnaire ou encadreur
+          connecté). Un pèlerin-encadreur ne modifie pas les statuts — c'est le
+          gestionnaire qui bascule les passeports en « reçu ». */}
+      {user && (
       <div className="card space-y-3">
         <p className="text-sm font-semibold text-afriland-black">{t('encadreurPortal.passports.title')}</p>
         <p className="text-xs text-afriland-gray-600">{t('encadreurPortal.passports.help')}</p>
@@ -771,6 +774,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
           </div>
         )}
       </div>
+      )}
 
       {/* Suivi (lecture seule) : l'encadreur consulte le statut visa de ses
           pèlerins mais ne peut jamais le modifier, ni changer un statut de
