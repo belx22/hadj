@@ -37,7 +37,6 @@ export default function VisaPelerinEncadreurPage() {
         <VisaEncadreurPortalPage
           encadreurId={dossier.encadreurId}
           encadreurName={`${dossier.pilgrimFirstName} ${dossier.pilgrimLastName}`}
-          actor={{ username: dossier.idNumber, role: 'ENCADREUR' }}
         />
       </main>
 

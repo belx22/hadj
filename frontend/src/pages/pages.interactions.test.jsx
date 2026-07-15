@@ -36,6 +36,8 @@ function loginAs(user) {
 }
 const admin = { id: 'U-5', username: 'admin', role: 'ADMIN_DSI', name: 'Admin', agency: 'Yaoundé - Siège' };
 const encadreur = { id: 'U-4', username: 'encadreur1', role: 'ENCADREUR', name: 'Guide', encadreurId: 'ENC-001' };
+// Un gestionnaire n'a pas d'encadreurId propre : il choisit l'encadreur cible.
+const gestionnaire = { id: 'U-2', username: 'gestionnaire', role: 'GESTIONNAIRE_HADJ', name: 'Gestionnaire', agency: 'Yaoundé - Siège' };
 
 beforeEach(() => {
   vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -90,6 +92,30 @@ describe('portail encadreur (session encadreur)', () => {
     expect(arg.deposits.map((d) => d.idNumber).sort()).toEqual(
       [group[0].idNumber, group[1].idNumber].sort()
     );
+  });
+});
+
+describe('portail encadreur (session gestionnaire)', () => {
+  it('n’affiche que le sélecteur tant qu’aucun encadreur n’est choisi', async () => {
+    loginAs(gestionnaire);
+    renderWithProviders(<VisaEncadreurPortalPage />, { route: '/visa/encadreur' });
+    // Le sélecteur d'encadreur est présent…
+    await screen.findByLabelText(/encadreur concerné/i);
+    // …mais pas encore le formulaire d'inscription (aucun encadreur choisi).
+    expect(screen.queryByText(/inscrire un pèlerin/i)).toBeNull();
+  });
+
+  it('affiche le portail complet une fois un encadreur sélectionné', async () => {
+    loginAs(gestionnaire);
+    renderWithProviders(<VisaEncadreurPortalPage />, { route: '/visa/encadreur' });
+    const select = await screen.findByLabelText(/encadreur concerné/i);
+    // Les encadreurs actifs (semés) alimentent la liste.
+    await waitFor(() => expect(select.querySelectorAll('option').length).toBeGreaterThan(1));
+    const opt = [...select.options].find((o) => o.value);
+    fireEvent.change(select, { target: { value: opt.value } });
+    // Le portail s'ouvre : inscription + versement pour le groupe de cet encadreur.
+    await screen.findByText(/inscrire un pèlerin/i);
+    await screen.findByText(/effectuer un versement/i);
   });
 });
 

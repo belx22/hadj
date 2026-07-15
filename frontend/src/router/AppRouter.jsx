@@ -108,7 +108,9 @@ export default function AppRouter() {
           </Route>
         </Route>
 
-        <Route element={<ProtectedRoute roles={['ENCADREUR']} />}>
+        {/* Le gestionnaire accède au portail comme l'encadreur, mais choisit
+            l'encadreur pour lequel il inscrit/verse via un sélecteur en tête. */}
+        <Route element={<ProtectedRoute roles={['ENCADREUR', 'GESTIONNAIRE_HADJ']} />}>
           <Route element={<MainLayout />}>
             <Route path="/visa/encadreur" element={<VisaEncadreurPortalPage />} />
           </Route>

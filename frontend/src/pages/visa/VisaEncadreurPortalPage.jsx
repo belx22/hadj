@@ -11,6 +11,7 @@ import {
   importGroupedVersementsByEncadreur,
 } from '../../api/visaApi';
 import { importPassportDeposits } from '../../api/attestationsApi';
+import { getEncadreurs } from '../../api/referenceDataApi';
 import StatCard from '../../components/ui/StatCard';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import Pagination from '../../components/ui/Pagination';
@@ -86,13 +87,23 @@ function normalizePassportRow(rawRow) {
 // Le portail est réutilisable : par défaut il s'appuie sur le compte staff
 // connecté (useAuth), mais il accepte des props pour être monté dans l'espace
 // pèlerin lorsqu'un pèlerin de type Encadreur consulte son groupe.
-export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, encadreurName: propName, actor: propActor } = {}) {
+export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, encadreurName: propName } = {}) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const toast = useToast();
-  const encadreurId = propEncadreurId ?? user?.encadreurId;
-  const encadreurName = propName ?? user?.name;
-  const actor = propActor ?? user;
+
+  // Un encadreur opère sur son propre groupe (encadreurId porté par son compte).
+  // Un gestionnaire — ou tout staff sans encadreurId propre — choisit dans une
+  // liste l'encadreur pour lequel il agit : le backend rattache le pèlerin à
+  // l'encadreurId transmis, pas à l'appelant, donc la meme page sert aux deux.
+  const ownEncadreurId = propEncadreurId ?? user?.encadreurId;
+  const managerMode = !ownEncadreurId;
+  const [managerEncadreurs, setManagerEncadreurs] = useState([]);
+  const [selectedEncadreurId, setSelectedEncadreurId] = useState('');
+  const encadreurId = ownEncadreurId ?? (selectedEncadreurId || null);
+  const encadreurName = propName ?? (managerMode
+    ? managerEncadreurs.find((e) => e.id === encadreurId)?.name
+    : user?.name);
   const [group, setGroup] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -123,6 +134,13 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
   const passportFileInputRef = useRef(null);
 
   function reload() {
+    // En mode gestionnaire tant qu'aucun encadreur n'est choisi, il n'y a pas de
+    // groupe à charger : on évite un appel avec un encadreurId nul.
+    if (!encadreurId) {
+      setGroup([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     getEncadreurGroup(encadreurId).then((groupData) => {
       setGroup(groupData);
@@ -134,6 +152,12 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [encadreurId]);
+
+  // Mode gestionnaire : liste des encadreurs actifs proposés dans le sélecteur.
+  useEffect(() => {
+    if (!managerMode) return;
+    getEncadreurs({ onlyActive: true }).then(setManagerEncadreurs);
+  }, [managerMode]);
 
   // Tableau de bord : encaissements, reste à verser et suivi des passeports.
   const stats = useMemo(() => {
@@ -386,10 +410,47 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
     }
   }
 
-  if (loading) return <p className="text-afriland-gray-600">{t('common.loading')}</p>;
+  // Sélecteur d'encadreur : rendu en tête uniquement pour un gestionnaire ; pour
+  // un encadreur connecté, managerMode est faux et cet élément ne s'affiche pas.
+  const encadreurPicker = managerMode && (
+    <div className="card space-y-2">
+      <label className="form-label" htmlFor="manager-encadreur-select">
+        {t('encadreurPortal.managerSelectLabel')}
+      </label>
+      <select
+        id="manager-encadreur-select"
+        className="form-input sm:max-w-md"
+        value={selectedEncadreurId}
+        onChange={(e) => setSelectedEncadreurId(e.target.value)}
+      >
+        <option value="">{t('encadreurPortal.managerSelectPlaceholder')}</option>
+        {managerEncadreurs.map((enc) => (
+          <option key={enc.id} value={enc.id}>
+            {enc.name}{enc.code ? ` — ${enc.code}` : ''}
+          </option>
+        ))}
+      </select>
+      <p className="text-xs text-afriland-gray-600">{t('encadreurPortal.managerHint')}</p>
+    </div>
+  );
+
+  // Gestionnaire sans encadreur choisi : rien à afficher hormis le sélecteur.
+  if (managerMode && !encadreurId) {
+    return <div className="space-y-6">{encadreurPicker}</div>;
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {encadreurPicker}
+        <p className="text-afriland-gray-600">{t('common.loading')}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {encadreurPicker}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-afriland-black">{t('visa.encadreurLoginTitle')}</h1>

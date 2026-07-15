@@ -539,6 +539,9 @@
     "futureNote": "بمجرد ربط الخلفية Spring Boot، سيحل تدفق مباشر (واجهة OData/REST) محل هذا التصدير اليدوي للتحديث التلقائي في Power BI."
   },
   "encadreurPortal": {
+    "managerSelectLabel": "المؤطر المعني",
+    "managerSelectPlaceholder": "اختر مؤطرًا…",
+    "managerHint": "اختر المؤطر الذي تسجّل الحجاج وتُدخل الدفعات نيابة عنه.",
     "registerTitle": "تسجيل حاج",
     "registerButton": "تسجيل",
     "importTitle": "استيراد جماعي للحجاج (Excel / CSV)",

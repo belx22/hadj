@@ -539,6 +539,9 @@
     "futureNote": "Once the Spring Boot backend is connected, a live feed (OData/REST API) will replace this manual export for automatic refresh in Power BI."
   },
   "encadreurPortal": {
+    "managerSelectLabel": "Selected guide",
+    "managerSelectPlaceholder": "Choose a guide…",
+    "managerHint": "Pick the guide for whom you are registering pilgrims and recording payments.",
     "registerTitle": "Register a pilgrim",
     "registerButton": "Register",
     "importTitle": "Bulk pilgrim import (Excel / CSV)",

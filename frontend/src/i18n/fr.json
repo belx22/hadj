@@ -539,6 +539,9 @@
     "futureNote": "Une fois le backend Spring Boot connecté, un flux live (API OData/REST) remplacera cet export manuel pour une actualisation automatique dans Power BI."
   },
   "encadreurPortal": {
+    "managerSelectLabel": "Encadreur concerné",
+    "managerSelectPlaceholder": "Choisir un encadreur…",
+    "managerHint": "Sélectionnez l'encadreur pour lequel vous inscrivez des pèlerins et enregistrez des versements.",
     "registerTitle": "Inscrire un pèlerin",
     "registerButton": "Inscrire",
     "importTitle": "Import en masse de pèlerins (Excel / CSV)",
