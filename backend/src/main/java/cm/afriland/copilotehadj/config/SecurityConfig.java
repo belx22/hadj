@@ -1,5 +1,6 @@
 package cm.afriland.copilotehadj.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,10 +44,14 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints publics : authentification, self-service pèlerin, inscription en ligne.
+                        // `check-duplicate` est appelé par la page d'inscription publique (avant
+                        // toute connexion) : sans cette autorisation, le contrôle de doublon
+                        // renvoyait 403 et faisait échouer le formulaire.
                         .requestMatchers(
                                 "/auth/**",
                                 "/visa/pelerin/login",
                                 "/bordereaux/inscription-en-ligne",
+                                "/bordereaux/check-duplicate",
                                 "/versements",
                                 "/versements/groupe",
                                 "/versements/beneficiaire/**",
@@ -58,6 +63,14 @@ public class SecurityConfig {
                         // Tout le reste exige un jeton valide.
                         .anyRequest().authenticated()
                 )
+                // Un accès anonyme (aucun jeton, ou jeton expiré — JwtAuthFilter le traite
+                // comme anonyme) à une route protégée doit renvoyer 401, et non le 403 que
+                // Spring émet par défaut. Sans cela, une session expirée laissait l'interface
+                // « connectée » mais chaque action renvoyait « Erreur » (403) sans jamais
+                // ramener à l'écran de connexion. Le 401 déclenche le SessionWatcher du front.
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(
+                        (request, response, authEx) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "UNAUTHENTICATED")
+                ))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
