@@ -59,6 +59,10 @@ public class SecurityConfig {
                                 "/saisons",
                                 "/parametrage/prix-officiel"
                         ).permitAll()
+                        // Espace pèlerin-encadreur : un encadreur de type pèlerin consulte son
+                        // groupe sans compte staff (identifié par sa session pèlerin, pas par un
+                        // JWT). Lecture seule — les mutations restent protégées.
+                        .requestMatchers(HttpMethod.GET, "/visa/encadreur/*/groupe").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                         // Tout le reste exige un jeton valide.
                         .anyRequest().authenticated()

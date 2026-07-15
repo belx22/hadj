@@ -98,7 +98,10 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
   // liste l'encadreur pour lequel il agit : le backend rattache le pèlerin à
   // l'encadreurId transmis, pas à l'appelant, donc la meme page sert aux deux.
   const ownEncadreurId = propEncadreurId ?? user?.encadreurId;
-  const managerMode = !ownEncadreurId;
+  // Mode gestionnaire = staff monté SANS encadreurId (aucune prop fournie et pas
+  // d'encadreurId sur le compte). Un pèlerin-encadreur reçoit toujours la prop
+  // `encadreurId` (même vide) : il ne doit jamais voir le sélecteur d'encadreur.
+  const managerMode = propEncadreurId === undefined && !user?.encadreurId;
   const [managerEncadreurs, setManagerEncadreurs] = useState([]);
   const [selectedEncadreurId, setSelectedEncadreurId] = useState('');
   const encadreurId = ownEncadreurId ?? (selectedEncadreurId || null);
@@ -143,10 +146,11 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
       return;
     }
     setLoading(true);
-    getEncadreurGroup(encadreurId).then((groupData) => {
-      setGroup(groupData);
-      setLoading(false);
-    });
+    getEncadreurGroup(encadreurId)
+      .then((groupData) => setGroup(groupData))
+      // Sans ce catch, un échec (ex. 401) laissait la page bloquée sur « Chargement… ».
+      .catch(() => setGroup([]))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {

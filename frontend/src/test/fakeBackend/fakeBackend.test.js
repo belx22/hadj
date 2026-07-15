@@ -128,6 +128,30 @@ describe('inscription en ligne et par encadreur', () => {
     const res = await api.importPilgrims(rows, 'ENC-001', { username: 'encadreur1' });
     expect(res.created.length).toBeGreaterThan(0);
   });
+
+  it('un encadreur qui s’auto-inscrit obtient une fiche référentiel INACTIVE avec un code', async () => {
+    const encadreursAvant = await api.getEncadreurs({ onlyActive: false });
+    const res = await api.registerPilgrimOnline({
+      ...base, idNumber: '5550009999', phone: '698999888', pilgrimType: 'ENCADREUR', encadreurId: '',
+    });
+    // Son dossier est rattaché à sa propre fiche, avec un code de paiement dérivé.
+    expect(res.encadreurId).toMatch(/^ENC-/);
+    expect(res.encadreurCode).toMatch(/^[A-Z0-9]{3}$/);
+    expect(res.paymentCode).toBe(`${res.id}-${res.encadreurCode}`);
+
+    // Une nouvelle fiche a bien été créée, mais INACTIVE (à valider).
+    const encadreursApres = await api.getEncadreurs({ onlyActive: false });
+    expect(encadreursApres.length).toBe(encadreursAvant.length + 1);
+    const fiche = encadreursApres.find((e) => e.id === res.encadreurId);
+    expect(fiche.active).toBe(false);
+
+    // Inactive => pas encore proposée aux pèlerins…
+    const actifs = await api.getEncadreurs({ onlyActive: true });
+    expect(actifs.find((e) => e.id === res.encadreurId)).toBeUndefined();
+    // …mais son groupe est déjà consultable (il s'y trouve lui-même).
+    const groupe = await api.getEncadreurGroup(res.encadreurId);
+    expect(groupe.some((b) => b.idNumber === '5550009999')).toBe(true);
+  });
 });
 
 describe('versements', () => {
