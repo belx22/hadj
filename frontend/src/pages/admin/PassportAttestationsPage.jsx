@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as XLSX from 'xlsx';
-import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getPassportDeposits, togglePassportDeposit, importPassportDeposits } from '../../api/attestationsApi';
 import { getSeasons } from '../../api/referenceDataApi';
@@ -9,6 +8,7 @@ import StatCard from '../../components/ui/StatCard';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { exportTemplateToExcel } from '../../utils/excel';
+import { buildPassportDepositTemplateRows } from '../../utils/importTemplates';
 import { generatePassportDepositCertificate } from '../../utils/pdf';
 import { CURRENT_SEASON } from '../../utils/constants';
 
@@ -16,7 +16,6 @@ const DEPOSIT_CHOICES = ['OUI', 'NON'];
 
 export default function PassportAttestationsPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const toast = useToast();
   const [season, setSeason] = useState(CURRENT_SEASON);
   const [seasons, setSeasons] = useState([]);
@@ -57,15 +56,12 @@ export default function PassportAttestationsPage() {
   }
 
   function handleDownloadTemplate() {
-    exportTemplateToExcel(
-      [
-        { idNumber: '1002345678', deposited: 'OUI', pilgrimName: 'Amadou Bah' },
-        { idNumber: '1002345679', deposited: 'NON', pilgrimName: 'Fatou Sow' },
-      ],
-      'modele-depots-passeports.xlsx',
-      'DepotsPasseports',
-      { deposited: DEPOSIT_CHOICES }
-    );
+    // Pré-rempli avec les pèlerins de la saison et leur statut de dépôt actuel
+    // (OUI/NON) : l'opérateur bascule seulement ce qui change puis réimporte.
+    const rows = data.items.length
+      ? buildPassportDepositTemplateRows(data.items)
+      : [{ Pelerin: '', idNumber: '1002345678', deposited: 'OUI' }];
+    exportTemplateToExcel(rows, 'modele-depots-passeports.xlsx', 'DepotsPasseports', { deposited: DEPOSIT_CHOICES });
   }
 
   function handleImportClick() {

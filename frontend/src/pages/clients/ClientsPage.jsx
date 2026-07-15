@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as XLSX from 'xlsx';
-import { useAuth } from '../../context/AuthContext';
 import { getBordereaux } from '../../api/bordereauApi';
 import { getEncadreurs } from '../../api/referenceDataApi';
 import { importVisaStatuses, checkStatusAnomalies } from '../../api/visaApi';
 import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
+import { buildVisaStatusTemplateRows } from '../../utils/importTemplates';
 import { generateListPdf } from '../../utils/pdf';
 import VisaStatusBadge from '../../components/ui/VisaStatusBadge';
 import Pagination from '../../components/ui/Pagination';
@@ -15,7 +15,6 @@ import { REGIONS, VISA_STATUSES } from '../../utils/constants';
 
 export default function ClientsPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const [bordereaux, setBordereaux] = useState([]);
   const [encadreurs, setEncadreurs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -116,13 +115,17 @@ export default function ClientsPage() {
   }
 
   function handleDownloadTemplate() {
-    // Codes bruts dans la liste déroulante : c'est ce qu'attend l'import.
-    exportTemplateToExcel(
-      [{ idNumber: '1002345678', status: 'ACCORDE', note: '' }],
-      'modele-statuts-visa.xlsx',
-      'Statuts',
-      { status: VISA_STATUSES }
-    );
+    // Le modèle est pré-rempli avec les clients du périmètre d'import courant
+    // (encadreur sélectionné, ou tous) et leur statut visa actuel : l'opérateur
+    // n'a plus qu'à corriger les statuts qui changent avant de réimporter.
+    // Les codes bruts (ACCORDE, REFUSE…) sont ce qu'attend l'import.
+    const scopedClients = importEncadreurId
+      ? bordereaux.filter((b) => b.encadreurId === importEncadreurId)
+      : bordereaux;
+    const rows = scopedClients.length
+      ? buildVisaStatusTemplateRows(scopedClients)
+      : [{ Pelerin: '', idNumber: '1002345678', status: 'ACCORDE', note: '' }];
+    exportTemplateToExcel(rows, 'modele-statuts-visa.xlsx', 'Statuts', { status: VISA_STATUSES });
   }
 
   // Source unique pour les deux exports : Excel et PDF restent alignés.

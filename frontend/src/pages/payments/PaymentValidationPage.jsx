@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import * as XLSX from 'xlsx';
-import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
   getPendingVersements,
@@ -16,6 +15,7 @@ import {
 } from '../../api/paymentsApi';
 import { getEncadreurs } from '../../api/referenceDataApi';
 import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
+import { buildPaymentStatusTemplateRows } from '../../utils/importTemplates';
 import { generateListPdf } from '../../utils/pdf';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { VERSEMENT_STATUS_COLORS, VERSEMENT_METHODS, REGIONS } from '../../utils/constants';
@@ -78,7 +78,6 @@ export default function PaymentValidationPage() {
 
 function PendingTab() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const toast = useToast();
   const [rows, setRows] = useState([]);
   const [encadreurs, setEncadreurs] = useState([]);
@@ -171,16 +170,12 @@ function PendingTab() {
   }
 
   function handleDownloadImportTemplate() {
-    exportTemplateToExcel(
-      [
-        { Reference: 'OM-2027-000123', Statut: 'VALIDE', Client: 'Amadou Bah' },
-        { Reference: 'MTN-2027-000456', Statut: 'REJETE', Client: 'Fatou Sow' },
-        { Reference: 'CPT-100002', Statut: '', Client: 'Ibrahima Diallo' },
-      ],
-      'modele-statuts-paiement.xlsx',
-      'StatutsPaiement',
-      { Statut: ['VALIDE', 'REJETE'] }
-    );
+    // Pré-rempli avec les versements en attente affichés (référence + client) ;
+    // la colonne Statut reste vide, à renseigner avec la décision (VALIDE/REJETE).
+    const rows = filteredRows.length
+      ? buildPaymentStatusTemplateRows(filteredRows)
+      : [{ Reference: 'OM-2027-000123', Client: '', Statut: '' }];
+    exportTemplateToExcel(rows, 'modele-statuts-paiement.xlsx', 'StatutsPaiement', { Statut: ['VALIDE', 'REJETE'] });
   }
 
   function handleImportClick() {
@@ -579,7 +574,6 @@ function HistoryTab() {
 
 function RefundsTab() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const toast = useToast();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);

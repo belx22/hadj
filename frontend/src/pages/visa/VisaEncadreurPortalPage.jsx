@@ -18,6 +18,7 @@ import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { formatCurrency } from '../../utils/formatters';
 import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
+import { buildGroupedPaymentTemplateRows, buildPassportDepositTemplateRows } from '../../utils/importTemplates';
 import { generateReportingPdf, generateGroupPassportDepositCertificate } from '../../utils/pdf';
 import { CURRENT_SEASON, PILGRIM_TYPES, REGIONS, VERSEMENT_METHODS, isEncadreurPilgrimType } from '../../utils/constants';
 import { validateBordereau } from '../../utils/validators';
@@ -325,11 +326,12 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
   }
 
   function handleDownloadGroupedTemplate() {
-    exportToExcel(
-      [{ pilgrimLastName: 'Nom', pilgrimFirstName: 'Prénom', phone: '699112233', amount: 500000 }],
-      'modele-paiement-groupe.xlsx',
-      'PaiementGroupe'
-    );
+    // Pré-rempli avec les membres du groupe et leur reste à verser ; la colonne
+    // « amount » reste vide, à renseigner avec le montant réellement versé.
+    const rows = group.length
+      ? buildGroupedPaymentTemplateRows(group)
+      : [{ pilgrimLastName: 'Nom', pilgrimFirstName: 'Prénom', phone: '699112233', ResteAVerser: 0, amount: '' }];
+    exportToExcel(rows, 'modele-paiement-groupe.xlsx', 'PaiementGroupe');
   }
 
   async function handleGroupedFileChange(e) {
@@ -380,11 +382,11 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
   }
 
   function handleDownloadPassportTemplate() {
-    exportToExcel(
-      [{ idNumber: '1002345699', Depot: 'OUI' }],
-      'modele-depot-passeports.xlsx',
-      'DepotPasseports'
-    );
+    // Pré-rempli avec les pèlerins du groupe et leur statut de dépôt actuel.
+    const rows = group.length
+      ? buildPassportDepositTemplateRows(group)
+      : [{ Pelerin: '', idNumber: '1002345699', deposited: 'OUI' }];
+    exportTemplateToExcel(rows, 'modele-depot-passeports.xlsx', 'DepotPasseports', { deposited: ['OUI', 'NON'] });
   }
 
   async function handlePassportFileChange(e) {

@@ -36,15 +36,20 @@ function isInlineListSafe(values) {
   return values.join(',').length <= 250;
 }
 
-function buildDataValidationsXml(dropdowns, headers) {
+function buildDataValidationsXml(dropdowns, headers, dataRowCount = 0) {
   const entries = Object.entries(dropdowns).filter(([column]) => headers.includes(column));
   if (entries.length === 0) return null;
+
+  // La liste déroulante couvre au moins TEMPLATE_VALIDATION_ROWS lignes, et
+  // davantage si le modèle est pré-rempli avec plus de clients que ça — sans
+  // quoi les lignes au-delà perdraient leur menu déroulant.
+  const lastRow = Math.max(TEMPLATE_VALIDATION_ROWS, dataRowCount) + 1;
 
   const validations = entries
     .map(([column, values]) => {
       if (!Array.isArray(values) || values.length === 0 || !isInlineListSafe(values)) return null;
       const letter = columnLetter(headers.indexOf(column));
-      const sqref = `${letter}2:${letter}${TEMPLATE_VALIDATION_ROWS + 1}`;
+      const sqref = `${letter}2:${letter}${lastRow}`;
       const list = escapeXml(`"${values.join(',')}"`);
       return (
         `<dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1" sqref="${sqref}">` +
@@ -107,7 +112,7 @@ export function exportTemplateToExcel(rows, filename, sheetName = 'Feuille1', dr
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
   const headers = Object.keys(rows[0] || {});
-  const validationsXml = buildDataValidationsXml(dropdowns, headers);
+  const validationsXml = buildDataValidationsXml(dropdowns, headers, rows.length);
 
   // Sans liste déroulante exploitable, on retombe sur l'export standard.
   if (!validationsXml) {
