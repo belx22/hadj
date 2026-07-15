@@ -119,23 +119,26 @@ describe('portail encadreur (session gestionnaire)', () => {
   });
 });
 
-describe('inscription : choix avec/sans frais pour le type Encadreur', () => {
-  it('affiche le sélecteur de frais uniquement pour le type Encadreur', async () => {
+describe('inscription : choix « intégrer au total du groupe » pour le type Encadreur', () => {
+  it('affiche le sélecteur d’intégration uniquement pour le type Encadreur', async () => {
     const { container } = renderWithProviders(<PilgrimSelfRegisterPage />, { route: '/inscription' });
     await waitFor(() => expect(container.querySelectorAll('select').length).toBeGreaterThan(0));
     // Le select "type de pèlerin" est celui dont les options contiennent ENCADREUR.
     const typeSelect = [...container.querySelectorAll('select')].find((s) =>
       [...s.options].some((o) => o.value === 'ENCADREUR')
     );
-    const feesSelect = () =>
-      [...container.querySelectorAll('select')].find((s) => [...s.options].some((o) => o.value === 'WITH'));
+    // Le select d'intégration au total du groupe a des options YES/NO.
+    const groupSelect = () =>
+      [...container.querySelectorAll('select')].find((s) =>
+        [...s.options].some((o) => o.value === 'YES') && [...s.options].some((o) => o.value === 'NO')
+      );
     // Aucun montant cible n'est affiché hors connexion.
     expect(screen.queryByText(/montant cible/i)).toBeNull();
-    expect(feesSelect()).toBeUndefined();
+    expect(groupSelect()).toBeUndefined();
     fireEvent.change(typeSelect, { target: { value: 'ENCADREUR' } });
-    await waitFor(() => expect(feesSelect()).toBeTruthy());
+    await waitFor(() => expect(groupSelect()).toBeTruthy());
     fireEvent.change(typeSelect, { target: { value: 'PELERIN' } });
-    await waitFor(() => expect(feesSelect()).toBeUndefined());
+    await waitFor(() => expect(groupSelect()).toBeUndefined());
   });
 });
 

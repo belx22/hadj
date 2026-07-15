@@ -63,6 +63,7 @@ public class BordereauMapper {
         m.put("pilgrimType", b.getPilgrimType());
         m.put("pilgrimStatus", b.getPilgrimStatus());
         m.put("includesEncadreurFees", b.isIncludesEncadreurFees());
+        m.put("includeInGroupTotal", b.isIncludeInGroupTotal());
         m.put("pilgrimCount", count);
         m.put("season", b.getSeason());
         m.put("receiptNumber", b.getReceiptNumber());

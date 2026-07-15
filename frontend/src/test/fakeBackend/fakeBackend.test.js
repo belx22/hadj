@@ -152,6 +152,17 @@ describe('inscription en ligne et par encadreur', () => {
       })
     ).rejects.toThrow('ENCADREUR_NOT_REGISTERED');
   });
+
+  it('un encadreur ne paie jamais de commission, même en cochant les frais', async () => {
+    const prixPelerin = await api.getOfficialPrice(2027, 'PELERIN', true);
+    const prixPelerinBase = await api.getOfficialPrice(2027, 'PELERIN', false);
+    // Pour un pèlerin, cocher les frais augmente le prix (commission).
+    expect(prixPelerin).toBeGreaterThan(prixPelerinBase);
+    // Pour un encadreur, la commission ne s'applique jamais.
+    const prixEncadreur = await api.getOfficialPrice(2027, 'ENCADREUR', true);
+    const prixEncadreurBase = await api.getOfficialPrice(2027, 'ENCADREUR', false);
+    expect(prixEncadreur).toBe(prixEncadreurBase);
+  });
 });
 
 describe('versements', () => {

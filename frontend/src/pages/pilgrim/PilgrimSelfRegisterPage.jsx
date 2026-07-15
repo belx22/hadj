@@ -25,6 +25,7 @@ const EMPTY_FORM = {
   pilgrimType: 'PELERIN',
   pilgrimStatus: 'NOUVEAU',
   includesEncadreurFees: false,
+  includeInGroupTotal: true,
   pilgrimCount: 1,
   season: CURRENT_SEASON,
 };
@@ -222,16 +223,17 @@ export default function PilgrimSelfRegisterPage() {
           </Field>
         </div>
 
-        {/* Choix « avec / sans frais de l'encadreur » réservé au type Encadreur. */}
+        {/* L'encadreur paie ses frais sans commission ; il choisit d'intégrer son
+            propre montant au total à collecter de son groupe, ou de le suivre à part. */}
         {isEncadreur && (
-          <Field label={t('bordereau.encadreurFees')} help={t('bordereau.includesEncadreurFeesHelp')}>
+          <Field label={t('pilgrimRegister.includeInGroupTotal')} help={t('pilgrimRegister.includeInGroupTotalHelp')}>
             <select
               className="form-input"
-              value={form.includesEncadreurFees ? 'WITH' : 'WITHOUT'}
-              onChange={(e) => update('includesEncadreurFees', e.target.value === 'WITH')}
+              value={form.includeInGroupTotal ? 'YES' : 'NO'}
+              onChange={(e) => update('includeInGroupTotal', e.target.value === 'YES')}
             >
-              <option value="WITHOUT">{t('bordereau.withoutEncadreurFees')}</option>
-              <option value="WITH">{t('bordereau.withEncadreurFees')}</option>
+              <option value="YES">{t('pilgrimRegister.includeInGroupYes')}</option>
+              <option value="NO">{t('pilgrimRegister.includeInGroupNo')}</option>
             </select>
           </Field>
         )}

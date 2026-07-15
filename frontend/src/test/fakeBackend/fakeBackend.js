@@ -133,11 +133,13 @@ function getSeason(season) {
 
 // Prix à régler pour un pèlerin : prix de base de son type, majoré des frais de
 // l'encadreur (commission par pèlerin de la saison) si le pèlerin a choisi de
-// les prendre en charge à l'inscription (`includesEncadreurFees`).
+// les prendre en charge à l'inscription (`includesEncadreurFees`). Un encadreur
+// ne finance jamais sa propre commission : le type ENCADREUR en est exempté.
 function getPrice(season, pilgrimType, includesEncadreurFees = false) {
   const seasonData = getSeason(season);
   const base = seasonData?.prices?.[pilgrimType] ?? DEFAULT_OFFICIAL_PRICE;
-  const fees = includesEncadreurFees ? (seasonData?.commissionPerPilgrim || 0) : 0;
+  const chargesFees = includesEncadreurFees && pilgrimType !== 'ENCADREUR';
+  const fees = chargesFees ? (seasonData?.commissionPerPilgrim || 0) : 0;
   return base + fees;
 }
 
@@ -170,6 +172,8 @@ function decorateBordereau(bordereau) {
     eligiblePilgrims,
     isEligible: eligiblePilgrims >= bordereau.pilgrimCount,
     isComplete: amountPaid >= targetAmount,
+    // Défaut true : seul un encadreur ayant décoché sort son dossier du total groupe.
+    includeInGroupTotal: bordereau.includeInGroupTotal !== false,
     encadreurCode: encadreur?.code || null,
     // Code de paiement remis au pèlerin : identifiant du bordereau + code
     // encadreur, pour identifier sans ambiguïté qui l'accompagne.

@@ -271,6 +271,10 @@
     "targetAmount": "Montant cible à atteindre",
     "personsToPay": "Nombre de personnes à payer",
     "pilgrimsToManage": "Nombre de pèlerins à gérer",
+    "includeInGroupTotal": "Mes frais de voyage",
+    "includeInGroupTotalHelp": "En tant qu'encadreur, vous payez vos frais sans commission. Choisissez de les intégrer au total à collecter de votre groupe, ou de les régler à part.",
+    "includeInGroupYes": "Intégrer au total du groupe",
+    "includeInGroupNo": "Régler à part (hors total du groupe)",
     "submit": "M'inscrire",
     "errors": {
       "encadreurNotRegistered": "Aucun encadreur enregistré avec ce numéro de pièce d'identité. Pour être encadreur, veuillez d'abord vous rapprocher de votre agence."
@@ -574,6 +578,8 @@
       "notFound": "{{count}} ligne(s) sans pèlerin correspondant dans votre groupe"
     },
     "dashboardTitle": "Tableau de bord de suivi",
+    "ownFeesTitle": "Vos frais d'encadreur",
+    "ownFeesHelp": "Vous avez choisi de régler vos frais à part : ils ne sont pas comptés dans le total de votre groupe.",
     "groupSpaceHelp": "Inscrire vos pèlerins en masse et suivre vos KPI, versements et dépôts de passeports",
     "openGroupSpace": "Ouvrir mon espace groupe",
     "remaining": "Reste à verser",

@@ -35,6 +35,9 @@ public class Bordereau {
     private String pilgrimType;   // PELERIN, ENCADREUR, OFFICIEL, GUH
     private String pilgrimStatus; // NOUVEAU, RECURRENT
     private boolean includesEncadreurFees;
+    // Dossier propre d'un encadreur : intègre (ou non) son montant dans le total
+    // à collecter de son groupe. Sans effet pour un pèlerin ordinaire.
+    private boolean includeInGroupTotal = true;
     private Integer pilgrimCount = 1;
     private Integer season;
     private String receiptNumber;

@@ -25,7 +25,8 @@ public class PricingService {
 
     /**
      * Prix à régler pour un pèlerin : prix de base du type, majoré des frais de
-     * l'encadreur (commission par pèlerin) si pris en charge.
+     * l'encadreur (commission par pèlerin) si pris en charge. Un encadreur ne
+     * finance jamais sa propre commission : le type ENCADREUR en est exempté.
      */
     public long getPrice(Integer season, String pilgrimType, boolean includesEncadreurFees) {
         Season s = getSeason(season);
@@ -34,7 +35,7 @@ public class PricingService {
             base = s.getPrices().get(pilgrimType);
         }
         long fees = 0;
-        if (includesEncadreurFees && s != null && s.getCommissionPerPilgrim() != null) {
+        if (includesEncadreurFees && !"ENCADREUR".equals(pilgrimType) && s != null && s.getCommissionPerPilgrim() != null) {
             fees = s.getCommissionPerPilgrim();
         }
         return base + fees;

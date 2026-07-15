@@ -242,6 +242,9 @@ public class BordereauService {
         b.setPilgrimType(p.get("pilgrimType") == null ? "PELERIN" : str(p.get("pilgrimType")));
         b.setPilgrimStatus(p.get("pilgrimStatus") == null ? "NOUVEAU" : str(p.get("pilgrimStatus")));
         b.setIncludesEncadreurFees(Boolean.TRUE.equals(p.get("includesEncadreurFees")));
+        // Défaut true : seul un encadreur qui décoche explicitement sort son
+        // dossier du total du groupe.
+        b.setIncludeInGroupTotal(!Boolean.FALSE.equals(p.get("includeInGroupTotal")));
         b.setPilgrimCount(p.get("pilgrimCount") == null ? 1 : intVal(p.get("pilgrimCount")));
         b.setSeason(p.get("season") == null ? defaultSeason() : intVal(p.get("season")));
         b.setOnlinePriority(Boolean.TRUE.equals(p.get("onlinePriority")));

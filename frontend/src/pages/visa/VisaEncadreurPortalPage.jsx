@@ -164,10 +164,20 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
     getEncadreurs({ onlyActive: true }).then(setManagerEncadreurs);
   }, [managerMode]);
 
+  // Dossier propre de l'encadreur (lui-même pèlerin) dans son groupe.
+  const ownRecord = useMemo(
+    () => group.find((b) => b.pilgrimType === 'ENCADREUR'),
+    [group]
+  );
+  // Si l'encadreur a choisi de NE PAS intégrer ses frais, son dossier sort des
+  // totaux financiers du groupe (mais reste suivi à part, carte dédiée).
+  const ownExcluded = ownRecord && ownRecord.includeInGroupTotal === false;
+
   // Tableau de bord : encaissements, reste à verser et suivi des passeports.
   const stats = useMemo(() => {
-    const collected = group.reduce((sum, b) => sum + b.amountPaid, 0);
-    const target = group.reduce((sum, b) => sum + b.targetAmount, 0);
+    const financialGroup = ownExcluded ? group.filter((b) => b.id !== ownRecord.id) : group;
+    const collected = financialGroup.reduce((sum, b) => sum + b.amountPaid, 0);
+    const target = financialGroup.reduce((sum, b) => sum + b.targetAmount, 0);
     const eligible = group.reduce((sum, b) => sum + b.eligiblePilgrims, 0);
     const passportsTotal = group.reduce((sum, b) => sum + b.pilgrimCount, 0);
     const passportsDeposited = group
@@ -182,7 +192,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
       passportsDeposited,
       passportsRemaining: Math.max(passportsTotal - passportsDeposited, 0),
     };
-  }, [group]);
+  }, [group, ownExcluded, ownRecord]);
 
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(group);
 
@@ -485,6 +495,20 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
           />
         </div>
       </div>
+
+      {/* Frais propres de l'encadreur, suivis à part car exclus du total du groupe. */}
+      {ownExcluded && (
+        <div className="card flex flex-wrap items-center justify-between gap-3 border-afriland-red/20 bg-afriland-red/5">
+          <div>
+            <p className="text-sm font-semibold text-afriland-black">{t('encadreurPortal.ownFeesTitle')}</p>
+            <p className="text-xs text-afriland-gray-600">{t('encadreurPortal.ownFeesHelp')}</p>
+          </div>
+          <div className="text-right text-sm">
+            <p>{t('visa.totalPaid')} : <span className="font-semibold text-visa-granted">{formatCurrency(ownRecord.amountPaid)}</span></p>
+            <p>{t('visa.target')} : <span className="font-semibold">{formatCurrency(ownRecord.targetAmount)}</span></p>
+          </div>
+        </div>
+      )}
 
       {/* Versement effectué par l'encadreur pour un de ses pèlerins. */}
       <div className="card space-y-3">

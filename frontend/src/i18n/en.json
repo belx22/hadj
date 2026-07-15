@@ -271,6 +271,10 @@
     "targetAmount": "Target amount to reach",
     "personsToPay": "Number of persons to pay for",
     "pilgrimsToManage": "Number of pilgrims to manage",
+    "includeInGroupTotal": "My travel fees",
+    "includeInGroupTotalHelp": "As a guide, you pay your fees without commission. Choose whether to include them in your group's total to collect, or to pay them separately.",
+    "includeInGroupYes": "Include in group total",
+    "includeInGroupNo": "Pay separately (outside group total)",
     "submit": "Register",
     "errors": {
       "encadreurNotRegistered": "No guide is registered with this ID card number. To become a guide, please contact your agency first."
@@ -574,6 +578,8 @@
       "notFound": "{{count}} row(s) with no matching pilgrim in your group"
     },
     "dashboardTitle": "Tracking dashboard",
+    "ownFeesTitle": "Your guide fees",
+    "ownFeesHelp": "You chose to pay your fees separately: they are not counted in your group's total.",
     "groupSpaceHelp": "Register your pilgrims in bulk and track your KPIs, payments and passport deposits",
     "openGroupSpace": "Open my group space",
     "remaining": "Remaining to pay",
