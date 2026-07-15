@@ -38,8 +38,10 @@ public class AttestationService {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("bordereauId", b.getId());
             m.put("idNumber", b.getIdNumber());
+            m.put("phone", b.getPhone());
             m.put("pilgrimName", b.getPilgrimFirstName() + " " + b.getPilgrimLastName());
             m.put("pilgrimCount", b.getPilgrimCount());
+            m.put("encadreurId", b.getEncadreurId());
             m.put("encadreurName", enc != null ? enc.getName() : null);
             m.put("encadreurCode", enc != null ? enc.getCode() : null);
             m.put("passportDeposited", b.isPassportDeposited());

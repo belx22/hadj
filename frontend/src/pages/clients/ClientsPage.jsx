@@ -63,6 +63,15 @@ export default function ClientsPage() {
     });
   }, [bordereaux, region, visaStatus, encadreurId, search]);
 
+  // Situation visa (compte par statut) sur la sélection courante : globale, ou
+  // pour l'encadreur/la région filtrés. Chaque dossier compte pour son nombre de
+  // pèlerins.
+  const visaCounts = useMemo(() => {
+    const counts = Object.fromEntries(VISA_STATUSES.map((s) => [s, 0]));
+    filtered.forEach((b) => { counts[b.visaStatus] = (counts[b.visaStatus] || 0) + (b.pilgrimCount || 1); });
+    return counts;
+  }, [filtered]);
+
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(filtered);
 
   async function handleCheckBI() {
@@ -246,6 +255,17 @@ export default function ClientsPage() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Situation visa (compte par statut) sur la sélection courante. */}
+      <div className="card flex flex-wrap items-center gap-x-6 gap-y-2">
+        <p className="text-sm font-semibold text-afriland-black">{t('clients.visaSituation')}</p>
+        {VISA_STATUSES.map((status) => (
+          <span key={status} className="flex items-center gap-2 text-sm">
+            <VisaStatusBadge status={status} />
+            <span className="font-semibold text-afriland-black">{visaCounts[status]}</span>
+          </span>
+        ))}
       </div>
 
       <div className="card grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

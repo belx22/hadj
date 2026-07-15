@@ -421,6 +421,10 @@ describe('commissions, pèlerin, passeports, audit', () => {
   it('gère les dépôts de passeports', async () => {
     const deposits = await api.getPassportDeposits(2027);
     expect(deposits).toBeTruthy();
+    // Chaque item porte encadreurId + phone (pour le filtre par encadreur et
+    // l'attestation collective côté gestionnaire).
+    expect(deposits.items[0]).toHaveProperty('encadreurId');
+    expect(deposits.items[0]).toHaveProperty('phone');
     const all = await api.getBordereaux();
     const res = await api.togglePassportDeposit(all[0].id, true, ADMIN);
     expect(res).toBeTruthy();

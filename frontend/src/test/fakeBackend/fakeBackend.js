@@ -1720,8 +1720,10 @@ export async function getPassportDeposits(season) {
       return {
         bordereauId: b.id,
         idNumber: b.idNumber,
+        phone: b.phone,
         pilgrimName: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,
         pilgrimCount: b.pilgrimCount,
+        encadreurId: b.encadreurId || null,
         encadreurName: encadreur?.name || null,
         encadreurCode: encadreur?.code || null,
         passportDeposited: b.passportDeposited || false,

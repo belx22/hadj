@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as XLSX from 'xlsx';
 import { useToast } from '../../context/ToastContext';
 import { getPassportDeposits, togglePassportDeposit, importPassportDeposits } from '../../api/attestationsApi';
-import { getSeasons } from '../../api/referenceDataApi';
+import { getSeasons, getEncadreurs } from '../../api/referenceDataApi';
 import StatCard from '../../components/ui/StatCard';
 import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { exportTemplateToExcel } from '../../utils/excel';
 import { buildPassportDepositTemplateRows } from '../../utils/importTemplates';
-import { generatePassportDepositCertificate } from '../../utils/pdf';
+import { generatePassportDepositCertificate, generateGroupPassportDepositCertificate } from '../../utils/pdf';
 import { CURRENT_SEASON } from '../../utils/constants';
 
 const DEPOSIT_CHOICES = ['OUI', 'NON'];
@@ -19,17 +19,67 @@ export default function PassportAttestationsPage() {
   const toast = useToast();
   const [season, setSeason] = useState(CURRENT_SEASON);
   const [seasons, setSeasons] = useState([]);
+  const [encadreurs, setEncadreurs] = useState([]);
+  const [encadreurFilter, setEncadreurFilter] = useState('');
   const [data, setData] = useState({ items: [], totalPilgrims: 0, depositedPilgrims: 0, remainingPilgrims: 0 });
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [importing, setImporting] = useState(false);
   const [importSummary, setImportSummary] = useState(null);
   const fileInputRef = useRef(null);
-  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(data.items);
+
+  // Situation filtrable par encadreur : les totaux (total / déposés / restants)
+  // sont recalculés sur la sélection → donne le « reste à déposer » par groupe.
+  const filteredItems = useMemo(
+    () => (encadreurFilter ? data.items.filter((i) => i.encadreurId === encadreurFilter) : data.items),
+    [data.items, encadreurFilter]
+  );
+  const stats = useMemo(() => {
+    const total = filteredItems.reduce((sum, i) => sum + i.pilgrimCount, 0);
+    const deposited = filteredItems.filter((i) => i.passportDeposited).reduce((sum, i) => sum + i.pilgrimCount, 0);
+    return { total, deposited, remaining: Math.max(total - deposited, 0) };
+  }, [filteredItems]);
+
+  // Récapitulatif par encadreur : total / déposés / restants pour chaque groupe.
+  const byEncadreur = useMemo(() => {
+    const map = new Map();
+    data.items.forEach((i) => {
+      const key = i.encadreurId || '—';
+      const row = map.get(key) || { encadreurId: i.encadreurId, encadreurName: i.encadreurName || '—', total: 0, deposited: 0 };
+      row.total += i.pilgrimCount;
+      if (i.passportDeposited) row.deposited += i.pilgrimCount;
+      map.set(key, row);
+    });
+    return [...map.values()]
+      .map((r) => ({ ...r, remaining: Math.max(r.total - r.deposited, 0) }))
+      .sort((a, b) => b.remaining - a.remaining);
+  }, [data.items]);
+
+  const depositedInSelection = useMemo(() => filteredItems.filter((i) => i.passportDeposited), [filteredItems]);
+
+  const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(filteredItems);
 
   useEffect(() => {
     getSeasons().then((s) => setSeasons([...s].sort((a, b) => b.season - a.season)));
+    getEncadreurs({ onlyActive: false }).then(setEncadreurs);
   }, []);
+
+  function handleDownloadGroupCertificate() {
+    if (depositedInSelection.length === 0) return;
+    const enc = encadreurs.find((e) => e.id === encadreurFilter);
+    generateGroupPassportDepositCertificate({
+      encadreurName: enc?.name || t('attestations.allEncadreurs'),
+      encadreurId: encadreurFilter || null,
+      season,
+      deposits: depositedInSelection.map((i) => ({
+        pilgrimName: i.pilgrimName,
+        idNumber: i.idNumber,
+        phone: i.phone,
+        pilgrimCount: i.pilgrimCount,
+        passportDepositedAt: i.passportDepositedAt,
+      })),
+    });
+  }
 
   function reload() {
     setLoading(true);
@@ -114,17 +164,63 @@ export default function PassportAttestationsPage() {
           <h1 className="text-xl font-bold text-afriland-black">{t('attestations.title')}</h1>
           <p className="text-sm text-afriland-gray-600">{t('attestations.subtitle')}</p>
         </div>
-        <select className="form-input" value={season} onChange={(e) => setSeason(Number(e.target.value))}>
-          {seasons.map((s) => (
-            <option key={s.season} value={s.season}>{s.season}</option>
-          ))}
-        </select>
+        <div className="flex flex-wrap gap-2">
+          <select
+            className="form-input"
+            value={encadreurFilter}
+            onChange={(e) => setEncadreurFilter(e.target.value)}
+          >
+            <option value="">{t('attestations.allEncadreurs')}</option>
+            {encadreurs.map((enc) => <option key={enc.id} value={enc.id}>{enc.name}</option>)}
+          </select>
+          <select className="form-input" value={season} onChange={(e) => setSeason(Number(e.target.value))}>
+            {seasons.map((s) => (
+              <option key={s.season} value={s.season}>{s.season}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label={t('attestations.totalPilgrims')} value={data.totalPilgrims} />
-        <StatCard label={t('attestations.deposited')} value={data.depositedPilgrims} accent="text-visa-granted" />
-        <StatCard label={t('attestations.remaining')} value={data.remainingPilgrims} accent="text-visa-complement" />
+        <StatCard label={t('attestations.totalPilgrims')} value={stats.total} />
+        <StatCard label={t('attestations.deposited')} value={stats.deposited} accent="text-visa-granted" />
+        <StatCard label={t('attestations.remaining')} value={stats.remaining} accent="text-visa-complement" />
+      </div>
+
+      {/* Attestation collective : couvre tous les passeports déposés de la
+          sélection courante (un encadreur, ou tous). */}
+      {depositedInSelection.length > 0 && (
+        <button type="button" className="btn-primary" onClick={handleDownloadGroupCertificate}>
+          {t('attestations.downloadGroupCertificate', { count: depositedInSelection.length })}
+        </button>
+      )}
+
+      {/* Situation de dépôt par encadreur (tous les groupes). */}
+      <div className="card overflow-x-auto p-0">
+        <p className="px-4 pt-4 text-sm font-semibold text-afriland-black">{t('attestations.byEncadreurTitle')}</p>
+        <table className="mt-2 w-full min-w-[520px] text-left text-sm">
+          <thead className="bg-afriland-gray-50 text-xs uppercase text-afriland-gray-600">
+            <tr>
+              <th className="px-4 py-3">{t('bordereau.table.encadreur')}</th>
+              <th className="px-4 py-3 text-right">{t('attestations.totalPilgrims')}</th>
+              <th className="px-4 py-3 text-right">{t('attestations.deposited')}</th>
+              <th className="px-4 py-3 text-right">{t('attestations.remaining')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-afriland-gray-200">
+            {byEncadreur.map((r) => (
+              <tr key={r.encadreurId || 'none'} className="cursor-pointer hover:bg-afriland-gray-50" onClick={() => setEncadreurFilter(r.encadreurId || '')}>
+                <td className="px-4 py-3">{r.encadreurName}</td>
+                <td className="px-4 py-3 text-right">{r.total}</td>
+                <td className="px-4 py-3 text-right text-visa-granted">{r.deposited}</td>
+                <td className={`px-4 py-3 text-right font-semibold ${r.remaining > 0 ? 'text-visa-complement' : 'text-visa-granted'}`}>{r.remaining}</td>
+              </tr>
+            ))}
+            {byEncadreur.length === 0 && !loading && (
+              <tr><td colSpan={4} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       <div className="card space-y-3">
@@ -182,7 +278,7 @@ export default function PassportAttestationsPage() {
             {loading && (
               <tr><td colSpan={5} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
             )}
-            {!loading && data.items.length === 0 && (
+            {!loading && filteredItems.length === 0 && (
               <tr><td colSpan={5} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
             {!loading && pageItems.map((row) => (
