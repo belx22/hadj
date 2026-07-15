@@ -21,7 +21,8 @@ const ROLE_VALUES = new Set(Object.values(ROLES));
 
 // v5 : ajout des collections `smtpSettings` et `passwordResets` — un cache v4
 // ne les contiendrait pas.
-const STORAGE_KEY = 'copilote-hadj-fake-db-v6';
+// v7 : ajout du champ `idNumber` sur les encadreurs (auto-inscription par pièce d'identité).
+const STORAGE_KEY = 'copilote-hadj-fake-db-v7';
 const NETWORK_DELAY = 350;
 
 // Paramètres SMTP par défaut, modifiables par l'Admin DSI depuis son interface.
@@ -357,21 +358,18 @@ export async function registerPilgrimOnline(payload) {
   const receiptNumber = `RC-${2000 + db.bordereaux.length}`;
   const createdAt = new Date().toISOString().slice(0, 10);
 
-  // Un encadreur qui s'inscrit lui-même devient sa propre fiche du référentiel
-  // (INACTIVE : à valider par un gestionnaire avant d'être sélectionnable par
-  // les pèlerins) et son dossier y est rattaché — ce qui lui génère un code
-  // encadreur et lui ouvre l'accès à son espace de groupe.
+  // Un encadreur ne peut pas se créer lui-même : sa fiche doit déjà exister au
+  // référentiel (créée par l'agence). On le reconnaît par son n° de pièce
+  // d'identité et on rattache son dossier à sa fiche ; sinon, direction l'agence.
   let encadreurId = payload.encadreurId || null;
   if (payload.pilgrimType === 'ENCADREUR') {
-    const fiche = {
-      id: `ENC-${String(db.encadreurs.length + 1).padStart(3, '0')}`,
-      name: `${payload.pilgrimFirstName || ''} ${payload.pilgrimLastName || ''}`.trim(),
-      region: payload.region || null,
-      code: generateEncadreurCode(),
-      active: false,
-    };
-    db.encadreurs = [...db.encadreurs, fiche];
-    encadreurId = fiche.id;
+    const enc = db.encadreurs.find((e) => e.idNumber === payload.idNumber);
+    if (!enc) {
+      const error = new Error('ENCADREUR_NOT_REGISTERED');
+      error.code = 'ENCADREUR_NOT_REGISTERED';
+      throw error;
+    }
+    encadreurId = enc.id;
   }
 
   const record = {
@@ -392,9 +390,6 @@ export async function registerPilgrimOnline(payload) {
 
   db.bordereaux = [record, ...db.bordereaux];
   addAudit('INSCRIPTION_EN_LIGNE', id, payload.idNumber);
-  if (payload.pilgrimType === 'ENCADREUR') {
-    addAudit('AUTO_INSCRIPTION_ENCADREUR', encadreurId, payload.idNumber);
-  }
   persist();
 
   const decorated = decorateBordereau(record);
@@ -403,13 +398,6 @@ export async function registerPilgrimOnline(payload) {
     `Copilote Hadj: votre inscription ${id} est enregistrée. Votre code de paiement est ${decorated.paymentCode}. Connectez-vous pour effectuer votre versement.`,
     'Inscription Hadj enregistrée'
   );
-  if (payload.pilgrimType === 'ENCADREUR') {
-    notifyPilgrim(
-      record,
-      `Copilote Hadj: votre code encadreur est ${decorated.encadreurCode}. Il sera actif après validation par un gestionnaire.`,
-      'Votre code encadreur'
-    );
-  }
 
   return decorated;
 }
@@ -1306,6 +1294,7 @@ export async function importEncadreurs(rows, actor) {
     const name = String(row.name || '').trim();
     const region = String(row.region || '').trim();
     const rawCode = String(row.code || '').trim();
+    const idNumber = String(row.idNumber || '').trim();
 
     if (!name || !region) {
       errors.push({ row: index + 1, reason: 'MISSING_FIELD' });
@@ -1331,7 +1320,7 @@ export async function importEncadreurs(rows, actor) {
 
     const id = `ENC-${String(db.encadreurs.length + created.length + 1).padStart(3, '0')}`;
     const code = rawCode ? rawCode.toUpperCase() : generateEncadreurCode();
-    const record = { id, name, region, code, active: true };
+    const record = { id, name, region, code, idNumber, active: true };
     db.encadreurs = [...db.encadreurs, record];
     created.push(record);
   });

@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface EncadreurRepository extends JpaRepository<Encadreur, String> {
     Optional<Encadreur> findByCode(String code);
     boolean existsByCode(String code);
+    Optional<Encadreur> findByIdNumber(String idNumber);
 }

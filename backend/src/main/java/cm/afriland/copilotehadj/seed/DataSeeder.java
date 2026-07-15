@@ -78,21 +78,22 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedEncadreurs() {
         encadreurs.saveAll(List.of(
-                encadreur("ENC-001", "El Hadj Oumarou Sanda", "Nord", "OS1"),
-                encadreur("ENC-002", "El Hadj Bello Ibrahim", "Extrême-Nord", "BI2"),
-                encadreur("ENC-003", "Hadja Fatimatou Njoya", "Ouest", "FN3"),
-                encadreur("ENC-004", "El Hadj Souleymanou Abba", "Adamaoua", "SA4"),
-                encadreur("ENC-005", "Hadja Aïssatou Bakari", "Centre", "AB5"),
-                encadreur("ENC-006", "El Hadj Moussa Alioum", "Littoral", "MA6")
+                encadreur("ENC-001", "El Hadj Oumarou Sanda", "Nord", "OS1", "110234501"),
+                encadreur("ENC-002", "El Hadj Bello Ibrahim", "Extrême-Nord", "BI2", "110234502"),
+                encadreur("ENC-003", "Hadja Fatimatou Njoya", "Ouest", "FN3", "110234503"),
+                encadreur("ENC-004", "El Hadj Souleymanou Abba", "Adamaoua", "SA4", "110234504"),
+                encadreur("ENC-005", "Hadja Aïssatou Bakari", "Centre", "AB5", "110234505"),
+                encadreur("ENC-006", "El Hadj Moussa Alioum", "Littoral", "MA6", "110234506")
         ));
     }
 
-    private Encadreur encadreur(String id, String name, String region, String code) {
+    private Encadreur encadreur(String id, String name, String region, String code, String idNumber) {
         Encadreur e = new Encadreur();
         e.setId(id);
         e.setName(name);
         e.setRegion(region);
         e.setCode(code);
+        e.setIdNumber(idNumber);
         e.setActive(true);
         return e;
     }

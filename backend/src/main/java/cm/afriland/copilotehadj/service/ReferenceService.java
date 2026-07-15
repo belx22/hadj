@@ -49,6 +49,7 @@ public class ReferenceService {
         e.setId(Ids.encadreurId(encadreurs.count() + 1));
         e.setName(str(p.get("name")));
         e.setRegion(str(p.get("region")));
+        e.setIdNumber(str(p.get("idNumber")));
         e.setCode(resolveCode(str(p.get("code")), null));
         e.setActive(p.get("active") == null || Boolean.TRUE.equals(p.get("active")));
         encadreurs.save(e);
@@ -61,6 +62,7 @@ public class ReferenceService {
         Encadreur e = encadreurs.findById(id).orElseThrow(() -> new ApiException(404, "NOT_FOUND"));
         if (updates.containsKey("name")) e.setName(str(updates.get("name")));
         if (updates.containsKey("region")) e.setRegion(str(updates.get("region")));
+        if (updates.containsKey("idNumber")) e.setIdNumber(str(updates.get("idNumber")));
         if (updates.containsKey("code")) e.setCode(resolveCode(str(updates.get("code")), id));
         if (updates.containsKey("active")) e.setActive(Boolean.TRUE.equals(updates.get("active")));
         encadreurs.save(e);

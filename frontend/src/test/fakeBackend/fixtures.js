@@ -13,13 +13,15 @@ export const SEED_USERS = [
 // Liste officielle des encadreurs (référentiel — géré par le Gestionnaire Hadj / Admin DSI).
 // `code` : identifiant alphanumérique unique à 3 caractères, inclus dans le code de
 // paiement remis au pèlerin pour identifier sans ambiguïté son encadreur.
+// `idNumber` : n° de pièce d'identité de l'encadreur, utilisé pour le reconnaître
+// lors de son auto-inscription en ligne (distinct du passeport du pèlerin).
 export const SEED_ENCADREURS = [
-  { id: 'ENC-001', name: 'El Hadj Oumarou Sanda', region: 'Nord', code: 'OS1', active: true },
-  { id: 'ENC-002', name: 'El Hadj Bello Ibrahim', region: 'Extrême-Nord', code: 'BI2', active: true },
-  { id: 'ENC-003', name: 'Hadja Fatimatou Njoya', region: 'Ouest', code: 'FN3', active: true },
-  { id: 'ENC-004', name: 'El Hadj Souleymanou Abba', region: 'Adamaoua', code: 'SA4', active: true },
-  { id: 'ENC-005', name: 'Hadja Aïssatou Bakari', region: 'Centre', code: 'AB5', active: true },
-  { id: 'ENC-006', name: 'El Hadj Moussa Alioum', region: 'Littoral', code: 'MA6', active: true },
+  { id: 'ENC-001', name: 'El Hadj Oumarou Sanda', region: 'Nord', code: 'OS1', idNumber: '110234501', active: true },
+  { id: 'ENC-002', name: 'El Hadj Bello Ibrahim', region: 'Extrême-Nord', code: 'BI2', idNumber: '110234502', active: true },
+  { id: 'ENC-003', name: 'Hadja Fatimatou Njoya', region: 'Ouest', code: 'FN3', idNumber: '110234503', active: true },
+  { id: 'ENC-004', name: 'El Hadj Souleymanou Abba', region: 'Adamaoua', code: 'SA4', idNumber: '110234504', active: true },
+  { id: 'ENC-005', name: 'Hadja Aïssatou Bakari', region: 'Centre', code: 'AB5', idNumber: '110234505', active: true },
+  { id: 'ENC-006', name: 'El Hadj Moussa Alioum', region: 'Littoral', code: 'MA6', idNumber: '110234506', active: true },
 ];
 
 // Montant officiel du Hadj, par saison et par type de pèlerin — paramétrable par le

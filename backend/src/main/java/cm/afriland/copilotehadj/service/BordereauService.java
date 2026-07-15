@@ -121,39 +121,20 @@ public class BordereauService {
         b.setVisaStatus("EN_ATTENTE");
         b.addStatusHistory(history("EN_ATTENTE"));
 
-        // Un encadreur qui s'inscrit lui-même devient sa propre fiche du référentiel
-        // (inactive : à valider par un gestionnaire avant d'être sélectionnable par
-        // les pèlerins) et son dossier y est rattaché, ce qui lui génère un code
-        // encadreur et lui ouvre l'accès à son espace de groupe.
+        // Un encadreur ne peut pas se créer lui-même : sa fiche doit déjà exister au
+        // référentiel (créée par l'agence). À l'auto-inscription en type Encadreur, on
+        // le reconnaît par son n° de pièce d'identité et on rattache son dossier à sa
+        // fiche (ce qui lui ouvre l'accès à son groupe). Sinon : direction l'agence.
         if ("ENCADREUR".equals(b.getPilgrimType())) {
-            Encadreur self = createSelfRegisteredEncadreur(b);
-            b.setEncadreurId(self.getId());
+            Encadreur enc = encadreurs.findByIdNumber(idNumber)
+                    .orElseThrow(() -> new ApiException(404, "ENCADREUR_NOT_REGISTERED"));
+            b.setEncadreurId(enc.getId());
         }
 
         notifications.notifyPilgrim(b, "Copilote Hadj: votre inscription en ligne " + b.getId() + " a été enregistrée.");
         repo.save(b);
         audit.log("INSCRIPTION_EN_LIGNE", b.getId(), idNumber);
         return mapper.decorate(b);
-    }
-
-    // Crée la fiche encadreur d'un pèlerin de type Encadreur qui s'auto-inscrit :
-    // code à 3 caractères unique généré, fiche INACTIVE jusqu'à validation par un
-    // gestionnaire (elle n'apparaît donc pas encore dans le choix des pèlerins).
-    @Transactional
-    public Encadreur createSelfRegisteredEncadreur(Bordereau b) {
-        Encadreur e = new Encadreur();
-        e.setId(Ids.encadreurId(encadreurs.count() + 1));
-        e.setName((str(b.getPilgrimFirstName()) + " " + str(b.getPilgrimLastName())).trim());
-        e.setRegion(b.getRegion());
-        e.setActive(false);
-        String code;
-        do {
-            code = Ids.encadreurCode();
-        } while (encadreurs.existsByCode(code));
-        e.setCode(code);
-        encadreurs.save(e);
-        audit.log("AUTO_INSCRIPTION_ENCADREUR", e.getId(), b.getIdNumber());
-        return e;
     }
 
     @Transactional

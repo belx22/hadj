@@ -15,6 +15,10 @@ public class Encadreur {
     private String name;
     private String region;
 
+    // Numéro de pièce d'identité de l'encadreur (distinct du passeport du pèlerin).
+    // Sert à le reconnaître lors de son auto-inscription en ligne.
+    private String idNumber;
+
     @Column(unique = true)
     private String code; // code alphanumérique 3 caractères
 

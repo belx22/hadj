@@ -106,6 +106,8 @@ export default function PilgrimSelfRegisterPage() {
         setSubmitError(t('bordereau.errors.duplicate', { season: form.season }));
       } else if (err.code === 'DUPLICATE_PHONE') {
         setSubmitError(t('bordereau.errors.duplicatePhone'));
+      } else if (err.code === 'ENCADREUR_NOT_REGISTERED') {
+        setSubmitError(t('pilgrimRegister.errors.encadreurNotRegistered'));
       } else {
         setSubmitError(t('common.error'));
       }

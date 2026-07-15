@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as XLSX from 'xlsx';
-import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getEncadreurs, createEncadreur, updateEncadreur, importEncadreurs } from '../../api/referenceDataApi';
 import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
@@ -10,10 +9,11 @@ import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { REGIONS } from '../../utils/constants';
 
-const EMPTY_FORM = { name: '', region: REGIONS[0], code: '' };
+const EMPTY_FORM = { name: '', idNumber: '', region: REGIONS[0], code: '' };
 
 const HEADER_ALIASES = {
   name: ['name', 'nom', 'nom de l\'encadreur', 'اسم المؤطر'],
+  idNumber: ['idnumber', 'piece', 'pièce', 'cni', 'pièce d\'identité', 'piece d\'identite', 'n° pièce', 'رقم الهوية'],
   region: ['region', 'région', 'منطقة'],
   code: ['code', 'code encadreur', 'رمز المؤطر'],
 };
@@ -24,12 +24,11 @@ function normalizeRow(rawRow) {
     const match = lowerEntries.find(([key]) => HEADER_ALIASES[field].includes(key));
     return match ? String(match[1] ?? '').trim() : '';
   };
-  return { name: pick('name'), region: pick('region'), code: pick('code') };
+  return { name: pick('name'), idNumber: pick('idNumber'), region: pick('region'), code: pick('code') };
 }
 
 export default function EncadreursAdminPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
   const toast = useToast();
   const [encadreurs, setEncadreurs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +80,7 @@ export default function EncadreursAdminPage() {
 
   function startEdit(enc) {
     setEditingId(enc.id);
-    setEditValues({ name: enc.name, region: enc.region, code: enc.code || '' });
+    setEditValues({ name: enc.name, idNumber: enc.idNumber || '', region: enc.region, code: enc.code || '' });
     setEditError(null);
   }
 
@@ -105,7 +104,7 @@ export default function EncadreursAdminPage() {
 
   function handleDownloadTemplate() {
     exportTemplateToExcel(
-      [{ name: 'El Hadj Exemple Nom', region: REGIONS[0], code: '' }],
+      [{ name: 'El Hadj Exemple Nom', idNumber: '110234500', region: REGIONS[0], code: '' }],
       'modele-encadreurs.xlsx',
       'Encadreurs',
       { region: REGIONS }
@@ -120,6 +119,7 @@ export default function EncadreursAdminPage() {
   function buildExportRows() {
     return encadreurs.map((enc) => ({
       Nom: enc.name,
+      PieceIdentite: enc.idNumber || '—',
       Code: enc.code || '—',
       Region: enc.region,
       Statut: enc.active ? 'Actif' : 'Inactif',
@@ -216,12 +216,18 @@ export default function EncadreursAdminPage() {
         )}
       </div>
 
-      <form onSubmit={handleCreate} className="card grid grid-cols-1 gap-3 sm:grid-cols-4">
+      <form onSubmit={handleCreate} className="card grid grid-cols-1 gap-3 sm:grid-cols-5">
         <input
           className="form-input"
           placeholder={t('adminEncadreurs.name')}
           value={form.name}
           onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+        />
+        <input
+          className="form-input"
+          placeholder={t('adminEncadreurs.idNumber')}
+          value={form.idNumber}
+          onChange={(e) => setForm((prev) => ({ ...prev, idNumber: e.target.value }))}
         />
         <select
           className="form-input"
@@ -240,15 +246,16 @@ export default function EncadreursAdminPage() {
         <button type="submit" className="btn-primary" disabled={submitting}>
           {submitting ? t('common.loading') : t('adminEncadreurs.add')}
         </button>
-        {createError && <p className="form-error sm:col-span-4">{createError}</p>}
-        <p className="text-xs text-afriland-gray-600 sm:col-span-4">{t('adminEncadreurs.codeHelp')}</p>
+        {createError && <p className="form-error sm:col-span-5">{createError}</p>}
+        <p className="text-xs text-afriland-gray-600 sm:col-span-5">{t('adminEncadreurs.codeHelp')}</p>
       </form>
 
       <div className="card overflow-x-auto p-0">
-        <table className="w-full min-w-[560px] text-left text-sm">
+        <table className="w-full min-w-[680px] text-left text-sm">
           <thead className="bg-afriland-gray-50 text-xs uppercase text-afriland-gray-600">
             <tr>
               <th className="px-4 py-3">{t('adminEncadreurs.name')}</th>
+              <th className="px-4 py-3">{t('adminEncadreurs.idNumber')}</th>
               <th className="px-4 py-3">{t('bordereau.region')}</th>
               <th className="px-4 py-3">{t('adminEncadreurs.code')}</th>
               <th className="px-4 py-3">{t('adminEncadreurs.status')}</th>
@@ -256,7 +263,7 @@ export default function EncadreursAdminPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
-            {loading && <tr><td colSpan={5} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>}
+            {loading && <tr><td colSpan={6} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>}
             {!loading && pageItems.map((enc) => (
               <tr key={enc.id}>
                 {editingId === enc.id ? (
@@ -266,6 +273,13 @@ export default function EncadreursAdminPage() {
                         className="form-input"
                         value={editValues.name}
                         onChange={(e) => setEditValues((prev) => ({ ...prev, name: e.target.value }))}
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        className="form-input"
+                        value={editValues.idNumber}
+                        onChange={(e) => setEditValues((prev) => ({ ...prev, idNumber: e.target.value }))}
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -297,6 +311,7 @@ export default function EncadreursAdminPage() {
                 ) : (
                   <>
                     <td className="px-4 py-3">{enc.name}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{enc.idNumber || '—'}</td>
                     <td className="px-4 py-3">{enc.region}</td>
                     <td className="px-4 py-3 font-mono text-xs">{enc.code || '—'}</td>
                     <td className="px-4 py-3">

@@ -129,28 +129,28 @@ describe('inscription en ligne et par encadreur', () => {
     expect(res.created.length).toBeGreaterThan(0);
   });
 
-  it('un encadreur qui s’auto-inscrit obtient une fiche référentiel INACTIVE avec un code', async () => {
-    const encadreursAvant = await api.getEncadreurs({ onlyActive: false });
+  it('un encadreur reconnu par sa pièce d’identité est rattaché à sa fiche et voit son groupe', async () => {
+    // ENC-005 est semé avec idNumber '110234505'. Il s'auto-inscrit avec CE numéro.
     const res = await api.registerPilgrimOnline({
-      ...base, idNumber: '5550009999', phone: '698999888', pilgrimType: 'ENCADREUR', encadreurId: '',
+      ...base, idNumber: '110234505', phone: '698999888', pilgrimType: 'ENCADREUR', encadreurId: '',
     });
-    // Son dossier est rattaché à sa propre fiche, avec un code de paiement dérivé.
-    expect(res.encadreurId).toMatch(/^ENC-/);
-    expect(res.encadreurCode).toMatch(/^[A-Z0-9]{3}$/);
-    expect(res.paymentCode).toBe(`${res.id}-${res.encadreurCode}`);
+    expect(res.encadreurId).toBe('ENC-005');
+    expect(res.encadreurCode).toBe('AB5');
+    expect(res.paymentCode).toBe(`${res.id}-AB5`);
+    // Son dossier apparaît bien dans le groupe de sa fiche.
+    const groupe = await api.getEncadreurGroup('ENC-005');
+    expect(groupe.some((b) => b.idNumber === '110234505')).toBe(true);
+    // Aucune nouvelle fiche n'est créée.
+    const encadreurs = await api.getEncadreurs({ onlyActive: false });
+    expect(encadreurs.filter((e) => e.id === 'ENC-005')).toHaveLength(1);
+  });
 
-    // Une nouvelle fiche a bien été créée, mais INACTIVE (à valider).
-    const encadreursApres = await api.getEncadreurs({ onlyActive: false });
-    expect(encadreursApres.length).toBe(encadreursAvant.length + 1);
-    const fiche = encadreursApres.find((e) => e.id === res.encadreurId);
-    expect(fiche.active).toBe(false);
-
-    // Inactive => pas encore proposée aux pèlerins…
-    const actifs = await api.getEncadreurs({ onlyActive: true });
-    expect(actifs.find((e) => e.id === res.encadreurId)).toBeUndefined();
-    // …mais son groupe est déjà consultable (il s'y trouve lui-même).
-    const groupe = await api.getEncadreurGroup(res.encadreurId);
-    expect(groupe.some((b) => b.idNumber === '5550009999')).toBe(true);
+  it('refuse l’auto-inscription d’un encadreur inconnu au référentiel', async () => {
+    await expect(
+      api.registerPilgrimOnline({
+        ...base, idNumber: '000000000', phone: '698111000', pilgrimType: 'ENCADREUR', encadreurId: '',
+      })
+    ).rejects.toThrow('ENCADREUR_NOT_REGISTERED');
   });
 });
 
