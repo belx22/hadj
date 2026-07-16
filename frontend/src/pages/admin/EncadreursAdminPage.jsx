@@ -9,11 +9,13 @@ import Pagination from '../../components/ui/Pagination';
 import usePagination from '../../hooks/usePagination';
 import { REGIONS } from '../../utils/constants';
 
-const EMPTY_FORM = { name: '', idNumber: '', region: REGIONS[0], code: '' };
+const EMPTY_FORM = { firstName: '', lastName: '', phone: '', idNumber: '', region: REGIONS[0], code: '' };
 
 const HEADER_ALIASES = {
-  name: ['name', 'nom', 'nom de l\'encadreur', 'اسم المؤطر'],
-  idNumber: ['idnumber', 'piece', 'pièce', 'cni', 'pièce d\'identité', 'piece d\'identite', 'n° pièce', 'رقم الهوية'],
+  firstName: ['firstname', 'prenom', 'prénom', 'اسم'],
+  lastName: ['lastname', 'nom', 'nom de l\'encadreur', 'اللقب'],
+  phone: ['phone', 'telephone', 'téléphone', 'tel', 'الهاتف'],
+  idNumber: ['idnumber', 'passeport', 'passport', 'n° passeport', 'no passeport', 'رقم الجواز'],
   region: ['region', 'région', 'منطقة'],
   code: ['code', 'code encadreur', 'رمز المؤطر'],
 };
@@ -24,7 +26,14 @@ function normalizeRow(rawRow) {
     const match = lowerEntries.find(([key]) => HEADER_ALIASES[field].includes(key));
     return match ? String(match[1] ?? '').trim() : '';
   };
-  return { name: pick('name'), idNumber: pick('idNumber'), region: pick('region'), code: pick('code') };
+  return {
+    firstName: pick('firstName'),
+    lastName: pick('lastName'),
+    phone: pick('phone'),
+    idNumber: pick('idNumber'),
+    region: pick('region'),
+    code: pick('code'),
+  };
 }
 
 export default function EncadreursAdminPage() {
@@ -64,7 +73,7 @@ export default function EncadreursAdminPage() {
   async function handleCreate(e) {
     e.preventDefault();
     setCreateError(null);
-    if (!form.name.trim()) return;
+    if (!form.lastName.trim()) return;
     setSubmitting(true);
     try {
       await createEncadreur(form);
@@ -80,7 +89,14 @@ export default function EncadreursAdminPage() {
 
   function startEdit(enc) {
     setEditingId(enc.id);
-    setEditValues({ name: enc.name, idNumber: enc.idNumber || '', region: enc.region, code: enc.code || '' });
+    setEditValues({
+      firstName: enc.firstName || '',
+      lastName: enc.lastName || enc.name || '',
+      phone: enc.phone || '',
+      idNumber: enc.idNumber || '',
+      region: enc.region,
+      code: enc.code || '',
+    });
     setEditError(null);
   }
 
@@ -104,7 +120,7 @@ export default function EncadreursAdminPage() {
 
   function handleDownloadTemplate() {
     exportTemplateToExcel(
-      [{ name: 'El Hadj Exemple Nom', idNumber: '110234500', region: REGIONS[0], code: '' }],
+      [{ firstName: 'Oumarou', lastName: 'Sanda', phone: '699000000', idNumber: '110234500', region: REGIONS[0], code: '' }],
       'modele-encadreurs.xlsx',
       'Encadreurs',
       { region: REGIONS }
@@ -118,8 +134,10 @@ export default function EncadreursAdminPage() {
   // Source unique pour les deux exports : Excel et PDF restent alignés.
   function buildExportRows() {
     return encadreurs.map((enc) => ({
-      Nom: enc.name,
-      PieceIdentite: enc.idNumber || '—',
+      Prenom: enc.firstName || '—',
+      Nom: enc.lastName || enc.name || '—',
+      Telephone: enc.phone || '—',
+      Passeport: enc.idNumber || '—',
       Code: enc.code || '—',
       Region: enc.region,
       Statut: enc.active ? 'Actif' : 'Inactif',
@@ -216,12 +234,25 @@ export default function EncadreursAdminPage() {
         )}
       </div>
 
-      <form onSubmit={handleCreate} className="card grid grid-cols-1 gap-3 sm:grid-cols-5">
+      <form onSubmit={handleCreate} className="card grid grid-cols-1 gap-3 sm:grid-cols-3">
         <input
           className="form-input"
-          placeholder={t('adminEncadreurs.name')}
-          value={form.name}
-          onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+          placeholder={t('adminEncadreurs.firstName')}
+          value={form.firstName}
+          onChange={(e) => setForm((prev) => ({ ...prev, firstName: e.target.value }))}
+        />
+        <input
+          className="form-input"
+          placeholder={t('adminEncadreurs.lastName')}
+          value={form.lastName}
+          onChange={(e) => setForm((prev) => ({ ...prev, lastName: e.target.value }))}
+        />
+        <input
+          className="form-input"
+          placeholder={t('adminEncadreurs.phone')}
+          value={form.phone}
+          onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 9) }))}
+          inputMode="numeric"
         />
         <input
           className="form-input"
@@ -243,18 +274,19 @@ export default function EncadreursAdminPage() {
           value={form.code}
           onChange={(e) => setForm((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
         />
-        <button type="submit" className="btn-primary" disabled={submitting}>
+        <button type="submit" className="btn-primary sm:col-span-3" disabled={submitting}>
           {submitting ? t('common.loading') : t('adminEncadreurs.add')}
         </button>
-        {createError && <p className="form-error sm:col-span-5">{createError}</p>}
-        <p className="text-xs text-afriland-gray-600 sm:col-span-5">{t('adminEncadreurs.codeHelp')}</p>
+        {createError && <p className="form-error sm:col-span-3">{createError}</p>}
+        <p className="text-xs text-afriland-gray-600 sm:col-span-3">{t('adminEncadreurs.codeHelp')}</p>
       </form>
 
       <div className="card overflow-x-auto p-0">
-        <table className="w-full min-w-[680px] text-left text-sm">
+        <table className="w-full min-w-[820px] text-left text-sm">
           <thead className="bg-afriland-gray-50 text-xs uppercase text-afriland-gray-600">
             <tr>
               <th className="px-4 py-3">{t('adminEncadreurs.name')}</th>
+              <th className="px-4 py-3">{t('adminEncadreurs.phone')}</th>
               <th className="px-4 py-3">{t('adminEncadreurs.idNumber')}</th>
               <th className="px-4 py-3">{t('bordereau.region')}</th>
               <th className="px-4 py-3">{t('adminEncadreurs.code')}</th>
@@ -263,16 +295,33 @@ export default function EncadreursAdminPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
-            {loading && <tr><td colSpan={6} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>}
+            {loading && <tr><td colSpan={7} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>}
             {!loading && pageItems.map((enc) => (
               <tr key={enc.id}>
                 {editingId === enc.id ? (
                   <>
                     <td className="px-4 py-2">
+                      <div className="flex gap-2">
+                        <input
+                          className="form-input"
+                          placeholder={t('adminEncadreurs.firstName')}
+                          value={editValues.firstName}
+                          onChange={(e) => setEditValues((prev) => ({ ...prev, firstName: e.target.value }))}
+                        />
+                        <input
+                          className="form-input"
+                          placeholder={t('adminEncadreurs.lastName')}
+                          value={editValues.lastName}
+                          onChange={(e) => setEditValues((prev) => ({ ...prev, lastName: e.target.value }))}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
                       <input
                         className="form-input"
-                        value={editValues.name}
-                        onChange={(e) => setEditValues((prev) => ({ ...prev, name: e.target.value }))}
+                        value={editValues.phone}
+                        onChange={(e) => setEditValues((prev) => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 9) }))}
+                        inputMode="numeric"
                       />
                     </td>
                     <td className="px-4 py-2">
@@ -311,6 +360,7 @@ export default function EncadreursAdminPage() {
                 ) : (
                   <>
                     <td className="px-4 py-3">{enc.name}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{enc.phone || '—'}</td>
                     <td className="px-4 py-3 font-mono text-xs">{enc.idNumber || '—'}</td>
                     <td className="px-4 py-3">{enc.region}</td>
                     <td className="px-4 py-3 font-mono text-xs">{enc.code || '—'}</td>

@@ -13,15 +13,15 @@ export const SEED_USERS = [
 // Liste officielle des encadreurs (référentiel — géré par le Gestionnaire Hadj / Admin DSI).
 // `code` : identifiant alphanumérique unique à 3 caractères, inclus dans le code de
 // paiement remis au pèlerin pour identifier sans ambiguïté son encadreur.
-// `idNumber` : n° de pièce d'identité de l'encadreur, utilisé pour le reconnaître
-// lors de son auto-inscription en ligne (distinct du passeport du pèlerin).
+// `idNumber` : n° de passeport de l'encadreur (même pièce que le pèlerin), utilisé
+// pour le reconnaître lors de son auto-inscription en ligne. `name` = prénom + nom.
 export const SEED_ENCADREURS = [
-  { id: 'ENC-001', name: 'El Hadj Oumarou Sanda', region: 'Nord', code: 'OS1', idNumber: '110234501', active: true },
-  { id: 'ENC-002', name: 'El Hadj Bello Ibrahim', region: 'Extrême-Nord', code: 'BI2', idNumber: '110234502', active: true },
-  { id: 'ENC-003', name: 'Hadja Fatimatou Njoya', region: 'Ouest', code: 'FN3', idNumber: '110234503', active: true },
-  { id: 'ENC-004', name: 'El Hadj Souleymanou Abba', region: 'Adamaoua', code: 'SA4', idNumber: '110234504', active: true },
-  { id: 'ENC-005', name: 'Hadja Aïssatou Bakari', region: 'Centre', code: 'AB5', idNumber: '110234505', active: true },
-  { id: 'ENC-006', name: 'El Hadj Moussa Alioum', region: 'Littoral', code: 'MA6', idNumber: '110234506', active: true },
+  { id: 'ENC-001', firstName: 'El Hadj Oumarou', lastName: 'Sanda', name: 'El Hadj Oumarou Sanda', phone: '699001001', region: 'Nord', code: 'OS1', idNumber: '110234501', active: true },
+  { id: 'ENC-002', firstName: 'El Hadj Bello', lastName: 'Ibrahim', name: 'El Hadj Bello Ibrahim', phone: '699001002', region: 'Extrême-Nord', code: 'BI2', idNumber: '110234502', active: true },
+  { id: 'ENC-003', firstName: 'Hadja Fatimatou', lastName: 'Njoya', name: 'Hadja Fatimatou Njoya', phone: '699001003', region: 'Ouest', code: 'FN3', idNumber: '110234503', active: true },
+  { id: 'ENC-004', firstName: 'El Hadj Souleymanou', lastName: 'Abba', name: 'El Hadj Souleymanou Abba', phone: '699001004', region: 'Adamaoua', code: 'SA4', idNumber: '110234504', active: true },
+  { id: 'ENC-005', firstName: 'Hadja Aïssatou', lastName: 'Bakari', name: 'Hadja Aïssatou Bakari', phone: '699001005', region: 'Centre', code: 'AB5', idNumber: '110234505', active: true },
+  { id: 'ENC-006', firstName: 'El Hadj Moussa', lastName: 'Alioum', name: 'El Hadj Moussa Alioum', phone: '699001006', region: 'Littoral', code: 'MA6', idNumber: '110234506', active: true },
 ];
 
 // Montant officiel du Hadj, par saison et par type de pèlerin — paramétrable par le

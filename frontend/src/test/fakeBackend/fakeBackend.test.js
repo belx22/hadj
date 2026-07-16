@@ -331,11 +331,20 @@ describe('remboursements', () => {
 });
 
 describe('référentiels (encadreurs, saisons, utilisateurs)', () => {
-  it('CRUD encadreur', async () => {
-    const created = await api.createEncadreur({ name: 'Nouveau Guide', region: 'Centre' }, ADMIN);
+  it('CRUD encadreur avec prénom/nom/téléphone/passeport', async () => {
+    const created = await api.createEncadreur(
+      { firstName: 'Nouveau', lastName: 'Guide', phone: '699888777', idNumber: '110299999', region: 'Centre' },
+      ADMIN
+    );
     expect(created.id).toMatch(/^ENC-/);
-    const updated = await api.updateEncadreur(created.id, { active: false }, ADMIN);
-    expect(updated.active).toBe(false);
+    // Le nom d'affichage est composé prénom + nom.
+    expect(created.name).toBe('Nouveau Guide');
+    expect(created.phone).toBe('699888777');
+    expect(created.idNumber).toBe('110299999');
+    // Le nom d'affichage suit une modification du nom.
+    const updated = await api.updateEncadreur(created.id, { lastName: 'Renommé' }, ADMIN);
+    expect(updated.name).toBe('Nouveau Renommé');
+    await api.updateEncadreur(created.id, { active: false }, ADMIN);
     const list = await api.getEncadreurs({ onlyActive: false });
     expect(list.some((e) => e.id === created.id)).toBe(true);
   });

@@ -277,7 +277,7 @@
     "includeInGroupNo": "Pay separately (outside group total)",
     "submit": "Register",
     "errors": {
-      "encadreurNotRegistered": "No guide is registered with this ID card number. To become a guide, please contact your agency first."
+      "encadreurNotRegistered": "No guide is registered with this passport number. To become a guide, please contact your agency first."
     }
   },
   "paymentPage": {
@@ -420,7 +420,10 @@
     "title": "Guide management",
     "subtitle": "Guide directory by region",
     "name": "Guide's name",
-    "idNumber": "ID card number",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "phone": "Phone",
+    "idNumber": "Passport number",
     "add": "Add",
     "edit": "Edit",
     "status": "Status",
@@ -432,7 +435,7 @@
     "codePlaceholder": "Code (auto)",
     "codeHelp": "3-character alphanumeric code identifying the guide — leave blank for automatic generation. It appears in the payment code given to the pilgrim.",
     "importTitle": "Bulk import (Excel / CSV)",
-    "importHelp": "Expected columns: \"name\" (guide's name), \"idNumber\" (ID card number), \"region\" and \"code\" (optional, 3 characters). Duplicates (same name) are ignored.",
+    "importHelp": "Expected columns: \"firstName\", \"lastName\", \"phone\", \"idNumber\" (passport number), \"region\" and \"code\" (optional, 3 characters). Duplicates (same name) are ignored.",
     "downloadTemplate": "Download template",
     "importFile": "Import a file",
     "importCreated": "{{count}} guide(s) imported successfully",

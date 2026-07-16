@@ -277,7 +277,7 @@
     "includeInGroupNo": "Régler à part (hors total du groupe)",
     "submit": "M'inscrire",
     "errors": {
-      "encadreurNotRegistered": "Aucun encadreur enregistré avec ce numéro de pièce d'identité. Pour être encadreur, veuillez d'abord vous rapprocher de votre agence."
+      "encadreurNotRegistered": "Aucun encadreur enregistré avec ce numéro de passeport. Pour être encadreur, veuillez d'abord vous rapprocher de votre agence."
     }
   },
   "paymentPage": {
@@ -420,7 +420,10 @@
     "title": "Gestion des encadreurs",
     "subtitle": "Référentiel des encadreurs par région",
     "name": "Nom de l'encadreur",
-    "idNumber": "N° de pièce d'identité",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "phone": "Téléphone",
+    "idNumber": "N° de passeport",
     "add": "Ajouter",
     "edit": "Modifier",
     "status": "Statut",
@@ -432,7 +435,7 @@
     "codePlaceholder": "Code (auto)",
     "codeHelp": "Code alphanumérique à 3 caractères identifiant l'encadreur — laissez vide pour une génération automatique. Il apparaît dans le code de paiement remis au pèlerin.",
     "importTitle": "Import en masse (Excel / CSV)",
-    "importHelp": "Colonnes attendues : \"name\" (nom de l'encadreur), \"idNumber\" (n° de pièce d'identité), \"region\" et \"code\" (facultatif, 3 caractères). Les doublons (même nom) sont ignorés.",
+    "importHelp": "Colonnes attendues : \"firstName\" (prénom), \"lastName\" (nom), \"phone\" (téléphone), \"idNumber\" (n° de passeport), \"region\" et \"code\" (facultatif, 3 caractères). Les doublons (même nom) sont ignorés.",
     "downloadTemplate": "Télécharger le modèle",
     "importFile": "Importer un fichier",
     "importCreated": "{{count}} encadreur(s) importé(s) avec succès",

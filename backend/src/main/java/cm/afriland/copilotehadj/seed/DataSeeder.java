@@ -78,22 +78,25 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedEncadreurs() {
         encadreurs.saveAll(List.of(
-                encadreur("ENC-001", "El Hadj Oumarou Sanda", "Nord", "OS1", "110234501"),
-                encadreur("ENC-002", "El Hadj Bello Ibrahim", "Extrême-Nord", "BI2", "110234502"),
-                encadreur("ENC-003", "Hadja Fatimatou Njoya", "Ouest", "FN3", "110234503"),
-                encadreur("ENC-004", "El Hadj Souleymanou Abba", "Adamaoua", "SA4", "110234504"),
-                encadreur("ENC-005", "Hadja Aïssatou Bakari", "Centre", "AB5", "110234505"),
-                encadreur("ENC-006", "El Hadj Moussa Alioum", "Littoral", "MA6", "110234506")
+                encadreur("ENC-001", "El Hadj Oumarou", "Sanda", "Nord", "OS1", "110234501", "699001001"),
+                encadreur("ENC-002", "El Hadj Bello", "Ibrahim", "Extrême-Nord", "BI2", "110234502", "699001002"),
+                encadreur("ENC-003", "Hadja Fatimatou", "Njoya", "Ouest", "FN3", "110234503", "699001003"),
+                encadreur("ENC-004", "El Hadj Souleymanou", "Abba", "Adamaoua", "SA4", "110234504", "699001004"),
+                encadreur("ENC-005", "Hadja Aïssatou", "Bakari", "Centre", "AB5", "110234505", "699001005"),
+                encadreur("ENC-006", "El Hadj Moussa", "Alioum", "Littoral", "MA6", "110234506", "699001006")
         ));
     }
 
-    private Encadreur encadreur(String id, String name, String region, String code, String idNumber) {
+    private Encadreur encadreur(String id, String firstName, String lastName, String region, String code, String idNumber, String phone) {
         Encadreur e = new Encadreur();
         e.setId(id);
-        e.setName(name);
+        e.setFirstName(firstName);
+        e.setLastName(lastName);
+        e.setName((firstName + " " + lastName).trim());
         e.setRegion(region);
         e.setCode(code);
         e.setIdNumber(idNumber);
+        e.setPhone(phone);
         e.setActive(true);
         return e;
     }

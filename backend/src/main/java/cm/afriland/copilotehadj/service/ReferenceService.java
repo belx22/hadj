@@ -47,7 +47,10 @@ public class ReferenceService {
     public Encadreur createEncadreur(Map<String, Object> p, String actor) {
         Encadreur e = new Encadreur();
         e.setId(Ids.encadreurId(encadreurs.count() + 1));
-        e.setName(str(p.get("name")));
+        e.setFirstName(str(p.get("firstName")));
+        e.setLastName(str(p.get("lastName")));
+        e.setName(composeName(str(p.get("firstName")), str(p.get("lastName")), str(p.get("name"))));
+        e.setPhone(str(p.get("phone")));
         e.setRegion(str(p.get("region")));
         e.setIdNumber(str(p.get("idNumber")));
         e.setCode(resolveCode(str(p.get("code")), null));
@@ -60,7 +63,14 @@ public class ReferenceService {
     @Transactional
     public Encadreur updateEncadreur(String id, Map<String, Object> updates, String actor) {
         Encadreur e = encadreurs.findById(id).orElseThrow(() -> new ApiException(404, "NOT_FOUND"));
+        if (updates.containsKey("firstName")) e.setFirstName(str(updates.get("firstName")));
+        if (updates.containsKey("lastName")) e.setLastName(str(updates.get("lastName")));
         if (updates.containsKey("name")) e.setName(str(updates.get("name")));
+        // Le nom d'affichage suit prénom/nom dès que l'un des deux change.
+        if (updates.containsKey("firstName") || updates.containsKey("lastName")) {
+            e.setName(composeName(e.getFirstName(), e.getLastName(), e.getName()));
+        }
+        if (updates.containsKey("phone")) e.setPhone(str(updates.get("phone")));
         if (updates.containsKey("region")) e.setRegion(str(updates.get("region")));
         if (updates.containsKey("idNumber")) e.setIdNumber(str(updates.get("idNumber")));
         if (updates.containsKey("code")) e.setCode(resolveCode(str(updates.get("code")), id));
@@ -70,6 +80,13 @@ public class ReferenceService {
         return e;
     }
 
+    // Nom d'affichage = « prénom nom » ; à défaut (import ne fournissant qu'un
+    // seul champ), on retombe sur le `name` fourni tel quel.
+    private String composeName(String firstName, String lastName, String fallback) {
+        String composed = ((firstName == null ? "" : firstName) + " " + (lastName == null ? "" : lastName)).trim();
+        return composed.isBlank() ? fallback : composed;
+    }
+
     @Transactional
     public Map<String, Object> importEncadreurs(List<Map<String, Object>> rows, String actor) {
         List<Encadreur> created = new ArrayList<>();
@@ -77,7 +94,7 @@ public class ReferenceService {
         List<Map<String, Object>> errors = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             index++;
-            String name = str(row.get("name"));
+            String name = composeName(str(row.get("firstName")), str(row.get("lastName")), str(row.get("name")));
             if (name == null || name.isBlank()) {
                 errors.add(Map.of("row", index, "reason", "MISSING_NAME"));
                 continue;

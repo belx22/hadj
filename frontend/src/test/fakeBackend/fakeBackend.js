@@ -22,7 +22,8 @@ const ROLE_VALUES = new Set(Object.values(ROLES));
 // v5 : ajout des collections `smtpSettings` et `passwordResets` — un cache v4
 // ne les contiendrait pas.
 // v7 : ajout du champ `idNumber` sur les encadreurs (auto-inscription par pièce d'identité).
-const STORAGE_KEY = 'copilote-hadj-fake-db-v7';
+// v8 : fiche encadreur enrichie (firstName, lastName, phone ; idNumber = passeport).
+const STORAGE_KEY = 'copilote-hadj-fake-db-v8';
 const NETWORK_DELAY = 350;
 
 // Paramètres SMTP par défaut, modifiables par l'Admin DSI depuis son interface.
@@ -1261,11 +1262,15 @@ function resolveEncadreurCode(rawCode, excludeId) {
   return code;
 }
 
+// Nom d'affichage = « prénom nom » ; à défaut (import ne fournissant qu'un seul
+// champ) on retombe sur le `name` fourni tel quel.
+const composeEncadreurName = (p) => `${p.firstName || ''} ${p.lastName || ''}`.trim() || p.name || '';
+
 export async function createEncadreur(payload, actor) {
   await delay(300);
   const id = `ENC-${String(db.encadreurs.length + 1).padStart(3, '0')}`;
   const code = resolveEncadreurCode(payload.code);
-  const record = { id, active: true, ...payload, code };
+  const record = { id, active: true, ...payload, name: composeEncadreurName(payload), code };
   db.encadreurs = [...db.encadreurs, record];
   addAudit('CREATION_ENCADREUR', id, actor?.username || 'system');
   persist();
@@ -1278,7 +1283,15 @@ export async function updateEncadreur(id, updates, actor) {
   if (updates.code !== undefined) {
     nextUpdates.code = resolveEncadreurCode(updates.code, id);
   }
-  db.encadreurs = db.encadreurs.map((e) => (e.id === id ? { ...e, ...nextUpdates } : e));
+  db.encadreurs = db.encadreurs.map((e) => {
+    if (e.id !== id) return e;
+    const merged = { ...e, ...nextUpdates };
+    // Le nom d'affichage suit prénom/nom dès que l'un des deux change.
+    if (updates.firstName !== undefined || updates.lastName !== undefined) {
+      merged.name = composeEncadreurName(merged);
+    }
+    return merged;
+  });
   addAudit('MODIFICATION_ENCADREUR', id, actor?.username || 'system');
   persist();
   return db.encadreurs.find((e) => e.id === id);
@@ -1295,7 +1308,10 @@ export async function importEncadreurs(rows, actor) {
   const errors = [];
 
   rows.forEach((row, index) => {
-    const name = String(row.name || '').trim();
+    const firstName = String(row.firstName || '').trim();
+    const lastName = String(row.lastName || '').trim();
+    const name = composeEncadreurName({ firstName, lastName, name: row.name });
+    const phone = String(row.phone || '').trim();
     const region = String(row.region || '').trim();
     const rawCode = String(row.code || '').trim();
     const idNumber = String(row.idNumber || '').trim();
@@ -1324,7 +1340,7 @@ export async function importEncadreurs(rows, actor) {
 
     const id = `ENC-${String(db.encadreurs.length + created.length + 1).padStart(3, '0')}`;
     const code = rawCode ? rawCode.toUpperCase() : generateEncadreurCode();
-    const record = { id, name, region, code, idNumber, active: true };
+    const record = { id, firstName, lastName, name, phone, region, code, idNumber, active: true };
     db.encadreurs = [...db.encadreurs, record];
     created.push(record);
   });
