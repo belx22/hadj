@@ -37,16 +37,20 @@ public class BordereauService {
         return repo.count() + 1;
     }
 
+    private static String blankToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> list(Map<String, String> filters) {
         List<Bordereau> items = repo.findAll();
-        String region = filters.get("region");
-        String encadreurId = filters.get("encadreurId");
-        String agency = filters.get("agency");
-        String pilgrimType = filters.get("pilgrimType");
-        String season = filters.get("season");
-        String from = filters.get("from");
-        String to = filters.get("to");
+        String region = blankToNull(filters.get("region"));
+        String encadreurId = blankToNull(filters.get("encadreurId"));
+        String agency = blankToNull(filters.get("agency"));
+        String pilgrimType = blankToNull(filters.get("pilgrimType"));
+        String season = blankToNull(filters.get("season"));
+        String from = blankToNull(filters.get("from"));
+        String to = blankToNull(filters.get("to"));
 
         return items.stream()
                 .filter(b -> region == null || region.equals(b.getRegion()))

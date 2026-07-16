@@ -40,12 +40,13 @@ public class ReportingService {
         for (Encadreur enc : encadreurRepo.findAll()) {
             List<Map<String, Object>> encItems = items.stream().filter(b -> enc.getId().equals(b.get("encadreurId"))).toList();
             if (encItems.isEmpty()) continue;
-            byEncadreur.add(Map.of(
-                    "encadreurId", enc.getId(),
-                    "encadreurName", enc.getName(),
-                    "collected", encItems.stream().mapToLong(b -> asLong(b.get("amountPaid"))).sum(),
-                    "pilgrims", encItems.stream().mapToLong(b -> asLong(b.get("pilgrimCount"))).sum(),
-                    "bordereaux", encItems.size()));
+            Map<String, Object> encRow = new LinkedHashMap<>();
+            encRow.put("encadreurId", enc.getId());
+            encRow.put("encadreurName", enc.getName());
+            encRow.put("collected", encItems.stream().mapToLong(b -> asLong(b.get("amountPaid"))).sum());
+            encRow.put("pilgrims", encItems.stream().mapToLong(b -> asLong(b.get("pilgrimCount"))).sum());
+            encRow.put("bordereaux", encItems.size());
+            byEncadreur.add(encRow);
         }
 
         List<Map<String, Object>> byRegion = new ArrayList<>();

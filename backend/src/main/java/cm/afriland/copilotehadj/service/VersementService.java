@@ -78,8 +78,12 @@ public class VersementService {
             v.setPayerName(payer.getPilgrimFirstName() + " " + payer.getPilgrimLastName());
             target.addVersement(v);
             repo.save(target);
-            results.add(Map.of("idNumber", idNumber, "name", target.getPilgrimFirstName() + " " + target.getPilgrimLastName(),
-                    "amount", amount, "encadreurCode", enc != null ? enc.getCode() : null));
+            Map<String, Object> beneficiary = new LinkedHashMap<>();
+            beneficiary.put("idNumber", idNumber);
+            beneficiary.put("name", target.getPilgrimFirstName() + " " + target.getPilgrimLastName());
+            beneficiary.put("amount", amount);
+            beneficiary.put("encadreurCode", enc != null ? enc.getCode() : null);
+            results.add(beneficiary);
         }
         audit.log("VERSEMENT_GROUPE_EN_LIGNE", groupPaymentId, payerIdNumber);
         Map<String, Object> res = new LinkedHashMap<>();
@@ -291,8 +295,12 @@ public class VersementService {
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> benes = (List<Map<String, Object>>) g.get("beneficiaries");
                 Encadreur enc = b.getEncadreurId() == null ? null : encadreurRepo.findById(b.getEncadreurId()).orElse(null);
-                benes.add(Map.of("idNumber", b.getIdNumber(), "name", b.getPilgrimFirstName() + " " + b.getPilgrimLastName(),
-                        "amount", v.getAmount(), "encadreurCode", enc != null ? enc.getCode() : null));
+                Map<String, Object> bene = new LinkedHashMap<>();
+                bene.put("idNumber", b.getIdNumber());
+                bene.put("name", b.getPilgrimFirstName() + " " + b.getPilgrimLastName());
+                bene.put("amount", v.getAmount());
+                bene.put("encadreurCode", enc != null ? enc.getCode() : null);
+                benes.add(bene);
             }
         }
         return new ArrayList<>(groups.values());
