@@ -516,6 +516,15 @@
     "subtitle": "List of pilgrims and their file status",
     "search": "Search (name, ID, phone)",
     "visaSituation": "Visa situation:",
+    "register": {
+      "title": "Register a client",
+      "help": "Register a single client, attached to the chosen guide. A tracking password is generated for them.",
+      "chooseEncadreur": "Choose the guide…",
+      "encadreurRequired": "Please choose a guide.",
+      "submit": "Register client",
+      "massTitle": "Bulk registration",
+      "massHelp": "Import a list of clients (Excel/CSV) for the chosen guide. Duplicate passports are ignored."
+    },
     "biCheckTitle": "Automatic check via Power BI",
     "biCheckHelp": "Detects fully paid files that are still pending, and payments awaiting validation for more than 3 days.",
     "biCheckButton": "Check via Power BI",

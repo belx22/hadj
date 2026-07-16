@@ -166,3 +166,29 @@ describe('paiement pèlerin : soumission d’un versement', () => {
     await waitFor(() => expect(document.body.textContent.length).toBeGreaterThan(0));
   });
 });
+
+describe('page Clients : inscription d’un client à l’unité', () => {
+  beforeEach(loginAdmin);
+
+  it('rattache le client à l’encadreur choisi et affiche ses identifiants', async () => {
+    renderWithProviders(<ClientsPage />, { route: '/clients' });
+    const submit = await screen.findByRole('button', { name: /inscrire le client/i });
+    const form = submit.closest('form');
+    const selects = form.querySelectorAll('select');
+    // 1er select = encadreur : on attend le chargement des encadreurs actifs.
+    await waitFor(() => expect(selects[0].querySelectorAll('option').length).toBeGreaterThan(1));
+    const encOpt = [...selects[0].options].find((o) => o.value);
+    fireEvent.change(selects[0], { target: { value: encOpt.value } });
+    const inputs = form.querySelectorAll('input');
+    fireEvent.change(inputs[0], { target: { value: 'Testclient' } });
+    fireEvent.change(inputs[1], { target: { value: 'Unitaire' } });
+    fireEvent.change(inputs[2], { target: { value: '699445566' } });
+    fireEvent.change(inputs[3], { target: { value: '1009990001' } });
+    // 2e select = région.
+    const regionOpt = [...selects[1].options].find((o) => o.value);
+    fireEvent.change(selects[1], { target: { value: regionOpt.value } });
+    fireEvent.click(submit);
+    // La carte d'identifiants du client créé apparaît (passeport visible).
+    await screen.findByText('1009990001');
+  });
+});
