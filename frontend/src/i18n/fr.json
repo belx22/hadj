@@ -92,6 +92,7 @@
     "password": "Mot de passe",
     "loginButton": "Se connecter",
     "invalidCredentials": "Identifiant ou mot de passe incorrect",
+    "connectionError": "Connexion au serveur impossible. Veuillez réessayer plus tard.",
     "forgotPassword": "Mot de passe oublié ?",
     "welcome": "Bienvenue",
     "loginSubtitle": "Accédez à votre espace Copilote Hadj",

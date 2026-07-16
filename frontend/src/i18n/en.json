@@ -92,6 +92,7 @@
     "password": "Password",
     "loginButton": "Sign in",
     "invalidCredentials": "Incorrect username or password",
+    "connectionError": "Unable to reach the server. Please try again later.",
     "forgotPassword": "Forgot your password?",
     "welcome": "Welcome",
     "loginSubtitle": "Access your Hadj Copilot workspace",

@@ -34,8 +34,9 @@ export default function StaffLoginPage() {
     try {
       const user = await login(username, password);
       navigate(ROLE_HOME[user.role] || '/');
-    } catch {
-      setError(t('auth.invalidCredentials'));
+    } catch (err) {
+      const status = err.response?.status;
+      setError(status === 401 ? t('auth.invalidCredentials') : t('auth.connectionError'));
     }
   }
 

@@ -92,6 +92,7 @@
     "password": "كلمة المرور",
     "loginButton": "تسجيل الدخول",
     "invalidCredentials": "اسم المستخدم أو كلمة المرور غير صحيحة",
+    "connectionError": "تعذر الاتصال بالخادم. يرجى المحاولة لاحقًا.",
     "forgotPassword": "هل نسيت كلمة المرور؟",
     "welcome": "مرحباً بكم",
     "loginSubtitle": "الدخول إلى فضاء كوبيلوت الحج",
