@@ -22,6 +22,9 @@ import java.util.Set;
 public class AuthService {
 
     private static final int MAX_OTP_ATTEMPTS = 5;
+    // OTP de réinitialisation du mot de passe : durée courte fixe (5 minutes),
+    // indépendante du réglage SMTP otpTtlMinutes utilisé par l'OTP de connexion.
+    private static final int RESET_OTP_TTL_MINUTES = 5;
 
     // Rôles staff soumis à la double authentification (l'encadreur en est exclu :
     // il accède à son espace via passeport + téléphone, pas par ce point d'entrée).
@@ -115,8 +118,7 @@ public class AuthService {
 
     public Map<String, Object> requestPasswordReset(String identifier) {
         AppUser user = findByIdentifier(identifier).orElse(null);
-        SmtpSettings settings = smtp.findById(1).orElse(null);
-        int ttlMinutes = settings != null && settings.getOtpTtlMinutes() != null ? settings.getOtpTtlMinutes() : 10;
+        int ttlMinutes = RESET_OTP_TTL_MINUTES;
 
         // Réponse identique que le compte existe ou non (anti-énumération).
         if (user == null || user.getEmail() == null || !user.isActive()) {
