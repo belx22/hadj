@@ -101,16 +101,18 @@ function PendingTab() {
 
   function reload() {
     setLoading(true);
-    getPendingVersements().then((data) => {
-      setRows(data);
-      setSelectedIds(new Set());
-      setLoading(false);
-    });
+    getPendingVersements()
+      .then((data) => {
+        setRows(data);
+        setSelectedIds(new Set());
+      })
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
     reload();
-    getEncadreurs({ onlyActive: false }).then(setEncadreurs);
+    getEncadreurs({ onlyActive: false }).then(setEncadreurs).catch(() => setEncadreurs([]));
   }, []);
 
   function toggleSelected(id) {
@@ -400,15 +402,15 @@ function HistoryTab() {
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(rows);
 
   useEffect(() => {
-    getEncadreurs({ onlyActive: false }).then(setEncadreurs);
+    getEncadreurs({ onlyActive: false }).then(setEncadreurs).catch(() => setEncadreurs([]));
   }, []);
 
   useEffect(() => {
     setLoading(true);
-    getVersementsHistory(filters).then((data) => {
-      setRows(data);
-      setLoading(false);
-    });
+    getVersementsHistory(filters)
+      .then((data) => setRows(data))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
   }, [filters]);
 
   function updateFilter(field, value) {
@@ -585,10 +587,10 @@ function RefundsTab() {
 
   function reload() {
     setLoading(true);
-    getRefunds().then((data) => {
-      setRows(data);
-      setLoading(false);
-    });
+    getRefunds()
+      .then((data) => setRows(data))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {

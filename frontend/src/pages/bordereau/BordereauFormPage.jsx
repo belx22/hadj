@@ -42,11 +42,11 @@ export default function BordereauFormPage() {
   const [createdBordereau, setCreatedBordereau] = useState(null);
 
   useEffect(() => {
-    getEncadreurs().then(setEncadreurs);
+    getEncadreurs().then(setEncadreurs).catch(() => setEncadreurs([]));
   }, []);
 
   useEffect(() => {
-    getOfficialPrice(form.season, form.pilgrimType, form.includesEncadreurFees).then(setOfficialPrice);
+    getOfficialPrice(form.season, form.pilgrimType, form.includesEncadreurFees).then(setOfficialPrice).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.season, form.pilgrimType, form.includesEncadreurFees]);
 

@@ -10,10 +10,10 @@ COPY src ./src
 RUN mvn -q -B clean package -DskipTests
 
 # --- Étape 2 : image d'exécution ---
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM eclipse-temurin:17-jre-jammy AS runtime
 WORKDIR /app
 
-RUN addgroup -S app && adduser -S app -G app
+RUN addgroup --system app && adduser --system --ingroup app app
 COPY --from=build /app/target/*.jar app.jar
 USER app
 

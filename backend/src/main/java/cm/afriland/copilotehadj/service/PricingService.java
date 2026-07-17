@@ -2,7 +2,10 @@ package cm.afriland.copilotehadj.service;
 
 import cm.afriland.copilotehadj.entity.Season;
 import cm.afriland.copilotehadj.repository.SeasonRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class PricingService {
@@ -20,7 +23,15 @@ public class PricingService {
             Season s = seasonRepository.findById(season).orElse(null);
             if (s != null) return s;
         }
-        return seasonRepository.findAll().stream().findFirst().orElse(null);
+        // Saison « courante » déterministe : la saison ouverte la plus récente,
+        // sinon (aucune ouverte) la plus récente. findAll().findFirst() dépendait
+        // de l'ordre physique des lignes en base et pouvait renvoyer une saison
+        // fermée après une mise à jour Postgres (MVCC).
+        var firstRow = PageRequest.of(0, 1);
+        List<Season> open = seasonRepository.findOpenSeasonsMostRecentFirst(firstRow);
+        if (!open.isEmpty()) return open.get(0);
+        List<Season> all = seasonRepository.findAllMostRecentFirst(firstRow);
+        return all.isEmpty() ? null : all.get(0);
     }
 
     /**

@@ -79,11 +79,16 @@ export default function ClientsPage() {
 
   function reload() {
     setLoading(true);
-    Promise.all([getBordereaux({}), getEncadreurs({ onlyActive: false })]).then(([b, e]) => {
-      setBordereaux(b);
-      setEncadreurs(e);
-      setLoading(false);
-    });
+    Promise.all([getBordereaux({}), getEncadreurs({ onlyActive: false })])
+      .then(([b, e]) => {
+        setBordereaux(b);
+        setEncadreurs(e);
+      })
+      .catch(() => {
+        setBordereaux([]);
+        setEncadreurs([]);
+      })
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {

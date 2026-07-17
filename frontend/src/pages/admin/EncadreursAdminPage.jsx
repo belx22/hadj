@@ -54,10 +54,10 @@ export default function EncadreursAdminPage() {
 
   function reload() {
     setLoading(true);
-    getEncadreurs({ onlyActive: false }).then((data) => {
-      setEncadreurs(data);
-      setLoading(false);
-    });
+    getEncadreurs({ onlyActive: false })
+      .then((data) => setEncadreurs(data))
+      .catch(() => setEncadreurs([]))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {

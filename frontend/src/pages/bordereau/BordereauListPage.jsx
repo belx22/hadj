@@ -29,15 +29,15 @@ export default function BordereauListPage() {
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(items);
 
   useEffect(() => {
-    getEncadreurs().then(setEncadreurs);
+    getEncadreurs().then(setEncadreurs).catch(() => setEncadreurs([]));
   }, []);
 
   function reload() {
     setLoading(true);
-    getBordereaux(filters).then((data) => {
-      setItems(data);
-      setLoading(false);
-    });
+    getBordereaux(filters)
+      .then((data) => setItems(data))
+      .catch(() => setItems([]))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {

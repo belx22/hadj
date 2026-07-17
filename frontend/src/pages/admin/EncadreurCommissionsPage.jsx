@@ -18,15 +18,15 @@ export default function EncadreurCommissionsPage() {
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(rows);
 
   useEffect(() => {
-    getSeasons().then((data) => setSeasons([...data].sort((a, b) => b.season - a.season)));
+    getSeasons().then((data) => setSeasons([...data].sort((a, b) => b.season - a.season))).catch(() => setSeasons([]));
   }, []);
 
   useEffect(() => {
     setLoading(true);
-    getEncadreurCommissions(season).then((data) => {
-      setRows(data);
-      setLoading(false);
-    });
+    getEncadreurCommissions(season)
+      .then((data) => setRows(data))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
   }, [season]);
 
   const totalPaid = rows.reduce((sum, r) => sum + r.totalPaid, 0);

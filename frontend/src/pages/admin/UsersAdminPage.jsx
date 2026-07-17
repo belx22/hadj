@@ -57,15 +57,15 @@ export default function UsersAdminPage() {
 
   function reload() {
     setLoading(true);
-    getUsers().then((data) => {
-      setUsers(data);
-      setLoading(false);
-    });
+    getUsers()
+      .then((data) => setUsers(data))
+      .catch(() => setUsers([]))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
     reload();
-    getEncadreurs({ onlyActive: false }).then(setEncadreurs);
+    getEncadreurs({ onlyActive: false }).then(setEncadreurs).catch(() => setEncadreurs([]));
   }, []);
 
   function update(field, value) {

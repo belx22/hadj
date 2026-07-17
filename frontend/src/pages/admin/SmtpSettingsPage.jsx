@@ -14,10 +14,10 @@ export default function SmtpSettingsPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    getSmtpSettings().then((data) => {
-      setSettings(data);
-      setLoading(false);
-    });
+    getSmtpSettings()
+      .then((data) => setSettings(data))
+      .catch(() => setSettings(null))
+      .finally(() => setLoading(false));
   }, []);
 
   function update(field, value) {
@@ -44,6 +44,7 @@ export default function SmtpSettingsPage() {
   }
 
   if (loading) return <p className="text-afriland-gray-600">{t('common.loading')}</p>;
+  if (!settings) return <p className="text-visa-refused">{t('common.error')}</p>;
 
   return (
     <div className="space-y-6">

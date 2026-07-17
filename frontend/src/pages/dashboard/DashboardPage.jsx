@@ -36,18 +36,20 @@ export default function DashboardPage() {
   const [groupedPayments, setGroupedPayments] = useState([]);
   const [tab, setTab] = useState('global');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    getEncadreurs().then(setEncadreurs);
-    getGroupedPayments().then(setGroupedPayments);
+    getEncadreurs().then(setEncadreurs).catch(() => setEncadreurs([]));
+    getGroupedPayments().then(setGroupedPayments).catch(() => setGroupedPayments([]));
   }, []);
 
   useEffect(() => {
     setLoading(true);
-    getReporting(filters).then((data) => {
-      setReporting(data);
-      setLoading(false);
-    });
+    setLoadError(false);
+    getReporting(filters)
+      .then((data) => setReporting(data))
+      .catch(() => setLoadError(true))
+      .finally(() => setLoading(false));
   }, [filters]);
 
   function updateFilter(field, value) {
@@ -85,8 +87,11 @@ export default function DashboardPage() {
     );
   }
 
-  if (loading || !reporting) {
+  if (loading) {
     return <p className="text-afriland-gray-600">{t('common.loading')}</p>;
+  }
+  if (loadError || !reporting) {
+    return <p className="text-visa-refused">{t('common.error')}</p>;
   }
 
   return (

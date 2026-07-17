@@ -60,8 +60,8 @@ export default function PassportAttestationsPage() {
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(filteredItems);
 
   useEffect(() => {
-    getSeasons().then((s) => setSeasons([...s].sort((a, b) => b.season - a.season)));
-    getEncadreurs({ onlyActive: false }).then(setEncadreurs);
+    getSeasons().then((s) => setSeasons([...s].sort((a, b) => b.season - a.season))).catch(() => setSeasons([]));
+    getEncadreurs({ onlyActive: false }).then(setEncadreurs).catch(() => setEncadreurs([]));
   }, []);
 
   function handleDownloadGroupCertificate() {
@@ -83,10 +83,10 @@ export default function PassportAttestationsPage() {
 
   function reload() {
     setLoading(true);
-    getPassportDeposits(season).then((result) => {
-      setData(result);
-      setLoading(false);
-    });
+    getPassportDeposits(season)
+      .then((result) => setData(result))
+      .catch(() => setData({ items: [], totalPilgrims: 0, depositedPilgrims: 0, remainingPilgrims: 0 }))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {

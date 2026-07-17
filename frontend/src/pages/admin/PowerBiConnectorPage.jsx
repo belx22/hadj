@@ -13,11 +13,16 @@ export default function PowerBiConnectorPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getBordereaux({}), getEncadreurs({ onlyActive: false })]).then(([b, e]) => {
-      setBordereaux(b);
-      setEncadreurs(e);
-      setLoading(false);
-    });
+    Promise.all([getBordereaux({}), getEncadreurs({ onlyActive: false })])
+      .then(([b, e]) => {
+        setBordereaux(b);
+        setEncadreurs(e);
+      })
+      .catch(() => {
+        setBordereaux([]);
+        setEncadreurs([]);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const encadreurName = useMemo(() => {
@@ -28,7 +33,7 @@ export default function PowerBiConnectorPage() {
   const versementRows = useMemo(() => {
     const rows = [];
     bordereaux.forEach((b) => {
-      b.versements.forEach((v) => {
+      (b.versements || []).forEach((v) => {
         rows.push({
           BordereauId: b.id,
           Pelerin: `${b.pilgrimFirstName} ${b.pilgrimLastName}`,

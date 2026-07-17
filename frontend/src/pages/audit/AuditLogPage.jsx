@@ -11,7 +11,7 @@ export default function AuditLogPage() {
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(logs);
 
   useEffect(() => {
-    getAuditLogs().then(setLogs);
+    getAuditLogs().then(setLogs).catch(() => setLogs([]));
   }, []);
 
   return (

@@ -29,10 +29,10 @@ export default function SeasonsAdminPage() {
 
   function reload() {
     setLoading(true);
-    getSeasons().then((data) => {
-      setSeasons([...data].sort((a, b) => b.season - a.season));
-      setLoading(false);
-    });
+    getSeasons()
+      .then((data) => setSeasons([...data].sort((a, b) => b.season - a.season)))
+      .catch(() => setSeasons([]))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
