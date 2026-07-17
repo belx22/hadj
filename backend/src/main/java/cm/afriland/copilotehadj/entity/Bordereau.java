@@ -3,6 +3,7 @@ package cm.afriland.copilotehadj.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -37,6 +38,11 @@ public class Bordereau {
     private boolean includesEncadreurFees;
     // Dossier propre d'un encadreur : intègre (ou non) son montant dans le total
     // à collecter de son groupe. Sans effet pour un pèlerin ordinaire.
+    // @ColumnDefault : sans valeur par défaut, l'ajout de cette colonne NOT NULL
+    // par ddl-auto=update échoue sur une table déjà peuplée (Postgres refuse
+    // « ADD COLUMN ... NOT NULL » sans défaut), la colonne n'est jamais créée et
+    // toute lecture de bordereau tombe alors en 500.
+    @ColumnDefault("true")
     private boolean includeInGroupTotal = true;
     private Integer pilgrimCount = 1;
     private Integer season;
