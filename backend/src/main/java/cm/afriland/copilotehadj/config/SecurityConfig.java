@@ -63,14 +63,16 @@ public class SecurityConfig {
                         // sans compte staff (identifié par sa session pèlerin, pas par un JWT). Ces
                         // actions relèvent du self-service pèlerin, au même titre que l'inscription
                         // en ligne et les versements déjà publics : consultation du groupe,
-                        // inscription (unité + import) et versements groupés. Le changement de
-                        // statut des passeports/visas reste réservé au staff.
+                        // inscription (unité + import), versements groupés et dépôt des passeports
+                        // de son propre groupe (le service vérifie que chaque dossier lui appartient).
+                        // Le changement de statut visa reste réservé au staff.
                         .requestMatchers(HttpMethod.GET, "/visa/encadreur/*/groupe").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/visa/encadreur/inscription",
                                 "/visa/encadreur/*/import",
                                 "/visa/encadreur/*/import-versement-groupe"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/visa/encadreur/*/depots-passeports").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
                         // Tout le reste exige un jeton valide.
                         .anyRequest().authenticated()

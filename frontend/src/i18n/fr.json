@@ -39,7 +39,8 @@
     "select": "Sélectionner...",
     "total": "Total",
     "seeMore": "Voir plus",
-    "print": "Imprimer"
+    "print": "Imprimer",
+    "selectAll": "Tout sélectionner"
   },
   "toasts": {
     "paymentValidated": "Versement validé et comptabilisé",
@@ -683,6 +684,9 @@
     "cancelDeposit": "Annuler le dépôt",
     "download": "Télécharger l'attestation",
     "depositedToast": "Passeport marqué comme déposé",
-    "cancelledToast": "Dépôt annulé"
+    "cancelledToast": "Dépôt annulé",
+    "selectedCount": "{{count}} sélectionné(s)",
+    "bulkDeposit": "Marquer déposé",
+    "bulkUndeposit": "Marquer non déposé"
   }
 }

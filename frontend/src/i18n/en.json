@@ -39,7 +39,8 @@
     "select": "Select...",
     "total": "Total",
     "seeMore": "See more",
-    "print": "Print"
+    "print": "Print",
+    "selectAll": "Select all"
   },
   "toasts": {
     "paymentValidated": "Payment validated and recorded",
@@ -683,6 +684,9 @@
     "cancelDeposit": "Cancel deposit",
     "download": "Download certificate",
     "depositedToast": "Passport marked as deposited",
-    "cancelledToast": "Deposit cancelled"
+    "cancelledToast": "Deposit cancelled",
+    "selectedCount": "{{count}} selected",
+    "bulkDeposit": "Mark deposited",
+    "bulkUndeposit": "Mark not deposited"
   }
 }

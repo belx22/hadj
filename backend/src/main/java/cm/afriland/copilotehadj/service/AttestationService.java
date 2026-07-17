@@ -70,6 +70,52 @@ public class AttestationService {
         return mapper.decorate(b);
     }
 
+    /** Marque (ou annule) le dépôt du passeport pour une liste de dossiers. */
+    @Transactional
+    public Map<String, Object> toggleBulk(List<String> bordereauIds, boolean deposited, String actor) {
+        int updated = 0;
+        if (bordereauIds != null) {
+            for (String id : bordereauIds) {
+                Bordereau b = id == null ? null : repo.findById(id).orElse(null);
+                if (b == null) continue;
+                b.setPassportDeposited(deposited);
+                b.setPassportDepositedAt(deposited ? LocalDate.now() : null);
+                repo.save(b);
+                updated++;
+            }
+        }
+        if (updated > 0) {
+            audit.log(deposited ? "DEPOT_PASSEPORT_MASSE" : "ANNULATION_DEPOT_PASSEPORT_MASSE",
+                    updated + " dossier(s)", actor);
+        }
+        return Map.of("updated", updated);
+    }
+
+    /**
+     * Dépôt en masse par un encadreur pour SON groupe : chaque dossier n'est
+     * modifié que s'il appartient bien à l'encadreurId fourni (endpoint public du
+     * portail encadreur — la vérification d'appartenance tient lieu d'autorisation).
+     */
+    @Transactional
+    public Map<String, Object> toggleBulkForEncadreur(String encadreurId, List<String> bordereauIds, boolean deposited, String actor) {
+        int updated = 0;
+        if (encadreurId != null && bordereauIds != null) {
+            for (String id : bordereauIds) {
+                Bordereau b = id == null ? null : repo.findById(id).orElse(null);
+                if (b == null || !encadreurId.equals(b.getEncadreurId())) continue;
+                b.setPassportDeposited(deposited);
+                b.setPassportDepositedAt(deposited ? LocalDate.now() : null);
+                repo.save(b);
+                updated++;
+            }
+        }
+        if (updated > 0) {
+            audit.log(deposited ? "DEPOT_PASSEPORT_ENCADREUR" : "ANNULATION_DEPOT_PASSEPORT_ENCADREUR",
+                    updated + " dossier(s)", actor);
+        }
+        return Map.of("updated", updated);
+    }
+
     @Transactional
     public Map<String, Object> importDeposits(List<Map<String, Object>> rows, Integer season, String actor) {
         List<Map<String, Object>> updated = new ArrayList<>();

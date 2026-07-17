@@ -39,7 +39,8 @@
     "select": "اختر...",
     "total": "المجموع",
     "seeMore": "عرض المزيد",
-    "print": "طباعة"
+    "print": "طباعة",
+    "selectAll": "تحديد الكل"
   },
   "toasts": {
     "paymentValidated": "تم التصديق على الدفعة وإدراجها في الحساب",
@@ -683,6 +684,9 @@
     "cancelDeposit": "إلغاء الإيداع",
     "download": "تحميل الشهادة",
     "depositedToast": "تم تحديد الجواز كمودَع",
-    "cancelledToast": "تم إلغاء الإيداع"
+    "cancelledToast": "تم إلغاء الإيداع",
+    "selectedCount": "{{count}} محدد",
+    "bulkDeposit": "تحديد كمودع",
+    "bulkUndeposit": "تحديد كغير مودع"
   }
 }

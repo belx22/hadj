@@ -9,6 +9,7 @@ import {
   importPilgrims,
   createVersementOnline,
   importGroupedVersementsByEncadreur,
+  setEncadreurPassportDeposits,
 } from '../../api/visaApi';
 import { importPassportDeposits } from '../../api/attestationsApi';
 import { getEncadreurs } from '../../api/referenceDataApi';
@@ -137,6 +138,10 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
   const [passportImporting, setPassportImporting] = useState(false);
   const passportFileInputRef = useRef(null);
 
+  // Sélection de pèlerins pour marquer/annuler le dépôt de leur passeport.
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [depositBusy, setDepositBusy] = useState(false);
+
   function reload() {
     // En mode gestionnaire tant qu'aucun encadreur n'est choisi, il n'y a pas de
     // groupe à charger : on évite un appel avec un encadreurId nul.
@@ -155,6 +160,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
 
   useEffect(() => {
     reload();
+    setSelectedIds(new Set());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [encadreurId]);
 
@@ -378,6 +384,40 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
   // Attestation de dépôt collective : un seul document pour tous les passeports
   // déposés du groupe (et non une attestation par pèlerin).
   const depositedPilgrims = useMemo(() => group.filter((b) => b.passportDeposited), [group]);
+
+  // --- Sélection + dépôt en masse des passeports (par l'encadreur) ---
+  const allGroupSelected = group.length > 0 && group.every((b) => selectedIds.has(b.id));
+
+  function toggleSelectOne(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds((prev) => (
+      group.length > 0 && group.every((b) => prev.has(b.id)) ? new Set() : new Set(group.map((b) => b.id))
+    ));
+  }
+
+  async function handleBulkDeposit(deposited) {
+    const ids = [...selectedIds];
+    if (ids.length === 0 || !encadreurId) return;
+    setDepositBusy(true);
+    try {
+      await setEncadreurPassportDeposits(encadreurId, ids, deposited);
+      toast.success(deposited ? t('attestations.depositedToast') : t('attestations.cancelledToast'));
+      setSelectedIds(new Set());
+      reload();
+    } catch {
+      toast.error(t('common.error'));
+    } finally {
+      setDepositBusy(false);
+    }
+  }
 
   function handleDownloadGroupCertificate() {
     if (depositedPilgrims.length === 0) return;
@@ -749,14 +789,6 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
             {passportImporting ? t('common.loading') : t('adminEncadreurs.importFile')}
           </button>
           <input ref={passportFileInputRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handlePassportFileChange} />
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={handleDownloadGroupCertificate}
-            disabled={depositedPilgrims.length === 0}
-          >
-            {t('encadreurPortal.passports.downloadGroupCertificate', { count: depositedPilgrims.length })}
-          </button>
         </div>
         {passportSummary && (
           <div className="rounded-md bg-afriland-gray-50 p-3 text-sm">
@@ -776,13 +808,39 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
       </div>
       )}
 
-      {/* Suivi (lecture seule) : l'encadreur consulte le statut visa de ses
-          pèlerins mais ne peut jamais le modifier, ni changer un statut de
-          paiement. */}
+      {/* Dépôt des passeports : l'encadreur sélectionne les pèlerins ayant
+          déposé leur passeport, valide en masse, puis télécharge l'attestation. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-semibold text-afriland-black">{t('encadreurPortal.passports.title')}</span>
+        {selectedIds.size > 0 && (
+          <>
+            <span className="text-sm text-afriland-gray-600">{t('attestations.selectedCount', { count: selectedIds.size })}</span>
+            <button type="button" className="btn-primary !py-1.5 text-xs" disabled={depositBusy} onClick={() => handleBulkDeposit(true)}>
+              {t('attestations.bulkDeposit')}
+            </button>
+            <button type="button" className="btn-secondary !py-1.5 text-xs" disabled={depositBusy} onClick={() => handleBulkDeposit(false)}>
+              {t('attestations.bulkUndeposit')}
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          className="btn-secondary !py-1.5 text-xs"
+          onClick={handleDownloadGroupCertificate}
+          disabled={depositedPilgrims.length === 0}
+        >
+          {t('encadreurPortal.passports.downloadGroupCertificate', { count: depositedPilgrims.length })}
+        </button>
+      </div>
+
+      {/* Suivi : statut visa (lecture seule) + sélection pour le dépôt passeport. */}
       <div className="card overflow-x-auto p-0">
-        <table className="w-full min-w-[620px] text-left text-sm">
+        <table className="w-full min-w-[680px] text-left text-sm">
           <thead className="bg-afriland-gray-50 text-xs uppercase text-afriland-gray-600">
             <tr>
+              <th className="px-4 py-3">
+                <input type="checkbox" checked={allGroupSelected} onChange={toggleSelectAll} aria-label={t('common.selectAll')} />
+              </th>
               <th className="px-4 py-3">{t('bordereau.table.pilgrim')}</th>
               <th className="px-4 py-3">{t('visa.idNumber')}</th>
               <th className="px-4 py-3">{t('bordereau.table.amount')}</th>
@@ -793,7 +851,15 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
             {pageItems.map((b) => (
-              <tr key={b.id}>
+              <tr key={b.id} className={selectedIds.has(b.id) ? 'bg-afriland-red/5' : ''}>
+                <td className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(b.id)}
+                    onChange={() => toggleSelectOne(b.id)}
+                    aria-label={`${b.pilgrimFirstName} ${b.pilgrimLastName}`}
+                  />
+                </td>
                 <td className="px-4 py-3">{b.pilgrimFirstName} {b.pilgrimLastName}</td>
                 <td className="px-4 py-3 font-mono text-xs">{b.idNumber}</td>
                 <td className="px-4 py-3">{formatCurrency(b.amountPaid)}</td>

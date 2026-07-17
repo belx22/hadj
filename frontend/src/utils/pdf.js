@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency, formatDate } from './formatters';
-import afrilandLogo from '../assets/logo-afriland.png';
+import attestationLogo from '../assets/Image2.png';
 
 // Charge une image (asset Vite, même origine) pour l'incruster dans un PDF.
 function loadImage(src) {
@@ -221,9 +221,9 @@ export async function generateGroupPassportDepositCertificate({ encadreurId, sea
   const year = season != null ? season : new Date().getFullYear();
   const passportsTotal = deposits.reduce((sum, d) => sum + (d.pilgrimCount || 1), 0);
 
-  // En-tête : logo Afriland (à défaut, repli texte).
+  // En-tête : logo Afriland — Banque Islamique (à défaut, repli texte).
   try {
-    const logo = await loadImage(afrilandLogo);
+    const logo = await loadImage(attestationLogo);
     const logoWidth = 55;
     const logoHeight = (logoWidth * logo.naturalHeight) / logo.naturalWidth;
     doc.addImage(logo, 'PNG', 14, 12, logoWidth, logoHeight);

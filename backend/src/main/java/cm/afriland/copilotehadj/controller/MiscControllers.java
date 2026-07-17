@@ -44,6 +44,13 @@ public class MiscControllers {
             return service.passportDeposits(season);
         }
 
+        @PutMapping("/masse")
+        @SuppressWarnings("unchecked")
+        public Map<String, Object> toggleBulk(@RequestBody Map<String, Object> body) {
+            return service.toggleBulk((List<String>) body.get("bordereauIds"),
+                    Boolean.TRUE.equals(body.get("deposited")), audit.currentUser());
+        }
+
         @PutMapping("/{bordereauId}")
         public Map<String, Object> toggle(@PathVariable String bordereauId, @RequestBody Map<String, Object> body) {
             return service.toggle(bordereauId, Boolean.TRUE.equals(body.get("deposited")), audit.currentUser());

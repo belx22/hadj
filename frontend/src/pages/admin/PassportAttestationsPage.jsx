@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as XLSX from 'xlsx';
 import { useToast } from '../../context/ToastContext';
-import { getPassportDeposits, togglePassportDeposit, importPassportDeposits } from '../../api/attestationsApi';
+import { getPassportDeposits, togglePassportDeposit, bulkTogglePassportDeposit, importPassportDeposits } from '../../api/attestationsApi';
 import { getSeasons, getEncadreurs } from '../../api/referenceDataApi';
 import StatCard from '../../components/ui/StatCard';
 import Pagination from '../../components/ui/Pagination';
@@ -24,6 +24,8 @@ export default function PassportAttestationsPage() {
   const [data, setData] = useState({ items: [], totalPilgrims: 0, depositedPilgrims: 0, remainingPilgrims: 0 });
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importSummary, setImportSummary] = useState(null);
   const fileInputRef = useRef(null);
@@ -58,6 +60,48 @@ export default function PassportAttestationsPage() {
   const depositedInSelection = useMemo(() => filteredItems.filter((i) => i.passportDeposited), [filteredItems]);
 
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(filteredItems);
+  const recap = usePagination(byEncadreur);
+
+  // La sélection ne porte que sur le groupe/saison affiché : on la réinitialise
+  // dès que le filtre encadreur, la saison ou la liste changent.
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [encadreurFilter, season, data]);
+
+  const allFilteredSelected = filteredItems.length > 0 && filteredItems.every((i) => selectedIds.has(i.bordereauId));
+
+  function toggleSelectOne(id) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds((prev) => (
+      filteredItems.length > 0 && filteredItems.every((i) => prev.has(i.bordereauId))
+        ? new Set()
+        : new Set(filteredItems.map((i) => i.bordereauId))
+    ));
+  }
+
+  async function handleBulkDeposit(deposited) {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    try {
+      await bulkTogglePassportDeposit(ids, deposited);
+      toast.success(deposited ? t('attestations.depositedToast') : t('attestations.cancelledToast'));
+      setSelectedIds(new Set());
+      reload();
+    } catch {
+      toast.error(t('common.error'));
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   useEffect(() => {
     getSeasons().then((s) => setSeasons([...s].sort((a, b) => b.season - a.season))).catch(() => setSeasons([]));
@@ -204,7 +248,7 @@ export default function PassportAttestationsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
-            {byEncadreur.map((r) => (
+            {recap.pageItems.map((r) => (
               <tr key={r.encadreurId || 'none'} className="cursor-pointer hover:bg-afriland-gray-50" onClick={() => setEncadreurFilter(r.encadreurId || '')}>
                 <td className="px-4 py-3">{r.encadreurName}</td>
                 <td className="px-4 py-3 text-right">{r.total}</td>
@@ -217,6 +261,7 @@ export default function PassportAttestationsPage() {
             )}
           </tbody>
         </table>
+        <Pagination page={recap.page} totalPages={recap.totalPages} totalItems={recap.totalItems} pageSize={recap.pageSize} onPageChange={recap.setPage} />
       </div>
 
       <div className="card space-y-3">
@@ -259,10 +304,34 @@ export default function PassportAttestationsPage() {
         )}
       </div>
 
+      {/* Sélection multiple : marquer/annuler le dépôt pour tous les pèlerins
+          sélectionnés (typiquement tout un encadreur via « tout sélectionner »). */}
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-afriland-red/30 bg-afriland-red/5 p-3">
+          <span className="text-sm font-semibold text-afriland-black">
+            {t('attestations.selectedCount', { count: selectedIds.size })}
+          </span>
+          <button type="button" className="btn-primary !py-1.5 text-xs" disabled={bulkBusy} onClick={() => handleBulkDeposit(true)}>
+            {t('attestations.bulkDeposit')}
+          </button>
+          <button type="button" className="btn-secondary !py-1.5 text-xs" disabled={bulkBusy} onClick={() => handleBulkDeposit(false)}>
+            {t('attestations.bulkUndeposit')}
+          </button>
+        </div>
+      )}
+
       <div className="card overflow-x-auto p-0">
-        <table className="w-full min-w-[820px] text-left text-sm">
+        <table className="w-full min-w-[860px] text-left text-sm">
           <thead className="bg-afriland-gray-50 text-xs uppercase text-afriland-gray-600">
             <tr>
+              <th className="px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={allFilteredSelected}
+                  onChange={toggleSelectAll}
+                  aria-label={t('common.selectAll')}
+                />
+              </th>
               <th className="px-4 py-3">{t('bordereau.table.pilgrim')}</th>
               <th className="px-4 py-3">{t('bordereau.table.encadreur')}</th>
               <th className="px-4 py-3 text-right">{t('bordereau.pilgrimCount')}</th>
@@ -272,13 +341,21 @@ export default function PassportAttestationsPage() {
           </thead>
           <tbody className="divide-y divide-afriland-gray-200">
             {loading && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.loading')}</td></tr>
             )}
             {!loading && filteredItems.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-6 text-center text-afriland-gray-600">{t('common.noData')}</td></tr>
             )}
             {!loading && pageItems.map((row) => (
-              <tr key={row.bordereauId}>
+              <tr key={row.bordereauId} className={selectedIds.has(row.bordereauId) ? 'bg-afriland-red/5' : ''}>
+                <td className="px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(row.bordereauId)}
+                    onChange={() => toggleSelectOne(row.bordereauId)}
+                    aria-label={row.pilgrimName}
+                  />
+                </td>
                 <td className="px-4 py-3">
                   <p className="font-medium">{row.pilgrimName}</p>
                   <p className="text-xs text-afriland-gray-600">{row.idNumber}</p>

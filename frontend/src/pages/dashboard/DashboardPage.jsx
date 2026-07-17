@@ -19,6 +19,8 @@ import { getReporting } from '../../api/reportingApi';
 import { getEncadreurs } from '../../api/referenceDataApi';
 import { getGroupedPayments } from '../../api/visaApi';
 import StatCard from '../../components/ui/StatCard';
+import Pagination from '../../components/ui/Pagination';
+import usePagination from '../../hooks/usePagination';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { exportToExcel } from '../../utils/excel';
 import { generateReportingPdf } from '../../utils/pdf';
@@ -37,6 +39,7 @@ export default function DashboardPage() {
   const [tab, setTab] = useState('global');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const groupedPage = usePagination(groupedPayments);
 
   useEffect(() => {
     getEncadreurs().then(setEncadreurs).catch(() => setEncadreurs([]));
@@ -251,7 +254,7 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-afriland-gray-200">
-              {groupedPayments.map((g) => (
+              {groupedPage.pageItems.map((g) => (
                 <tr key={g.groupPaymentId}>
                   <td className="py-2 align-top">{formatDate(g.createdAt)}</td>
                   <td className="py-2 align-top">{g.payerName} ({g.payerIdNumber})</td>
@@ -273,6 +276,7 @@ export default function DashboardPage() {
               )}
             </tbody>
           </table>
+          <Pagination page={groupedPage.page} totalPages={groupedPage.totalPages} totalItems={groupedPage.totalItems} pageSize={groupedPage.pageSize} onPageChange={groupedPage.setPage} />
         </div>
       )}
 

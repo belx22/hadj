@@ -10,6 +10,14 @@ export async function getEncadreurGroup(encadreurId) {
   return data;
 }
 
+// Dépôt (ou annulation) des passeports par l'encadreur pour son groupe.
+// Endpoint public du portail encadreur : le backend n'agit que sur les dossiers
+// rattachés à cet encadreurId.
+export async function setEncadreurPassportDeposits(encadreurId, bordereauIds, deposited) {
+  const { data } = await axiosClient.put(`/visa/encadreur/${encadreurId}/depots-passeports`, { bordereauIds, deposited });
+  return data;
+}
+
 export async function registerPilgrimOnline(payload) {
   const { data } = await axiosClient.post('/bordereaux/inscription-en-ligne', payload);
   return data;

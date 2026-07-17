@@ -1,5 +1,6 @@
 package cm.afriland.copilotehadj.controller;
 
+import cm.afriland.copilotehadj.service.AttestationService;
 import cm.afriland.copilotehadj.service.AuditService;
 import cm.afriland.copilotehadj.service.BordereauService;
 import cm.afriland.copilotehadj.service.VersementService;
@@ -17,12 +18,15 @@ public class VisaController {
     private final VisaService visa;
     private final BordereauService bordereaux;
     private final VersementService versements;
+    private final AttestationService attestations;
     private final AuditService audit;
 
-    public VisaController(VisaService visa, BordereauService bordereaux, VersementService versements, AuditService audit) {
+    public VisaController(VisaService visa, BordereauService bordereaux, VersementService versements,
+                          AttestationService attestations, AuditService audit) {
         this.visa = visa;
         this.bordereaux = bordereaux;
         this.versements = versements;
+        this.attestations = attestations;
         this.audit = audit;
     }
 
@@ -62,6 +66,15 @@ public class VisaController {
     @SuppressWarnings("unchecked")
     public Map<String, Object> importGroupedVersement(@PathVariable String encadreurId, @RequestBody Map<String, Object> body) {
         return versements.importGroupedByEncadreur((List<Map<String, Object>>) body.get("rows"), encadreurId, body, audit.currentUser());
+    }
+
+    // Dépôt (ou annulation) des passeports par l'encadreur pour son propre groupe.
+    // Le service ne modifie que les dossiers rattachés à cet encadreurId.
+    @PutMapping("/encadreur/{encadreurId}/depots-passeports")
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> encadreurDeposits(@PathVariable String encadreurId, @RequestBody Map<String, Object> body) {
+        return attestations.toggleBulkForEncadreur(encadreurId, (List<String>) body.get("bordereauIds"),
+                Boolean.TRUE.equals(body.get("deposited")), audit.currentUser());
     }
 
     @PutMapping("/{bordereauId}/statut")
