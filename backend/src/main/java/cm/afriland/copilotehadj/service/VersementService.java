@@ -211,6 +211,67 @@ public class VersementService {
         return mapper.decorate(b);
     }
 
+    /**
+     * Rapprochement bancaire à partir de l'extrait BI : chaque ligne porte la
+     * référence (lettrage) et le montant constaté en banque. Un versement en
+     * attente dont la référence correspond est validé UNIQUEMENT si son montant
+     * déclaré est égal au montant BI ; en cas d'écart, il n'est pas validé et
+     * l'écart est signalé au gestionnaire. Les références du fichier sans
+     * versement correspondant sont retournées en « unmatched ».
+     */
+    @Transactional
+    public Map<String, Object> reconcile(List<Map<String, Object>> rows, String actor) {
+        Map<String, Long> refToAmount = new LinkedHashMap<>();
+        for (Map<String, Object> row : rows) {
+            String reference = str(row.get("reference"));
+            if (reference == null || reference.isBlank()) continue;
+            refToAmount.put(reference, longVal(row.get("amount")));
+        }
+        List<Map<String, Object>> validated = new ArrayList<>();
+        List<Map<String, Object>> discrepancies = new ArrayList<>();
+        List<Map<String, Object>> skipped = new ArrayList<>();
+        Set<String> matchedRefs = new HashSet<>();
+        for (Bordereau b : repo.findAll()) {
+            boolean changed = false;
+            for (Versement v : b.getVersements()) {
+                if (!"PENDING".equals(v.getStatus())) continue;
+                String ref = v.getReference() == null ? "" : v.getReference().trim();
+                if (ref.isEmpty() || !refToAmount.containsKey(ref)) continue;
+                matchedRefs.add(ref);
+                long bankAmount = refToAmount.get(ref) == null ? 0 : refToAmount.get(ref);
+                String pilgrimName = b.getPilgrimFirstName() + " " + b.getPilgrimLastName();
+                if (bankAmount != v.getAmount()) {
+                    // Écart de montant : on ne valide pas, on signale pour contrôle.
+                    discrepancies.add(Map.of("bordereauId", b.getId(), "versementId", v.getId(),
+                            "reference", ref, "pilgrimName", pilgrimName,
+                            "declaredAmount", v.getAmount(), "bankAmount", bankAmount));
+                    continue;
+                }
+                if (referenceAlreadyValidated(v)) {
+                    skipped.add(Map.of("bordereauId", b.getId(), "versementId", v.getId(), "reference", ref));
+                    continue;
+                }
+                v.setStatus("VALIDE");
+                v.setValidatedAt(LocalDate.now());
+                v.setValidatedBy(actor);
+                v.setNote("Rapprochement bancaire BI");
+                notifications.notifyPilgrim(b, "Copilote Hadj: votre versement a été validé et comptabilisé.");
+                validated.add(Map.of("bordereauId", b.getId(), "versementId", v.getId(), "reference", ref,
+                        "pilgrimName", pilgrimName, "amount", v.getAmount()));
+                changed = true;
+            }
+            if (changed) repo.save(b);
+        }
+        if (!validated.isEmpty()) audit.log("RAPPROCHEMENT_BANCAIRE", validated.size() + " versement(s)", actor);
+        List<String> unmatched = refToAmount.keySet().stream().filter(r -> !matchedRefs.contains(r)).toList();
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("validated", validated);
+        res.put("discrepancies", discrepancies);
+        res.put("skipped", skipped);
+        res.put("unmatched", unmatched);
+        return res;
+    }
+
     @Transactional
     public Map<String, Object> importStatusesByReference(List<Map<String, Object>> rows, String actor) {
         Map<String, String> refToStatus = new LinkedHashMap<>();

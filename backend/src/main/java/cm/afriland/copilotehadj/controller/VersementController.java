@@ -80,4 +80,11 @@ public class VersementController {
     public Map<String, Object> importStatuses(@RequestBody Map<String, Object> body) {
         return service.importStatusesByReference((List<Map<String, Object>>) body.get("rows"), audit.currentUser());
     }
+
+    // Rapprochement bancaire (fichier BI) : validation par référence + contrôle du montant.
+    @PostMapping("/rapprochement")
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> reconcile(@RequestBody Map<String, Object> body) {
+        return service.reconcile((List<Map<String, Object>>) body.get("rows"), audit.currentUser());
+    }
 }

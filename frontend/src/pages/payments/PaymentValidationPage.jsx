@@ -8,14 +8,13 @@ import {
   getVersementsHistory,
   validateVersement,
   bulkValidateVersements,
-  importPaymentStatuses,
+  reconcilePayments,
   rejectVersement,
   getRefunds,
   processRefund,
 } from '../../api/paymentsApi';
 import { getEncadreurs } from '../../api/referenceDataApi';
-import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
-import { buildPaymentStatusTemplateRows } from '../../utils/importTemplates';
+import { exportToExcel } from '../../utils/excel';
 import { generateListPdf } from '../../utils/pdf';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { VERSEMENT_STATUS_COLORS, VERSEMENT_METHODS, REGIONS } from '../../utils/constants';
@@ -172,12 +171,12 @@ function PendingTab() {
   }
 
   function handleDownloadImportTemplate() {
-    // Pré-rempli avec les versements en attente affichés (référence + client) ;
-    // la colonne Statut reste vide, à renseigner avec la décision (VALIDE/REJETE).
+    // Export des versements en attente (référence + montant déclaré) pour croiser
+    // avec l'extrait BI lors du rapprochement.
     const rows = filteredRows.length
-      ? buildPaymentStatusTemplateRows(filteredRows)
-      : [{ Reference: 'OM-2027-000123', Client: '', Statut: '' }];
-    exportTemplateToExcel(rows, 'modele-statuts-paiement.xlsx', 'StatutsPaiement', { Statut: ['VALIDE', 'REJETE'] });
+      ? filteredRows.map((v) => ({ Reference: v.reference || '', Client: v.pilgrimName || '', Montant: v.amount }))
+      : [{ Reference: '00063461', Client: '', Montant: 3263000 }];
+    exportToExcel(rows, 'versements-en-attente.xlsx', 'VersementsEnAttente');
   }
 
   function handleImportClick() {
@@ -197,24 +196,29 @@ function PendingTab() {
       const workbook = XLSX.read(buffer, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-      // La référence est recherchée quelle que soit la colonne qui la porte
-      // (Reference / Référence / Ref / Transaction...), idem pour le statut.
-      const parsed = rawRows.map((row) => {
-        const lower = Object.entries(row).map(([k, v]) => [k.trim().toLowerCase(), v]);
-        const pick = (keys) => {
-          const match = lower.find(([k]) => keys.includes(k));
-          return match ? String(match[1] ?? '').trim() : '';
-        };
-        return {
-          reference: pick(['reference', 'référence', 'ref', 'référence de la transaction', 'transaction', 'مرجع']),
-          status: pick(['statut', 'status', 'etat', 'état', 'الحالة']),
-        };
-      });
-      const summary = await importPaymentStatuses(parsed);
+      // Fichier BI : on lit la « Référence lettrage » (rapprochement) et le
+      // « Montant » constaté en banque. Le montant, souvent formaté « 3 263 000 »,
+      // est nettoyé de tout séparateur avant contrôle.
+      const parsed = rawRows
+        .map((row) => {
+          const lower = Object.entries(row).map(([k, v]) => [k.trim().toLowerCase(), v]);
+          const pick = (keys) => {
+            const match = lower.find(([k]) => keys.includes(k));
+            return match ? String(match[1] ?? '').trim() : '';
+          };
+          const reference = pick([
+            'référence lettrage', 'reference lettrage', 'ref lettrage', 'lettrage',
+            'reference', 'référence', 'ref',
+          ]);
+          const amount = Number(pick(['montant', 'amount', 'montant versé']).replace(/[^\d]/g, '')) || 0;
+          return { reference, amount };
+        })
+        .filter((r) => r.reference);
+      const summary = await reconcilePayments(parsed);
       setImportSummary(summary);
       reload();
     } catch {
-      setImportSummary({ updated: [], skipped: [], unmatched: [], parseError: true });
+      setImportSummary({ validated: [], discrepancies: [], skipped: [], unmatched: [], parseError: true });
     } finally {
       setImporting(false);
     }
@@ -271,8 +275,26 @@ function PendingTab() {
             ) : (
               <>
                 <p className="font-medium text-visa-granted">
-                  {t('paymentValidation.import.updated', { count: importSummary.updated.length })}
+                  {t('paymentValidation.import.validated', { count: importSummary.validated.length })}
                 </p>
+                {importSummary.discrepancies.length > 0 && (
+                  <div className="mt-1">
+                    <p className="font-medium text-visa-refused">
+                      {t('paymentValidation.import.discrepancies', { count: importSummary.discrepancies.length })}
+                    </p>
+                    <ul className="mt-1 list-disc pl-5 text-afriland-gray-700">
+                      {importSummary.discrepancies.map((d, i) => (
+                        <li key={i}>
+                          {d.pilgrimName} — {d.reference} :{' '}
+                          {t('paymentValidation.import.declaredVsBank', {
+                            declared: formatCurrency(d.declaredAmount),
+                            bank: formatCurrency(d.bankAmount),
+                          })}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {importSummary.skipped.length > 0 && (
                   <p className="text-visa-complement">
                     {t('paymentValidation.import.skipped', { count: importSummary.skipped.length })}

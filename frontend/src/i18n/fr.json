@@ -403,13 +403,16 @@
     "processedBy": "Traité par",
     "import": {
       "title": "Rapprochement bancaire (Excel / CSV)",
-      "help": "Importez un fichier des paiements confirmés. Colonnes : \"Reference\" (obligatoire) et \"Statut\" (VALIDE ou REJETE ; vide = VALIDE). Pour chaque versement en attente, si sa référence figure dans le fichier, son statut est mis à jour ; sinon il reste inchangé. La colonne \"Client\" est facultative (lisibilité).",
+      "help": "Importez l'extrait BI des paiements. Colonnes utilisées : « Référence lettrage » et « Montant ». Chaque versement en attente dont la référence figure dans le fichier est validé si son montant correspond ; en cas d'écart de montant, il est signalé sans être validé.",
       "downloadTemplate": "Télécharger le modèle",
       "importFile": "Importer le fichier",
       "updated": "{{count}} versement(s) mis à jour",
       "skipped": "{{count}} ignoré(s) : référence déjà comptabilisée",
       "unmatched": "{{count}} référence(s) du fichier sans versement en attente correspondant",
-      "parseError": "Fichier illisible. Vérifiez le format (Excel/CSV) et les colonnes."
+      "parseError": "Fichier illisible. Vérifiez le format (Excel/CSV) et les colonnes.",
+      "validated": "{{count}} versement(s) validé(s)",
+      "discrepancies": "{{count}} écart(s) de montant (non validés) :",
+      "declaredVsBank": "déclaré {{declared}} / banque {{bank}}"
     },
     "refunds": {
       "help": "Un visa refusé place automatiquement les versements déjà validés en attente de remboursement. Choisissez le moyen de restitution (par défaut celui du versement d'origine) et une référence.",

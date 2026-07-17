@@ -25,6 +25,12 @@ export async function importPaymentStatuses(rows) {
   return data;
 }
 
+// Rapprochement bancaire à partir de l'extrait BI (référence lettrage + montant).
+export async function reconcilePayments(rows) {
+  const { data } = await axiosClient.post('/versements/rapprochement', { rows });
+  return data;
+}
+
 export async function rejectVersement(bordereauId, versementId, reason) {
   const { data } = await axiosClient.put(`/versements/${versementId}/rejeter`, { bordereauId, reason });
   return data;
