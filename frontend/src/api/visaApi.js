@@ -50,6 +50,13 @@ export async function importPilgrims(rows, encadreurId) {
   return data;
 }
 
+// Import staff (page Clients) : l'encadreur est porté par chaque ligne (code) ;
+// encadreurId n'est qu'une valeur de repli facultative pour les lignes sans code.
+export async function importPilgrimsBulk(rows, encadreurId) {
+  const { data } = await axiosClient.post('/visa/pelerins/import', { rows, encadreurId: encadreurId || null });
+  return data;
+}
+
 export async function lookupBeneficiary(idNumber, season) {
   const { data } = await axiosClient.get(`/versements/beneficiaire/${idNumber}`, { params: { season } });
   return data;

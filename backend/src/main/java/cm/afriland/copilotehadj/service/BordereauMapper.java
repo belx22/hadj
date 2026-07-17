@@ -62,6 +62,7 @@ public class BordereauMapper {
         m.put("encadreurId", b.getEncadreurId());
         m.put("pilgrimType", b.getPilgrimType());
         m.put("pilgrimStatus", b.getPilgrimStatus());
+        m.put("gender", b.getGender());
         m.put("includesEncadreurFees", b.isIncludesEncadreurFees());
         m.put("includeInGroupTotal", b.isIncludeInGroupTotal());
         m.put("pilgrimCount", count);

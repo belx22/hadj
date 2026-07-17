@@ -48,6 +48,16 @@ public class VisaController {
         return bordereaux.importPilgrims((List<Map<String, Object>>) body.get("rows"), encadreurId, audit.currentUser());
     }
 
+    // Import staff : l'encadreur est porté par chaque ligne (colonne « Encadreur »
+    // = code), un même fichier peut donc en mélanger plusieurs. L'encadreurId du
+    // corps est facultatif : il sert de valeur de repli pour les lignes sans code.
+    @PostMapping("/pelerins/import")
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> importPilgrimsBulk(@RequestBody Map<String, Object> body) {
+        return bordereaux.importPilgrims((List<Map<String, Object>>) body.get("rows"),
+                (String) body.get("encadreurId"), audit.currentUser());
+    }
+
     @PostMapping("/encadreur/{encadreurId}/import-versement-groupe")
     @SuppressWarnings("unchecked")
     public Map<String, Object> importGroupedVersement(@PathVariable String encadreurId, @RequestBody Map<String, Object> body) {

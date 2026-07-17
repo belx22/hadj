@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
 import { useToast } from '../../context/ToastContext';
 import { getBordereaux } from '../../api/bordereauApi';
 import { getEncadreurs } from '../../api/referenceDataApi';
-import { importVisaStatuses, checkStatusAnomalies, registerPilgrimByEncadreur, importPilgrims } from '../../api/visaApi';
+import { importVisaStatuses, checkStatusAnomalies, registerPilgrimByEncadreur, importPilgrimsBulk } from '../../api/visaApi';
 import { exportToExcel, exportTemplateToExcel } from '../../utils/excel';
 import { buildVisaStatusTemplateRows } from '../../utils/importTemplates';
 import { generateListPdf } from '../../utils/pdf';
@@ -17,13 +17,16 @@ import { REGIONS, VISA_STATUSES, PILGRIM_TYPES } from '../../utils/constants';
 
 const EMPTY_REG_FORM = { pilgrimLastName: '', pilgrimFirstName: '', phone: '', idNumber: '', region: '', pilgrimType: 'PELERIN' };
 
-// Parseur des lignes du fichier d'inscription en masse (mêmes colonnes que le
-// portail encadreur), tolérant sur les en-têtes FR/EN.
+// Parseur des lignes du fichier d'inscription en masse. En-têtes tolérants
+// (EN/FR) : le modèle officiel utilise FirstName, LastName, Gender,
+// PassportNumber, Encadreur, Telephone ; les anciens en-têtes restent acceptés.
 const PILGRIM_HEADER_ALIASES = {
-  pilgrimLastName: ['pilgrimlastname', 'nom', 'nom du pèlerin'],
-  pilgrimFirstName: ['pilgrimfirstname', 'prenom', 'prénom', 'prénom du pèlerin'],
-  phone: ['phone', 'telephone', 'téléphone'],
-  idNumber: ['idnumber', 'passeport', 'passport', 'cni'],
+  pilgrimFirstName: ['firstname', 'firtname', 'pilgrimfirstname', 'prenom', 'prénom', 'prénom du pèlerin'],
+  pilgrimLastName: ['lastname', 'pilgrimlastname', 'nom', 'nom du pèlerin'],
+  gender: ['gender', 'sexe', 'genre'],
+  idNumber: ['passportnumber', 'idnumber', 'passeport', 'passport', 'cni'],
+  encadreurCode: ['encadreur', 'encadreurcode', 'code encadreur', 'code'],
+  phone: ['telephone', 'téléphone', 'phone'],
   region: ['region', 'région'],
   pilgrimType: ['pilgrimtype', 'type', 'type de pèlerin'],
 };
@@ -35,10 +38,12 @@ function normalizePilgrimRow(rawRow) {
     return match ? String(match[1] ?? '').trim() : '';
   };
   return {
-    pilgrimLastName: pick('pilgrimLastName'),
     pilgrimFirstName: pick('pilgrimFirstName'),
-    phone: pick('phone').replace(/\D/g, '').slice(0, 9),
+    pilgrimLastName: pick('pilgrimLastName'),
+    gender: pick('gender'),
     idNumber: pick('idNumber'),
+    encadreurCode: pick('encadreurCode'),
+    phone: pick('phone').replace(/\D/g, '').slice(0, 9),
     region: pick('region'),
     pilgrimType: pick('pilgrimType'),
   };
@@ -145,11 +150,12 @@ export default function ClientsPage() {
   }
 
   function handleDownloadRegisterTemplate() {
+    const encadreurCodes = activeEncadreurs.map((e) => e.code).filter(Boolean);
     exportTemplateToExcel(
-      [{ pilgrimLastName: 'Nom', pilgrimFirstName: 'Prénom', phone: '699112233', idNumber: '1002340000', region: REGIONS[0], pilgrimType: 'PELERIN' }],
+      [{ FirstName: 'Prénom', LastName: 'Nom', Gender: 'M', PassportNumber: '1002340000', Encadreur: encadreurCodes[0] || 'OS1', Telephone: '699112233' }],
       'modele-inscription-clients.xlsx',
       'Clients',
-      { region: REGIONS, pilgrimType: PILGRIM_TYPES }
+      { Gender: ['M', 'F'], Encadreur: encadreurCodes }
     );
   }
 
@@ -157,7 +163,9 @@ export default function ClientsPage() {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!regMassEncadreurId) { toast.error(t('clients.register.encadreurRequired')); return; }
+    // L'encadreur est porté par la colonne « Encadreur » de chaque ligne (par
+    // code). La sélection d'un encadreur dans l'écran reste facultative : elle
+    // ne sert que de valeur par défaut pour les lignes sans code.
 
     setRegMassImporting(true);
     setRegMassSummary(null);
@@ -167,7 +175,7 @@ export default function ClientsPage() {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawRows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       const rows = rawRows.map(normalizePilgrimRow);
-      const summary = await importPilgrims(rows, regMassEncadreurId);
+      const summary = await importPilgrimsBulk(rows, regMassEncadreurId);
       setRegMassSummary(summary);
       reload();
     } catch {
@@ -417,7 +425,7 @@ export default function ClientsPage() {
             type="button"
             className="btn-primary"
             onClick={() => regMassFileRef.current?.click()}
-            disabled={regMassImporting || !regMassEncadreurId}
+            disabled={regMassImporting}
           >
             {regMassImporting ? t('common.loading') : t('adminEncadreurs.importFile')}
           </button>

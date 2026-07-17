@@ -190,12 +190,30 @@ public class BordereauService {
                 skipped.add(Map.of("row", index, "idNumber", idNumber, "reason", "DUPLICATE_PHONE", "phone", phone));
                 continue;
             }
+            // Encadreur par ligne : la colonne « Encadreur » du fichier porte le CODE
+            // de l'encadreur (un même fichier peut donc en mélanger plusieurs). À
+            // défaut de code sur la ligne, on retombe sur l'encadreur passé en
+            // paramètre (import depuis le portail encadreur, où il est fixe).
+            String rowCode = str(row.get("encadreurCode"));
+            String targetEncadreurId = encadreurId;
+            if (rowCode != null && !rowCode.isBlank()) {
+                Encadreur enc = encadreurs.findByCode(rowCode.toUpperCase()).orElse(null);
+                if (enc == null) {
+                    errors.add(Map.of("row", index, "idNumber", idNumber, "reason", "ENCADREUR_NOT_FOUND", "encadreur", rowCode));
+                    continue;
+                }
+                targetEncadreurId = enc.getId();
+            }
+            if (targetEncadreurId == null || targetEncadreurId.isBlank()) {
+                errors.add(Map.of("row", index, "idNumber", idNumber, "reason", "MISSING_ENCADREUR"));
+                continue;
+            }
             Map<String, Object> payload = new HashMap<>(row);
             payload.put("season", season);
             payload.putIfAbsent("pilgrimType", "PELERIN");
             payload.putIfAbsent("pilgrimStatus", "NOUVEAU");
             Bordereau b = base(payload);
-            b.setEncadreurId(encadreurId);
+            b.setEncadreurId(targetEncadreurId);
             b.setSource("ENCADREUR");
             b.setVisaStatus("EN_ATTENTE");
             String password = Ids.pilgrimPassword();
@@ -282,6 +300,7 @@ public class BordereauService {
         if (p.get("encadreurId") != null) b.setEncadreurId(str(p.get("encadreurId")));
         b.setPilgrimType(p.get("pilgrimType") == null ? "PELERIN" : str(p.get("pilgrimType")));
         b.setPilgrimStatus(p.get("pilgrimStatus") == null ? "NOUVEAU" : str(p.get("pilgrimStatus")));
+        b.setGender(normalizeGender(p.get("gender")));
         b.setIncludesEncadreurFees(Boolean.TRUE.equals(p.get("includesEncadreurFees")));
         // Défaut true : seul un encadreur qui décoche explicitement sort son
         // dossier du total du groupe.
@@ -307,6 +326,18 @@ public class BordereauService {
 
     private static String str(Object o) {
         return o == null ? null : String.valueOf(o).trim();
+    }
+
+    // Normalise le sexe vers "M"/"F". Tolérant : M/Masculin/Male et H/Homme -> M ;
+    // F/Femme/Féminin/Female -> F. Toute autre valeur (ou vide) -> null.
+    private static String normalizeGender(Object o) {
+        if (o == null) return null;
+        String s = String.valueOf(o).trim();
+        if (s.isEmpty()) return null;
+        char c = Character.toUpperCase(s.charAt(0));
+        if (c == 'F') return "F";
+        if (c == 'M' || c == 'H') return "M";
+        return null;
     }
 
     private static Integer intVal(Object o) {
