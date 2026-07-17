@@ -1,6 +1,17 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatCurrency, formatDate } from './formatters';
+import afrilandLogo from '../assets/logo-afriland.png';
+
+// Charge une image (asset Vite, même origine) pour l'incruster dans un PDF.
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
 
 function addHeader(doc, title) {
   doc.setFillColor(17, 17, 17);
@@ -192,58 +203,62 @@ export function generatePassportDepositCertificate(deposit) {
 }
 
 /**
- * Attestation de dépôt collective : un document unique récapitulant tous les
- * passeports déposés d'un groupe d'encadreur (au lieu d'une attestation par
- * pèlerin). Chaque ligne = un pèlerin dont le passeport a été déposé.
+ * Attestation officielle de dépôt de passeports (Guichet unique du Hadj).
+ * Lettre reprenant le modèle papier de la banque : en-tête logo Afriland,
+ * « Yaoundé, le {date} », titre, autorisation à déposer N passeports, et bloc
+ * de signature « Pour le Guichet unique du Hadj ». N = total des passeports
+ * (somme des pilgrimCount) des dépôts fournis.
  *
  * @param {object}   options
- * @param {string}   options.encadreurName  Nom de l'encadreur (en-tête).
  * @param {string}   [options.encadreurId]  Code encadreur (nom de fichier).
- * @param {number|string} [options.season]  Saison Hadj.
- * @param {Array<{pilgrimName:string,idNumber:string,phone?:string,pilgrimCount?:number,passportDepositedAt?:string}>} options.deposits
- *        Pèlerins dont le passeport est déposé.
+ * @param {number|string} [options.season]  Année Hadj (saison).
+ * @param {Array<{pilgrimCount?:number}>} options.deposits  Dépôts pris en compte.
  */
-export function generateGroupPassportDepositCertificate({ encadreurName, encadreurId, season, deposits }) {
+export async function generateGroupPassportDepositCertificate({ encadreurId, season, deposits }) {
   const doc = new jsPDF();
-  addHeader(doc, 'Attestation de dépôt de passeports — groupe');
-
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const centerX = pageWidth / 2;
+  const year = season != null ? season : new Date().getFullYear();
   const passportsTotal = deposits.reduce((sum, d) => sum + (d.pilgrimCount || 1), 0);
 
-  doc.setFontSize(11);
-  doc.setTextColor(17, 17, 17);
-  doc.text(`Encadreur : ${encadreurName || '—'}`, 14, 45);
-  if (season != null) doc.text(`Saison Hadj : ${season}`, 14, 52);
-  doc.text(
-    `Nous attestons que les passeports des pèlerins listés ci-dessous (${passportsTotal}) ont été`,
-    14,
-    season != null ? 60 : 53,
-    { maxWidth: 182 }
-  );
-  doc.text('déposés auprès de nos services en vue du traitement de leurs dossiers de visa.', 14, season != null ? 66 : 59);
+  // En-tête : logo Afriland (à défaut, repli texte).
+  try {
+    const logo = await loadImage(afrilandLogo);
+    const logoWidth = 55;
+    const logoHeight = (logoWidth * logo.naturalHeight) / logo.naturalWidth;
+    doc.addImage(logo, 'PNG', 14, 12, logoWidth, logoHeight);
+  } catch {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(200, 16, 46);
+    doc.text('Afriland First Bank', 14, 22);
+  }
 
-  autoTable(doc, {
-    startY: season != null ? 74 : 67,
-    head: [['N°', 'Pèlerin', 'N° de passeport', 'Téléphone', 'Pèlerins', 'Date de dépôt']],
-    headStyles: { fillColor: [200, 16, 46] },
-    styles: { fontSize: 9, cellPadding: 2 },
-    alternateRowStyles: { fillColor: [246, 246, 246] },
-    body: deposits.map((d, index) => [
-      String(index + 1),
-      d.pilgrimName,
-      d.idNumber,
-      d.phone || '—',
-      String(d.pilgrimCount || 1),
-      d.passportDepositedAt ? formatDate(d.passportDepositedAt) : '—',
-    ]),
+  doc.setTextColor(17, 17, 17);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  doc.text(`Yaoundé, le ${formatDate(new Date().toISOString().slice(0, 10))}`, pageWidth - 14, 40, {
+    align: 'right',
   });
 
-  doc.setFontSize(8);
-  doc.setTextColor(89, 89, 89);
-  doc.text(
-    `Document généré le ${formatDate(new Date().toISOString().slice(0, 10))} — Copilote Hadj.`,
-    14,
-    doc.lastAutoTable.finalY + 10
-  );
+  // Titre centré.
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.text(`ATTESTATION DEPOT PASSEPORTS HADJ ${year}`, centerX, 78, { align: 'center' });
 
-  doc.save(`attestation-depot-groupe-${encadreurId || 'encadreur'}.pdf`);
+  // Corps : autorisation avec le nombre de passeports.
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  const body =
+    `Nous, AFRILAND FIRST BANK, soussignés Guichet unique du Hadj, autorisons à déposer ` +
+    `${passportsTotal} passeports dans le cadre des demandes de visas aux pèlerins pour le Hadj ${year}.`;
+  const lines = doc.splitTextToSize(body, 168);
+  doc.text(lines, 21, 100, { align: 'justify', maxWidth: 168, lineHeightFactor: 1.6 });
+
+  // Bloc signature.
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Pour le GUICHET UNIQUE DU HADJ', centerX, 150, { align: 'center' });
+
+  doc.save(`attestation-depot-passeports-hadj-${year}-${encadreurId || 'tous'}.pdf`);
 }

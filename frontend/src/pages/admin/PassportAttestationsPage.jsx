@@ -64,21 +64,17 @@ export default function PassportAttestationsPage() {
     getEncadreurs({ onlyActive: false }).then(setEncadreurs).catch(() => setEncadreurs([]));
   }, []);
 
-  function handleDownloadGroupCertificate() {
+  async function handleDownloadGroupCertificate() {
     if (depositedInSelection.length === 0) return;
-    const enc = encadreurs.find((e) => e.id === encadreurFilter);
-    generateGroupPassportDepositCertificate({
-      encadreurName: enc?.name || t('attestations.allEncadreurs'),
-      encadreurId: encadreurFilter || null,
-      season,
-      deposits: depositedInSelection.map((i) => ({
-        pilgrimName: i.pilgrimName,
-        idNumber: i.idNumber,
-        phone: i.phone,
-        pilgrimCount: i.pilgrimCount,
-        passportDepositedAt: i.passportDepositedAt,
-      })),
-    });
+    try {
+      await generateGroupPassportDepositCertificate({
+        encadreurId: encadreurFilter || null,
+        season,
+        deposits: depositedInSelection.map((i) => ({ pilgrimCount: i.pilgrimCount })),
+      });
+    } catch {
+      toast.error(t('common.error'));
+    }
   }
 
   function reload() {
