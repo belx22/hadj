@@ -33,11 +33,19 @@ public class VersementService {
         this.audit = audit;
     }
 
-    private boolean referenceAlreadyValidated(String reference, String excludeVersementId) {
+    private boolean referenceAlreadyValidated(Versement current) {
+        String reference = current.getReference();
         if (reference == null || reference.isBlank()) return false;
+        String group = current.getGroupPaymentId();
         return repo.findAll().stream().flatMap(b -> b.getVersements().stream())
                 .anyMatch(v -> "VALIDE".equals(v.getStatus()) && reference.equals(v.getReference())
-                        && !Objects.equals(v.getId(), excludeVersementId));
+                        && !Objects.equals(v.getId(), current.getId())
+                        // Deux versements d'un même paiement groupé partagent
+                        // légitimement la référence du virement : ils ne sont pas
+                        // des doublons l'un de l'autre. L'anti-doublon ne joue
+                        // qu'entre paiements distincts (groupes différents, ou
+                        // versement individuel réutilisant une référence).
+                        && !(group != null && group.equals(v.getGroupPaymentId())));
     }
 
     @Transactional
@@ -150,7 +158,7 @@ public class VersementService {
         Bordereau b = repo.findById(bordereauId).orElseThrow(() -> new ApiException(404, "NOT_FOUND"));
         Versement v = b.getVersements().stream().filter(x -> x.getId().equals(versementId)).findFirst()
                 .orElseThrow(() -> new ApiException(404, "NOT_FOUND"));
-        if (referenceAlreadyValidated(v.getReference(), versementId)) throw new ApiException(409, "REFERENCE_ALREADY_USED");
+        if (referenceAlreadyValidated(v)) throw new ApiException(409, "REFERENCE_ALREADY_USED");
         v.setStatus("VALIDE");
         v.setValidatedAt(LocalDate.now());
         v.setValidatedBy(actor);
@@ -172,7 +180,7 @@ public class VersementService {
             if (b == null) continue;
             Versement v = b.getVersements().stream().filter(x -> x.getId().equals(versementId)).findFirst().orElse(null);
             if (v == null || !"PENDING".equals(v.getStatus())) continue;
-            if (referenceAlreadyValidated(v.getReference(), versementId)) {
+            if (referenceAlreadyValidated(v)) {
                 skipped.add(Map.of("bordereauId", bordereauId, "versementId", versementId, "reference", v.getReference()));
                 continue;
             }
@@ -220,7 +228,7 @@ public class VersementService {
                 String ref = v.getReference() == null ? "" : v.getReference().trim();
                 if (ref.isEmpty() || !refToStatus.containsKey(ref)) continue;
                 String newStatus = refToStatus.get(ref);
-                if ("VALIDE".equals(newStatus) && referenceAlreadyValidated(ref, v.getId())) {
+                if ("VALIDE".equals(newStatus) && referenceAlreadyValidated(v)) {
                     skipped.add(Map.of("bordereauId", b.getId(), "versementId", v.getId(), "reference", ref));
                     continue;
                 }
