@@ -171,6 +171,11 @@ public class BordereauService {
         List<Map<String, Object>> skipped = new ArrayList<>();
         List<Map<String, Object>> errors = new ArrayList<>();
         int season = defaultSeason();
+        // Déduplication intra-fichier, indépendante du flush en base : un même
+        // passeport (ou téléphone) présent plusieurs fois dans le fichier n'est
+        // importé qu'une seule fois. Clé passeport insensible à la casse/espaces.
+        Set<String> seenIds = new HashSet<>();
+        Set<String> seenPhones = new HashSet<>();
 
         int index = 0;
         for (Map<String, Object> row : rows) {
@@ -184,9 +189,14 @@ public class BordereauService {
                 skipped.add(Map.of("row", index, "idNumber", idNumber));
                 continue;
             }
+            if (!seenIds.add(idNumber.toUpperCase())) {
+                skipped.add(Map.of("row", index, "idNumber", idNumber, "reason", "DUPLICATE_IN_FILE"));
+                continue;
+            }
             // Deux pèlerins ne peuvent pas partager le même numéro de téléphone.
             String phone = str(row.get("phone"));
-            if (phone != null && !phone.isBlank() && repo.existsByPhoneAndSeason(phone, season)) {
+            if (phone != null && !phone.isBlank()
+                    && (repo.existsByPhoneAndSeason(phone, season) || !seenPhones.add(phone))) {
                 skipped.add(Map.of("row", index, "idNumber", idNumber, "reason", "DUPLICATE_PHONE", "phone", phone));
                 continue;
             }
