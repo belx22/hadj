@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import logo from '../../assets/logo-afriland.png';
-import IslamicFinanceIllustration from '../illustrations/IslamicFinanceIllustration';
-import ArabesquePattern from '../illustrations/ArabesquePattern';
+import loginHero from '../../assets/login.png';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 
 export default function AuthLayout({ children, subtitle }) {
@@ -9,15 +8,10 @@ export default function AuthLayout({ children, subtitle }) {
 
   return (
     <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
-      {/* Panneau décoratif noir réservé au bureau (≥ lg) : sur mobile et
-          tablette il disparaît pour laisser le formulaire occuper tout l'écran. */}
-      <div className="relative hidden items-center justify-center overflow-hidden bg-afriland-black lg:flex">
-        <ArabesquePattern className="absolute inset-0" tone="#FFFFFF" opacity={0.05} />
-        <div className="relative z-10 flex max-w-sm flex-col items-center px-8 text-center">
-          <IslamicFinanceIllustration className="mb-6 w-64" />
-          <h2 className="text-xl font-bold text-white">{t('app.name')}</h2>
-          <p className="mt-2 text-sm text-afriland-gray-200/80">{t('app.tagline')}</p>
-        </div>
+      {/* Panneau visuel réservé au bureau (≥ lg) : sur mobile et tablette il
+          disparaît pour laisser le formulaire occuper tout l'écran. */}
+      <div className="relative hidden overflow-hidden bg-afriland-red lg:block">
+        <img src={loginHero} alt={t('app.name')} className="absolute inset-0 h-full w-full object-cover" />
       </div>
 
       <div className="app-shell-bg flex flex-col justify-center px-6 py-10 sm:px-12">
