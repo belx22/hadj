@@ -214,6 +214,43 @@ public class BordereauService {
         return res;
     }
 
+    /**
+     * Crée le dossier ENCADREUR propre à un encadreur (rattaché à lui-même) pour
+     * qu'il puisse ouvrir son espace de gestion de groupe via passeport +
+     * téléphone. Idempotent et sans effet de bord bloquant : ne crée rien si
+     * l'encadreur n'a pas de n° de pièce, ou si un dossier existe déjà pour ce
+     * passeport ou ce téléphone sur la saison courante. Renvoie true si un
+     * dossier a été créé.
+     */
+    @Transactional
+    public boolean createEncadreurSelfDossier(Encadreur e, String actor) {
+        String idNumber = blankToNull(e.getIdNumber());
+        if (idNumber == null) return false;
+        int season = defaultSeason();
+        if (repo.existsByIdNumberAndSeason(idNumber, season)) return false;
+        String phone = blankToNull(e.getPhone());
+        if (phone != null && repo.existsByPhoneAndSeason(phone, season)) return false;
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("pilgrimLastName", e.getLastName());
+        payload.put("pilgrimFirstName", e.getFirstName());
+        payload.put("phone", phone);
+        payload.put("idNumber", idNumber);
+        payload.put("region", e.getRegion());
+        payload.put("pilgrimType", "ENCADREUR");
+        payload.put("pilgrimStatus", "NOUVEAU");
+        payload.put("season", season);
+
+        Bordereau b = base(payload);
+        b.setEncadreurId(e.getId());
+        b.setSource("ENCADREUR");
+        b.setVisaStatus("EN_ATTENTE");
+        b.addStatusHistory(history("EN_ATTENTE"));
+        repo.save(b);
+        audit.log("CREATION_DOSSIER_ENCADREUR", b.getId(), actor);
+        return true;
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> pilgrimLogin(String idNumber, String secret) {
         Bordereau b = repo.findFirstByIdNumber(idNumber).orElse(null);

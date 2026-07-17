@@ -17,18 +17,20 @@ public class ReferenceService {
     private final AppUserRepository users;
     private final SmtpSettingsRepository smtp;
     private final BordereauRepository bordereaux;
+    private final BordereauService bordereauService;
     private final PricingService pricing;
     private final PasswordEncoder encoder;
     private final AuditService audit;
 
     public ReferenceService(EncadreurRepository encadreurs, SeasonRepository seasons, AppUserRepository users,
-                            SmtpSettingsRepository smtp, BordereauRepository bordereaux, PricingService pricing,
-                            PasswordEncoder encoder, AuditService audit) {
+                            SmtpSettingsRepository smtp, BordereauRepository bordereaux, BordereauService bordereauService,
+                            PricingService pricing, PasswordEncoder encoder, AuditService audit) {
         this.encadreurs = encadreurs;
         this.seasons = seasons;
         this.users = users;
         this.smtp = smtp;
         this.bordereaux = bordereaux;
+        this.bordereauService = bordereauService;
         this.pricing = pricing;
         this.encoder = encoder;
         this.audit = audit;
@@ -57,6 +59,10 @@ public class ReferenceService {
         e.setActive(p.get("active") == null || Boolean.TRUE.equals(p.get("active")));
         encadreurs.save(e);
         audit.log("CREATION_ENCADREUR", e.getId(), actor);
+        // Ouvre l'accès self-service de l'encadreur : sans dossier ENCADREUR
+        // rattaché, sa connexion (passeport + téléphone) renvoie « Aucun dossier
+        // trouvé ». Idempotent et non bloquant si passeport/téléphone manquants.
+        bordereauService.createEncadreurSelfDossier(e, actor);
         return e;
     }
 
