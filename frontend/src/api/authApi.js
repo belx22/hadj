@@ -5,6 +5,13 @@ export async function login(username, password) {
   return data;
 }
 
+// 2e étape de la connexion staff à deux facteurs : valide le code OTP reçu par
+// email et renvoie { token, user }.
+export async function verifyLoginOtp(username, otp) {
+  const { data } = await axiosClient.post('/auth/login/verify-otp', { username, otp });
+  return data;
+}
+
 // Le backend n'expose qu'un seul point d'entrée d'authentification : le portail
 // encadreur y accède comme les autres, mais refuse tout compte qui n'est pas un
 // encadreur (un agent d'agence ne doit pas entrer par cette porte).

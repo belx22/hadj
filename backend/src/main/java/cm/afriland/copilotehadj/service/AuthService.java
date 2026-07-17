@@ -2,9 +2,11 @@ package cm.afriland.copilotehadj.service;
 
 import cm.afriland.copilotehadj.config.JwtService;
 import cm.afriland.copilotehadj.entity.AppUser;
+import cm.afriland.copilotehadj.entity.LoginOtp;
 import cm.afriland.copilotehadj.entity.PasswordReset;
 import cm.afriland.copilotehadj.entity.SmtpSettings;
 import cm.afriland.copilotehadj.repository.AppUserRepository;
+import cm.afriland.copilotehadj.repository.LoginOtpRepository;
 import cm.afriland.copilotehadj.repository.PasswordResetRepository;
 import cm.afriland.copilotehadj.repository.SmtpSettingsRepository;
 import cm.afriland.copilotehadj.web.ApiException;
@@ -14,28 +16,37 @@ import org.springframework.stereotype.Service;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class AuthService {
 
     private static final int MAX_OTP_ATTEMPTS = 5;
 
+    // Rôles staff soumis à la double authentification (l'encadreur en est exclu :
+    // il accède à son espace via passeport + téléphone, pas par ce point d'entrée).
+    private static final Set<String> OTP_ROLES =
+            Set.of("ADMIN_DSI", "SUPERVISEUR", "GESTIONNAIRE_HADJ", "OPERATEUR_HADJ");
+
     private final AppUserRepository users;
     private final PasswordResetRepository resets;
+    private final LoginOtpRepository loginOtps;
     private final SmtpSettingsRepository smtp;
     private final PasswordEncoder encoder;
     private final JwtService jwt;
-    private final NotificationService notifications;
+    private final MailService mail;
     private final AuditService audit;
 
-    public AuthService(AppUserRepository users, PasswordResetRepository resets, SmtpSettingsRepository smtp,
-                       PasswordEncoder encoder, JwtService jwt, NotificationService notifications, AuditService audit) {
+    public AuthService(AppUserRepository users, PasswordResetRepository resets, LoginOtpRepository loginOtps,
+                       SmtpSettingsRepository smtp, PasswordEncoder encoder, JwtService jwt, MailService mail,
+                       AuditService audit) {
         this.users = users;
         this.resets = resets;
+        this.loginOtps = loginOtps;
         this.smtp = smtp;
         this.encoder = encoder;
         this.jwt = jwt;
-        this.notifications = notifications;
+        this.mail = mail;
         this.audit = audit;
     }
 
@@ -44,10 +55,61 @@ public class AuthService {
         if (user == null || !user.isActive() || !encoder.matches(password, user.getPassword())) {
             throw new ApiException(401, "INVALID_CREDENTIALS");
         }
-        Map<String, Object> safe = safeUser(user);
+
+        // 2FA : pour les rôles staff on exige un code OTP envoyé par email. Repli
+        // volontaire sur le mot de passe seul si l'OTP ne peut pas être envoyé
+        // (SMTP non configuré ou injoignable) afin de ne jamais verrouiller le
+        // staff dehors ; l'OTP se réactive dès que le SMTP fonctionne.
+        boolean hasEmail = user.getEmail() != null && !user.getEmail().isBlank();
+        if (OTP_ROLES.contains(user.getRole()) && hasEmail && mail.isConfigured()) {
+            SmtpSettings settings = smtp.findById(1).orElse(null);
+            int ttlMinutes = settings != null && settings.getOtpTtlMinutes() != null ? settings.getOtpTtlMinutes() : 10;
+            String code = Ids.otp();
+            LoginOtp otp = new LoginOtp();
+            otp.setUsername(user.getUsername());
+            otp.setOtp(code);
+            otp.setExpiresAt(System.currentTimeMillis() + (long) ttlMinutes * 60_000);
+            otp.setAttempts(0);
+            loginOtps.save(otp);
+
+            boolean sent = mail.send(user.getEmail(), "Code de connexion Copilote Hadj",
+                    "Votre code de connexion est " + code + ". Il expire dans " + ttlMinutes + " minutes.");
+            if (sent) {
+                audit.log("OTP_CONNEXION_ENVOYE", user.getUsername(), user.getUsername());
+                Map<String, Object> res = new LinkedHashMap<>();
+                res.put("otpRequired", true);
+                res.put("maskedEmail", maskEmail(user.getEmail()));
+                return res;
+            }
+            // Envoi impossible : on retombe sur le mot de passe seul et on nettoie l'OTP.
+            loginOtps.delete(otp);
+        }
+        return issueToken(user);
+    }
+
+    public Map<String, Object> verifyLoginOtp(String username, String otpInput) {
+        AppUser user = username == null ? null : users.findByUsername(username.trim()).orElse(null);
+        LoginOtp otp = user == null ? null : loginOtps.findById(user.getUsername()).orElse(null);
+        if (user == null || otp == null) throw new ApiException(400, "INVALID_OTP");
+        if (System.currentTimeMillis() > otp.getExpiresAt()) {
+            loginOtps.delete(otp);
+            throw new ApiException(400, "OTP_EXPIRED");
+        }
+        if (otp.getAttempts() >= MAX_OTP_ATTEMPTS) throw new ApiException(400, "TOO_MANY_ATTEMPTS");
+        if (!String.valueOf(otpInput).trim().equals(otp.getOtp())) {
+            otp.setAttempts(otp.getAttempts() + 1);
+            loginOtps.save(otp);
+            throw new ApiException(400, "INVALID_OTP");
+        }
+        loginOtps.delete(otp);
+        audit.log("CONNEXION_OTP", user.getUsername(), user.getUsername());
+        return issueToken(user);
+    }
+
+    private Map<String, Object> issueToken(AppUser user) {
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("token", jwt.generate(user.getUsername(), user.getRole(), user.getName()));
-        res.put("user", safe);
+        res.put("user", safeUser(user));
         return res;
     }
 
@@ -68,7 +130,7 @@ public class AuthService {
         reset.setAttempts(0);
         resets.save(reset);
 
-        notifications.sendEmail(user.getEmail(), "Code de réinitialisation",
+        mail.send(user.getEmail(), "Code de réinitialisation",
                 "Votre code de vérification est " + reset.getOtp() + ". Il expire dans " + ttlMinutes + " minutes.");
         audit.log("DEMANDE_REINITIALISATION_MDP", user.getUsername(), user.getUsername());
 

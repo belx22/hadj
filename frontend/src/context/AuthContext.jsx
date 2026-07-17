@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { login as loginApi, loginEncadreur as loginEncadreurApi } from '../api/authApi';
+import { login as loginApi, loginEncadreur as loginEncadreurApi, verifyLoginOtp as verifyLoginOtpApi } from '../api/authApi';
 
 const TOKEN_KEY = 'copilote-hadj-token';
 const USER_KEY = 'copilote-hadj-user';
@@ -26,7 +26,27 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const { token, user: loggedUser } = await loginApi(username, password);
+      const data = await loginApi(username, password);
+      // 2FA : le backend peut demander un code OTP (aucun token à ce stade).
+      if (data.otpRequired) {
+        return { otpRequired: true, maskedEmail: data.maskedEmail };
+      }
+      localStorage.setItem(TOKEN_KEY, data.token);
+      setUser(data.user);
+      return { otpRequired: false, user: data.user };
+    } catch (err) {
+      setError(err.code || 'LOGIN_ERROR');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function verifyLoginOtp(username, otp) {
+    setLoading(true);
+    setError(null);
+    try {
+      const { token, user: loggedUser } = await verifyLoginOtpApi(username, otp);
       localStorage.setItem(TOKEN_KEY, token);
       setUser(loggedUser);
       return loggedUser;
@@ -60,7 +80,7 @@ export function AuthProvider({ children }) {
   }
 
   const value = useMemo(
-    () => ({ user, loading, error, login, loginEncadreur, logout, isAuthenticated: Boolean(user) }),
+    () => ({ user, loading, error, login, verifyLoginOtp, loginEncadreur, logout, isAuthenticated: Boolean(user) }),
     [user, loading, error]
   );
 

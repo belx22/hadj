@@ -99,7 +99,7 @@ export default function SmtpSettingsPage() {
         </div>
 
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={settings.secure} onChange={(e) => update('secure', e.target.checked)} />
+          <input type="checkbox" checked={!!settings.useTls} onChange={(e) => update('useTls', e.target.checked)} />
           {t('adminSmtp.secure')}
         </label>
 

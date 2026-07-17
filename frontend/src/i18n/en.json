@@ -105,7 +105,17 @@
     "encadreurSpace": "Guide space",
     "encadreurSpaceDesc": "Track your group and the pilgrims you guide",
     "backToChoice": "Change space",
-    "sessionExpired": "Your session has expired, please sign in again"
+    "sessionExpired": "Your session has expired, please sign in again",
+    "otpTitle": "Two-step verification",
+    "otpSentTo": "A sign-in code was sent to {{email}}. Enter it to finish signing in.",
+    "otpCode": "Sign-in code (6 digits)",
+    "otpVerify": "Verify and sign in",
+    "otpBack": "Back",
+    "otpErrors": {
+      "invalidOtp": "Incorrect sign-in code",
+      "otpExpired": "The code has expired, please sign in again",
+      "tooManyAttempts": "Too many attempts. Sign in again to get a new code."
+    }
   },
   "bordereau": {
     "title": "Digital subscription slip",

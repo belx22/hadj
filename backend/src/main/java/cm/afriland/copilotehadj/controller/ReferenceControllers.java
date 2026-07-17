@@ -2,7 +2,6 @@ package cm.afriland.copilotehadj.controller;
 
 import cm.afriland.copilotehadj.entity.Encadreur;
 import cm.afriland.copilotehadj.entity.Season;
-import cm.afriland.copilotehadj.entity.SmtpSettings;
 import cm.afriland.copilotehadj.service.AuditService;
 import cm.afriland.copilotehadj.service.ReferenceService;
 import org.springframework.web.bind.annotation.*;
@@ -131,12 +130,12 @@ public class ReferenceControllers {
         }
 
         @GetMapping("/smtp")
-        public SmtpSettings getSmtp() {
-            return service.smtp();
+        public Map<String, Object> getSmtp() {
+            return service.smtpView();
         }
 
         @PutMapping("/smtp")
-        public SmtpSettings updateSmtp(@RequestBody Map<String, Object> body) {
+        public Map<String, Object> updateSmtp(@RequestBody Map<String, Object> body) {
             return service.updateSmtp(body, audit.currentUser());
         }
     }

@@ -274,19 +274,44 @@ public class ReferenceService {
     }
 
     @Transactional
-    public SmtpSettings updateSmtp(Map<String, Object> p, String actor) {
+    public Map<String, Object> updateSmtp(Map<String, Object> p, String actor) {
         SmtpSettings s = smtp();
         if (p.containsKey("host")) s.setHost(str(p.get("host")));
         if (p.containsKey("port")) s.setPort(intVal(p.get("port")));
         if (p.containsKey("username")) s.setUsername(str(p.get("username")));
-        if (p.containsKey("password")) s.setPassword(str(p.get("password")));
+        // Le mot de passe n'est jamais renvoyé par l'API (masqué) : on ne l'écrase
+        // que si l'administrateur en saisit un nouveau (valeur non vide).
+        if (p.containsKey("password")) {
+            String pw = str(p.get("password"));
+            if (pw != null && !pw.isBlank()) s.setPassword(pw);
+        }
         if (p.containsKey("fromName")) s.setFromName(str(p.get("fromName")));
         if (p.containsKey("fromEmail")) s.setFromEmail(str(p.get("fromEmail")));
         if (p.containsKey("useTls")) s.setUseTls(Boolean.TRUE.equals(p.get("useTls")));
         if (p.containsKey("otpTtlMinutes")) s.setOtpTtlMinutes(intVal(p.get("otpTtlMinutes")));
         smtp.save(s);
         audit.log("MODIFICATION_SMTP", "smtp", actor);
-        return s;
+        return smtpView();
+    }
+
+    /**
+     * Vue des paramètres SMTP exposée à l'API : le mot de passe n'est jamais
+     * renvoyé (remplacé par le booléen {@code hasPassword}).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> smtpView() {
+        SmtpSettings s = smtp();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", s.getId());
+        m.put("host", s.getHost());
+        m.put("port", s.getPort());
+        m.put("username", s.getUsername());
+        m.put("fromName", s.getFromName());
+        m.put("fromEmail", s.getFromEmail());
+        m.put("useTls", s.isUseTls());
+        m.put("otpTtlMinutes", s.getOtpTtlMinutes());
+        m.put("hasPassword", s.getPassword() != null && !s.getPassword().isBlank());
+        return m;
     }
 
     // --- Helpers ---

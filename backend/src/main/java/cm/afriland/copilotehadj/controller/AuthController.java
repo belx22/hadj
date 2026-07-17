@@ -20,6 +20,11 @@ public class AuthController {
         return auth.login(body.get("username"), body.get("password"));
     }
 
+    @PostMapping("/login/verify-otp")
+    public Map<String, Object> verifyLoginOtp(@RequestBody Map<String, String> body) {
+        return auth.verifyLoginOtp(body.get("username"), body.get("otp"));
+    }
+
     @PostMapping("/mot-de-passe-oublie")
     public Map<String, Object> forgot(@RequestBody Map<String, String> body) {
         return auth.requestPasswordReset(body.get("identifier"));

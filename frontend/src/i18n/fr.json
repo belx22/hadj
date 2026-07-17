@@ -105,7 +105,17 @@
     "encadreurSpace": "Espace encadreur",
     "encadreurSpaceDesc": "Suivi du groupe et des pèlerins encadrés",
     "backToChoice": "Changer d'espace",
-    "sessionExpired": "Votre session a expiré, veuillez vous reconnecter"
+    "sessionExpired": "Votre session a expiré, veuillez vous reconnecter",
+    "otpTitle": "Vérification en deux étapes",
+    "otpSentTo": "Un code de connexion a été envoyé à {{email}}. Saisissez-le pour terminer la connexion.",
+    "otpCode": "Code de connexion (6 chiffres)",
+    "otpVerify": "Vérifier et se connecter",
+    "otpBack": "Retour",
+    "otpErrors": {
+      "invalidOtp": "Code de connexion incorrect",
+      "otpExpired": "Le code a expiré, veuillez vous reconnecter",
+      "tooManyAttempts": "Trop de tentatives. Reconnectez-vous pour recevoir un nouveau code."
+    }
   },
   "bordereau": {
     "title": "Bordereau digital de souscription",
