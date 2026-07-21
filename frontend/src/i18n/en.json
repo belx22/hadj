@@ -628,7 +628,8 @@
       "help": "Import the list of passports already deposited (column \"idNumber\"; optional \"Depot\" column: YES/NO). Empty = deposited.",
       "imported": "{{count}} deposit(s) updated",
       "notFound": "{{count}} row(s) with no matching pilgrim",
-      "downloadGroupCertificate": "Group deposit certificate ({{count}})"
+      "downloadGroupCertificate": "Group deposit certificate ({{count}})",
+      "importTitle": "Import deposited passports (file)"
     }
   },
   "adminSeasons": {

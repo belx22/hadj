@@ -628,7 +628,8 @@
       "help": "استورد قائمة الجوازات المودعة مسبقاً (العمود \"idNumber\" ؛ العمود \"Depot\" اختياري: نعم/لا). فارغ = مودع.",
       "imported": "تم تحديث {{count}} إيداع",
       "notFound": "{{count}} سطر بدون حاج مطابق",
-      "downloadGroupCertificate": "شهادة إيداع المجموعة ({{count}})"
+      "downloadGroupCertificate": "شهادة إيداع المجموعة ({{count}})",
+      "importTitle": "استيراد الجوازات المودعة (ملف)"
     }
   },
   "adminSeasons": {

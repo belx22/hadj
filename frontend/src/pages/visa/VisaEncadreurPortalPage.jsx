@@ -779,7 +779,7 @@ export default function VisaEncadreurPortalPage({ encadreurId: propEncadreurId, 
           gestionnaire qui bascule les passeports en « reçu ». */}
       {user && (
       <div className="card space-y-3">
-        <p className="text-sm font-semibold text-afriland-black">{t('encadreurPortal.passports.title')}</p>
+        <p className="text-sm font-semibold text-afriland-black">{t('encadreurPortal.passports.importTitle')}</p>
         <p className="text-xs text-afriland-gray-600">{t('encadreurPortal.passports.help')}</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="btn-secondary" onClick={handleDownloadPassportTemplate}>

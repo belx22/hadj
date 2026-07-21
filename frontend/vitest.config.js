@@ -33,14 +33,14 @@ export default defineConfig({
         'src/router/AppRouter.jsx',
         'src/components/layout/MainLayout.jsx',
       ],
-      // Seuils = garde-fou de non-régression (légèrement sous le niveau actuel).
-      // Ils ne portent que sur le code applicatif : le faux backend des tests vit
-      // sous src/test/ (exclu ci-dessus), il ne gonfle donc plus la couverture.
+      // Seuils = garde-fou de non-régression (légèrement sous le niveau actuel :
+      // ~85 % lignes/statements). Ils ne portent que sur le code applicatif : le
+      // faux backend des tests vit sous src/test/ (exclu ci-dessus).
       thresholds: {
-        statements: 62,
-        branches: 72,
-        functions: 50,
-        lines: 62,
+        statements: 84,
+        branches: 74,
+        functions: 70,
+        lines: 84,
       },
     },
   },

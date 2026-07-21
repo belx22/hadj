@@ -628,7 +628,8 @@
       "help": "Importez la liste des passeports déjà déposés (colonne \"idNumber\" ; colonne \"Depot\" facultative : OUI/NON). Vide = déposé.",
       "imported": "{{count}} dépôt(s) mis à jour",
       "notFound": "{{count}} ligne(s) sans pèlerin correspondant",
-      "downloadGroupCertificate": "Attestation de dépôt du groupe ({{count}})"
+      "downloadGroupCertificate": "Attestation de dépôt du groupe ({{count}})",
+      "importTitle": "Import des passeports déposés (fichier)"
     }
   },
   "adminSeasons": {

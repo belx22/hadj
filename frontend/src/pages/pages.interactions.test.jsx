@@ -14,6 +14,7 @@ import SeasonsAdminPage from './admin/SeasonsAdminPage';
 import UsersAdminPage from './admin/UsersAdminPage';
 import EncadreursAdminPage from './admin/EncadreursAdminPage';
 import PaymentValidationPage from './payments/PaymentValidationPage';
+import PassportAttestationsPage from './admin/PassportAttestationsPage';
 import BordereauListPage from './bordereau/BordereauListPage';
 import * as pdf from '../utils/pdf';
 import { getEncadreurGroup } from '../api/visaApi';
@@ -93,6 +94,36 @@ describe('portail encadreur (session encadreur)', () => {
       [group[0].idNumber, group[1].idNumber].sort()
     );
   });
+
+  it('permet à l’encadreur de marquer en masse les passeports déposés', async () => {
+    loginAs(encadreur);
+    renderWithProviders(<VisaEncadreurPortalPage />, { route: '/visa/encadreur' });
+    // Sélectionne tout le groupe via la case d'en-tête, puis marque déposé.
+    const selectAll = await screen.findByLabelText(/tout sélectionner/i);
+    fireEvent.click(selectAll);
+    const markBtn = await screen.findByRole('button', { name: /^marquer déposé$/i });
+    fireEvent.click(markBtn);
+    // handleBulkDeposit vide la sélection en cas de succès → la barre disparaît.
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /^marquer déposé$/i })).toBeNull()
+    );
+  });
+});
+
+describe('attestations : dépôt de passeports en masse (staff)', () => {
+  it('sélectionne les pèlerins et marque leurs passeports déposés', async () => {
+    loginAs(gestionnaire);
+    renderWithProviders(<PassportAttestationsPage />, { route: '/attestations' });
+    // Attendre que les pèlerins de la saison soient chargés (cases de ligne
+    // présentes) avant de tout sélectionner, sinon la sélection serait vide.
+    await waitFor(() => expect(screen.getAllByRole('checkbox').length).toBeGreaterThan(1));
+    fireEvent.click(await screen.findByLabelText(/tout sélectionner/i));
+    const markBtn = await screen.findByRole('button', { name: /^marquer déposé$/i });
+    fireEvent.click(markBtn);
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /^marquer déposé$/i })).toBeNull()
+    );
+  });
 });
 
 describe('portail encadreur (session gestionnaire)', () => {
@@ -122,15 +153,17 @@ describe('portail encadreur (session gestionnaire)', () => {
 });
 
 describe('portail encadreur (montage pèlerin-encadreur, sans compte staff)', () => {
-  it('inscription visible mais dépôt des passeports masqué (réservé au staff)', async () => {
+  it('inscription et dépôt des passeports visibles, mais import fichier réservé au staff', async () => {
     // Aucune session staff (useAuth().user null) : montage type pèlerin-encadreur.
     renderWithProviders(
       <VisaEncadreurPortalPage encadreurId="ENC-001" encadreurName="Guide" />,
       { route: '/visa/pelerin/encadreur' }
     );
     await screen.findByText(/inscrire un pèlerin/i);
-    // Le dépôt des passeports (changement de statut) reste réservé au gestionnaire.
-    expect(screen.queryByText(/dépôt des passeports/i)).toBeNull();
+    // L'encadreur peut désormais sélectionner ses pèlerins et marquer les dépôts.
+    expect(screen.getByText(/dépôt des passeports/i)).toBeInTheDocument();
+    // …mais l'import des dépôts par fichier reste réservé au staff connecté.
+    expect(screen.queryByText(/import des passeports déposés/i)).toBeNull();
   });
 });
 

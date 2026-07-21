@@ -185,12 +185,35 @@ function decorateBordereau(bordereau) {
 // ---------------------------------------------------------------------------
 // Auth
 // ---------------------------------------------------------------------------
+// Interrupteur de 2FA pour les tests : quand il est activé, login renvoie
+// { otpRequired } au lieu du token (comme le backend lorsque le SMTP est
+// configuré). Le code OTP de test valide est « 123456 ».
+let loginOtpMode = false;
+export function setLoginOtpMode(value) {
+  loginOtpMode = value;
+}
+
 export async function login(username, password) {
   await delay();
   const user = db.users.find((u) => u.username === username && u.password === password);
   if (!user || user.active === false) {
     const error = new Error('INVALID_CREDENTIALS');
     error.code = 'INVALID_CREDENTIALS';
+    throw error;
+  }
+  if (loginOtpMode && user.email) {
+    return { otpRequired: true, maskedEmail: maskEmail(user.email) };
+  }
+  const { password: _pw, ...safeUser } = user;
+  return { token: fakeJwt(user), user: safeUser };
+}
+
+export async function verifyLoginOtp(username, otp) {
+  await delay();
+  const user = db.users.find((u) => u.username === username);
+  if (!user || String(otp).trim() !== '123456') {
+    const error = new Error('INVALID_OTP');
+    error.code = 'INVALID_OTP';
     throw error;
   }
   const { password: _pw, ...safeUser } = user;
@@ -1774,6 +1797,89 @@ export async function togglePassportDeposit(bordereauId, deposited, actor) {
   return decorateBordereau(bordereau);
 }
 
+// Dépôt (ou annulation) en masse pour une sélection de dossiers (page staff).
+export async function bulkTogglePassportDeposit(bordereauIds, deposited, actor) {
+  await delay(300);
+  let updated = 0;
+  (bordereauIds || []).forEach((id) => {
+    const bordereau = db.bordereaux.find((b) => b.id === id);
+    if (!bordereau) return;
+    bordereau.passportDeposited = deposited;
+    bordereau.passportDepositedAt = deposited ? new Date().toISOString().slice(0, 10) : null;
+    updated += 1;
+  });
+  if (updated > 0) {
+    addAudit(deposited ? 'DEPOT_PASSEPORT_MASSE' : 'ANNULATION_DEPOT_PASSEPORT_MASSE', `${updated} dossier(s)`, actor?.username || 'system');
+    persist();
+  }
+  return { updated };
+}
+
+// Dépôt en masse par l'encadreur pour SON groupe : seuls les dossiers rattachés
+// à l'encadreurId fourni sont modifiés (mirroir du contrôle backend).
+export async function setEncadreurPassportDeposits(encadreurId, bordereauIds, deposited, actor) {
+  await delay(300);
+  let updated = 0;
+  (bordereauIds || []).forEach((id) => {
+    const bordereau = db.bordereaux.find((b) => b.id === id);
+    if (!bordereau || bordereau.encadreurId !== encadreurId) return;
+    bordereau.passportDeposited = deposited;
+    bordereau.passportDepositedAt = deposited ? new Date().toISOString().slice(0, 10) : null;
+    updated += 1;
+  });
+  if (updated > 0) {
+    addAudit(deposited ? 'DEPOT_PASSEPORT_ENCADREUR' : 'ANNULATION_DEPOT_PASSEPORT_ENCADREUR', `${updated} dossier(s)`, actor?.username || 'system');
+    persist();
+  }
+  return { updated };
+}
+
+// Rapprochement bancaire (extrait BI) : validation par référence + contrôle du
+// montant. Montant égal => validé ; écart => signalé ; référence sans versement
+// en attente correspondant => non trouvée.
+export async function reconcilePayments(rows, actor) {
+  await delay(500);
+  const refToAmount = new Map();
+  (rows || []).forEach((r) => {
+    const ref = String(r.reference ?? '').trim();
+    if (ref) refToAmount.set(ref, Number(r.amount) || 0);
+  });
+  const validated = [];
+  const discrepancies = [];
+  const skipped = [];
+  const matched = new Set();
+  const now = new Date().toISOString().slice(0, 10);
+  db.bordereaux.forEach((bordereau) => {
+    bordereau.versements.forEach((v) => {
+      if (v.status !== 'PENDING') return;
+      const ref = String(v.reference ?? '').trim();
+      if (!ref || !refToAmount.has(ref)) return;
+      matched.add(ref);
+      const pilgrimName = `${bordereau.pilgrimFirstName} ${bordereau.pilgrimLastName}`;
+      const bankAmount = refToAmount.get(ref);
+      if (bankAmount !== v.amount) {
+        discrepancies.push({ bordereauId: bordereau.id, versementId: v.id, reference: ref, pilgrimName, declaredAmount: v.amount, bankAmount });
+        return;
+      }
+      if (isReferenceAlreadyValidated(ref, v.id)) {
+        skipped.push({ bordereauId: bordereau.id, versementId: v.id, reference: ref });
+        return;
+      }
+      v.status = 'VALIDE';
+      v.validatedAt = now;
+      v.validatedBy = actor?.username;
+      v.note = 'Rapprochement bancaire BI';
+      validated.push({ bordereauId: bordereau.id, versementId: v.id, reference: ref, pilgrimName, amount: v.amount });
+    });
+  });
+  if (validated.length > 0) {
+    addAudit('RAPPROCHEMENT_BANCAIRE', `${validated.length} versement(s)`, actor?.username || 'system');
+    persist();
+  }
+  const unmatched = [...refToAmount.keys()].filter((r) => !matched.has(r));
+  return { validated, discrepancies, skipped, unmatched };
+}
+
 // Valeurs acceptées dans la colonne « Depot » du fichier d'import : on tolère
 // les variantes courantes (OUI/NON, VRAI/FAUX, 1/0) pour absorber les exports
 // Excel localisés.
@@ -1847,5 +1953,6 @@ export async function getAuditLogs() {
 
 export function resetDb() {
   db = seedDb();
+  loginOtpMode = false;
   persist();
 }

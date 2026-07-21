@@ -43,6 +43,7 @@ const bool = (v, fallback = false) => (v === undefined ? fallback : String(v) ==
 // L'ordre compte : le premier motif qui correspond gagne.
 const ROUTES = [
   // --- Auth ---
+  ['POST', /^\/auth\/login\/verify-otp$/, ({ body }) => fake.verifyLoginOtp(body.username, body.otp)],
   ['POST', /^\/auth\/login$/, ({ body }) => fake.login(body.username, body.password)],
   ['POST', /^\/auth\/mot-de-passe-oublie$/, ({ body }) => fake.requestPasswordReset(body.identifier)],
   ['POST', /^\/auth\/reinitialiser-mot-de-passe$/, ({ body }) =>
@@ -70,6 +71,7 @@ const ROUTES = [
     fake.createGroupedVersementOnline(body.payerIdNumber, body.payerPhone, body)],
   ['POST', /^\/versements\/import-statuts$/, ({ body, actor }) =>
     fake.importPaymentStatusesByReference(body.rows, actor)],
+  ['POST', /^\/versements\/rapprochement$/, ({ body, actor }) => fake.reconcilePayments(body.rows, actor)],
   ['POST', /^\/versements$/, ({ body }) => fake.createVersementOnline(body.idNumber, body.phone, body)],
   ['PUT', /^\/versements\/valider-en-masse$/, ({ body, actor }) => fake.bulkValidateVersements(body.items, actor)],
   ['PUT', /^\/versements\/([^/]+)\/valider$/, ({ path, body, actor }) =>
@@ -88,6 +90,8 @@ const ROUTES = [
     fake.importGroupedVersementsByEncadreur(body.rows, path[1], body, actor)],
   ['POST', /^\/visa\/encadreur\/([^/]+)\/import$/, ({ path, body, actor }) =>
     fake.importPilgrims(body.rows, path[1], actor)],
+  ['PUT', /^\/visa\/encadreur\/([^/]+)\/depots-passeports$/, ({ path, body, actor }) =>
+    fake.setEncadreurPassportDeposits(path[1], body.bordereauIds, body.deposited, actor)],
   ['POST', /^\/visa\/import-statuts$/, ({ body, actor }) =>
     fake.importVisaStatuses(body.rows, actor, body.encadreurId)],
   ['GET', /^\/visa\/verification-bi$/, () => fake.checkStatusAnomalies()],
@@ -122,6 +126,8 @@ const ROUTES = [
   ['GET', /^\/attestations\/depots-passeports$/, ({ params }) => fake.getPassportDeposits(num(params.season))],
   ['POST', /^\/attestations\/depots-passeports\/import$/, ({ body, actor }) =>
     fake.importPassportDeposits(body.rows, body.season, actor)],
+  ['PUT', /^\/attestations\/depots-passeports\/masse$/, ({ body, actor }) =>
+    fake.bulkTogglePassportDeposit(body.bordereauIds, body.deposited, actor)],
   ['PUT', /^\/attestations\/depots-passeports\/([^/]+)$/, ({ path, body, actor }) =>
     fake.togglePassportDeposit(path[1], body.deposited, actor)],
 
