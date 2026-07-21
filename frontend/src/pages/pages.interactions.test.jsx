@@ -291,4 +291,15 @@ describe('pages back-office : interactions (admin connecté)', () => {
     fireEvent.change(select, { target: { value: 'Centre' } });
     await waitFor(() => expect(document.body.textContent.length).toBeGreaterThan(0));
   });
+
+  it('paiement en ligne (Payment Hub) : ouvre le widget puis confirme', async () => {
+    // Simule le widget hébergé : à l'ouverture, on déclenche onSuccess.
+    window.PayHub = { open: (opts) => opts.onSuccess({}) };
+    sessionStorage.setItem(PILGRIM_SESSION, JSON.stringify({ idNumber: '1002345684', phone: '655112299' }));
+    renderWithProviders(<VisaPelerinPaymentPage />, { route: '/visa/pelerin/paiement' });
+    const payBtn = await screen.findByRole('button', { name: /payer.*en ligne/i });
+    fireEvent.click(payBtn);
+    await waitFor(() => expect(document.body.textContent.length).toBeGreaterThan(0));
+    delete window.PayHub;
+  });
 });

@@ -625,6 +625,54 @@ export async function createVersementOnline(idNumber, phone, { method, amount, r
   return decorateBordereau(bordereau);
 }
 
+// --- Paiement en ligne via Payment Hub (mock : activé + confirmation simulée) ---
+let onlinePaySeq = 0;
+
+export async function getOnlinePaymentConfig() {
+  await delay(200);
+  return {
+    enabled: true,
+    methods: [
+      { code: 'orange', label: 'Orange Money', currency: 'XAF' },
+      { code: 'mtn', label: 'MTN MoMo', currency: 'XAF' },
+    ],
+  };
+}
+
+export async function createOnlinePayment(idNumber, phone) {
+  await delay(300);
+  const bordereau = db.bordereaux.find((b) => b.idNumber === idNumber && b.phone === phone);
+  if (!bordereau) { const e = new Error('NOT_FOUND'); e.code = 'NOT_FOUND'; throw e; }
+  const decorated = decorateBordereau(bordereau);
+  const remaining = Math.max(decorated.balance - decorated.pendingAmount, 0);
+  if (remaining <= 0) { const e = new Error('NOTHING_DUE'); e.code = 'NOTHING_DUE'; throw e; }
+  const id = `VER-ONLINE-${++onlinePaySeq}`;
+  const paymentId = `PH-${id}`;
+  bordereau.versements = [...bordereau.versements, {
+    id, amount: remaining, method: 'EN_LIGNE', reference: id, status: 'PENDING',
+    createdAt: new Date().toISOString().slice(0, 10), validatedAt: null, validatedBy: null,
+    note: null, refundStatus: null, refundedAt: null, onlinePaymentId: paymentId,
+  }];
+  persist();
+  return { paymentId, checkoutUrl: `https://pay.bbcomplex.com/checkout/${paymentId}?cs=demo`, versementId: id, amount: remaining };
+}
+
+export async function confirmOnlinePayment(paymentId) {
+  await delay(300);
+  const now = new Date().toISOString().slice(0, 10);
+  let status = 'PENDING';
+  for (const b of db.bordereaux) {
+    const v = (b.versements || []).find((x) => x.onlinePaymentId === paymentId);
+    if (v) {
+      if (v.status === 'PENDING') { v.status = 'VALIDE'; v.validatedAt = now; v.validatedBy = 'reconfirmation'; }
+      status = v.status;
+      break;
+    }
+  }
+  persist();
+  return { status };
+}
+
 // ---------------------------------------------------------------------------
 // Paiement groupé (un pèlerin règle le versement de plusieurs bénéficiaires,
 // potentiellement rattachés à des encadreurs différents) — chaque part est

@@ -1,9 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, Link, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { usePilgrim } from '../../context/PilgrimContext';
-import { createVersementOnline, createGroupedVersementOnline, lookupBeneficiary } from '../../api/visaApi';
+import {
+  createVersementOnline,
+  createGroupedVersementOnline,
+  lookupBeneficiary,
+  getOnlinePaymentConfig,
+  createOnlinePayment,
+  confirmOnlinePayment,
+} from '../../api/visaApi';
+import { loadPayHub } from '../../utils/paymentHub';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import PilgrimBottomNav from '../../components/layout/PilgrimBottomNav';
@@ -35,7 +43,17 @@ export default function VisaPelerinPaymentPage() {
   const [isGrouped, setIsGrouped] = useState(false);
   const [beneficiaries, setBeneficiaries] = useState([{ ...EMPTY_BENEFICIARY }]);
   const [groupResult, setGroupResult] = useState(null);
+  const [onlineEnabled, setOnlineEnabled] = useState(false);
+  const [payingOnline, setPayingOnline] = useState(false);
   const { page, setPage, totalPages, totalItems, pageSize, pageItems } = usePagination(dossier?.versements || []);
+
+  // Le bouton « Payer en ligne » n'apparaît que si le Payment Hub est activé et
+  // configuré côté serveur (la clé d'API et le secret n'atteignent jamais le navigateur).
+  useEffect(() => {
+    getOnlinePaymentConfig()
+      .then((c) => setOnlineEnabled(Boolean(c?.enabled)))
+      .catch(() => setOnlineEnabled(false));
+  }, []);
 
   if (!dossier) {
     return <Navigate to="/visa/pelerin" replace />;
@@ -194,6 +212,41 @@ export default function VisaPelerinPaymentPage() {
     }
   }
 
+  // Paiement en ligne : le serveur crée le paiement (clé d'API côté serveur) et
+  // renvoie l'adresse de règlement ; on ouvre la fenêtre du Hub. Au succès on
+  // reconfirme auprès du serveur (source de vérité) avant d'afficher le résultat.
+  async function handlePayOnline() {
+    setError(null);
+    setSuccess(false);
+    setPayingOnline(true);
+    try {
+      const { paymentId, checkoutUrl } = await createOnlinePayment(dossier.idNumber, dossier.phone);
+      const PayHub = await loadPayHub();
+      PayHub.open({
+        checkoutUrl,
+        onSuccess: async () => {
+          try {
+            await confirmOnlinePayment(paymentId);
+            await login(dossier.idNumber, dossier.phone);
+            setSuccess(true);
+          } catch {
+            setError(t('common.error'));
+          } finally {
+            setPayingOnline(false);
+          }
+        },
+        onError: () => {
+          setError(t('paymentPage.online.failed'));
+          setPayingOnline(false);
+        },
+        onClose: () => setPayingOnline(false),
+      });
+    } catch (err) {
+      setError(err.code === 'NOTHING_DUE' ? t('paymentPage.complete') : t('paymentPage.online.unavailable'));
+      setPayingOnline(false);
+    }
+  }
+
   return (
     <div className="app-shell-bg flex min-h-screen flex-col">
       <Header>
@@ -247,6 +300,23 @@ export default function VisaPelerinPaymentPage() {
         {remaining <= 0 && (
           <div className="card border-visa-granted/30 bg-visa-granted/5">
             <p className="text-sm font-semibold text-visa-granted">{t('paymentPage.complete')}</p>
+          </div>
+        )}
+
+        {onlineEnabled && remaining > 0 && (
+          <div className="card space-y-3 border-afriland-red/30 bg-afriland-red/5">
+            <div>
+              <p className="text-sm font-semibold text-afriland-black">{t('paymentPage.online.title')}</p>
+              <p className="text-xs text-afriland-gray-600">{t('paymentPage.online.help')}</p>
+            </div>
+            <button
+              type="button"
+              className="btn-primary w-full sm:w-auto"
+              onClick={handlePayOnline}
+              disabled={payingOnline}
+            >
+              {payingOnline ? t('common.loading') : t('paymentPage.online.pay', { amount: formatCurrency(remaining) })}
+            </button>
           </div>
         )}
 

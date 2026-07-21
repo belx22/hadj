@@ -378,6 +378,13 @@
       "cameraUnavailable": "Unable to access the camera. Check permissions or enter the information manually.",
       "cameraInsecure": "Camera scanning requires a secure connection (HTTPS). On this HTTP site, enter the reference manually.",
       "cameraDenied": "Camera access denied. Allow the camera in your browser settings, or enter the reference manually."
+    },
+    "online": {
+      "title": "Pay online",
+      "help": "Pay online with Orange Money, MTN MoMo or card, securely. The payment is confirmed automatically.",
+      "pay": "Pay {{amount}} online",
+      "failed": "Online payment failed. Try again or use another method.",
+      "unavailable": "Online payment is temporarily unavailable."
     }
   },
   "paymentValidation": {

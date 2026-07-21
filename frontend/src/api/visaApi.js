@@ -28,6 +28,25 @@ export async function createVersementOnline(idNumber, phone, versementPayload) {
   return data;
 }
 
+// --- Paiement en ligne via Payment Hub ---
+// Disponibilité + moyens activés (pour n'afficher le bouton que si c'est configuré).
+export async function getOnlinePaymentConfig() {
+  const { data } = await axiosClient.get('/versements/paiement-en-ligne/config');
+  return data;
+}
+
+// Initie le paiement du solde restant ; renvoie { checkoutUrl, paymentId, ... }.
+export async function createOnlinePayment(idNumber, phone) {
+  const { data } = await axiosClient.post('/versements/paiement-en-ligne', { idNumber, phone });
+  return data;
+}
+
+// Reconfirmation auprès du serveur (source de vérité) au retour de la page de paiement.
+export async function confirmOnlinePayment(paymentId) {
+  const { data } = await axiosClient.get(`/versements/paiement-en-ligne/${paymentId}/statut`);
+  return data;
+}
+
 export async function changeVisaStatus(bordereauId, newStatus, note) {
   const { data } = await axiosClient.put(`/visa/${bordereauId}/statut`, { status: newStatus, note });
   return data;

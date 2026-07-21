@@ -6,6 +6,7 @@ import cm.afriland.copilotehadj.entity.Versement;
 import cm.afriland.copilotehadj.repository.BordereauRepository;
 import cm.afriland.copilotehadj.repository.EncadreurRepository;
 import cm.afriland.copilotehadj.web.ApiException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,17 +21,22 @@ public class VersementService {
     private final BordereauMapper mapper;
     private final NotificationService notifications;
     private final AuditService audit;
+    private final PaymentHubService paymentHub;
+    private final ObjectMapper objectMapper;
 
-    private static final Set<String> VALIDE_ALIASES = Set.of("VALIDE", "VALIDÉ", "VALID", "OK", "CONFIRME", "CONFIRMÉ", "CONFIRMED", "PAID", "PAYE", "PAYÉ", "REGLE", "RÉGLÉ");
-    private static final Set<String> REJETE_ALIASES = Set.of("REJETE", "REJETÉ", "REJECTED", "KO", "REFUSE", "REFUSÉ", "ECHEC", "ÉCHEC", "FAILED");
+    private static final Set<String> VALIDE_ALIASES = Set.of("VALIDE", "VALIDÉ", "VALID", "OK", "CONFIRME", "CONFIRMÉ", "CONFIRMED", "PAID", "PAYE", "PAYÉ", "REGLE", "RÉGLÉ", "SUCCESS", "SUCCEEDED");
+    private static final Set<String> REJETE_ALIASES = Set.of("REJETE", "REJETÉ", "REJECTED", "KO", "REFUSE", "REFUSÉ", "ECHEC", "ÉCHEC", "FAILED", "CANCELED", "CANCELLED", "EXPIRED");
 
     public VersementService(BordereauRepository repo, EncadreurRepository encadreurRepo, BordereauMapper mapper,
-                            NotificationService notifications, AuditService audit) {
+                            NotificationService notifications, AuditService audit, PaymentHubService paymentHub,
+                            ObjectMapper objectMapper) {
         this.repo = repo;
         this.encadreurRepo = encadreurRepo;
         this.mapper = mapper;
         this.notifications = notifications;
         this.audit = audit;
+        this.paymentHub = paymentHub;
+        this.objectMapper = objectMapper;
     }
 
     private boolean referenceAlreadyValidated(Versement current) {
@@ -63,6 +69,128 @@ public class VersementService {
         repo.save(b);
         audit.log("DECLARATION_VERSEMENT", b.getId(), idNumber);
         return mapper.decorate(b);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Paiement en ligne via Payment Hub
+    // ---------------------------------------------------------------------------
+
+    /** Le paiement en ligne est-il disponible (Hub activé + configuré) ? */
+    public boolean onlinePaymentEnabled() {
+        return paymentHub.isEnabled();
+    }
+
+    public List<Map<String, Object>> onlinePaymentMethods() {
+        return paymentHub.getMethods();
+    }
+
+    /**
+     * Initie un paiement en ligne pour le solde restant du pèlerin : crée un
+     * versement PENDING (méthode EN_LIGNE) puis le paiement côté Hub, et renvoie
+     * l'adresse de règlement (checkoutUrl). Le versement n'est validé qu'à la
+     * confirmation du Hub (webhook + reconfirmation).
+     */
+    @Transactional
+    public Map<String, Object> createOnlinePayment(String idNumber, String phone) {
+        if (!paymentHub.isEnabled()) throw new ApiException(503, "PAYMENT_HUB_DISABLED");
+        Bordereau b = repo.findByIdNumberAndPhone(idNumber, phone).orElseThrow(() -> new ApiException(404, "NOT_FOUND"));
+        long remaining = mapper.targetAmount(b) - mapper.validatedAmount(b) - mapper.pendingAmount(b);
+        if (remaining <= 0) throw new ApiException(400, "NOTHING_DUE");
+
+        Versement v = new Versement();
+        v.setId(Ids.versementId());
+        v.setAmount(remaining);
+        v.setMethod("EN_LIGNE");
+        v.setReference(v.getId()); // notre référence de rapprochement = versementId
+        v.setStatus("PENDING");
+        v.setCreatedAt(LocalDate.now());
+        b.addVersement(v);
+        repo.save(b);
+
+        String payerName = b.getPilgrimFirstName() + " " + b.getPilgrimLastName();
+        Map<String, Object> metadata = Map.of("bordereauId", b.getId(), "idNumber", b.getIdNumber());
+        Map<String, Object> hub = paymentHub.createPayment(v.getReference(), remaining, payerName, v.getId(), metadata);
+        v.setOnlinePaymentId(str(hub.get("id")));
+        repo.save(b);
+        audit.log("PAIEMENT_EN_LIGNE_INITIE", b.getId() + " / " + v.getId(), idNumber);
+
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("paymentId", hub.get("id"));
+        res.put("checkoutUrl", hub.get("checkoutUrl"));
+        res.put("versementId", v.getId());
+        res.put("amount", remaining);
+        return res;
+    }
+
+    /** Reconfirme un paiement auprès du Hub (source de vérité) et met à jour le versement. */
+    @Transactional
+    public Map<String, Object> confirmOnlinePayment(String paymentId) {
+        Versement v = findByOnlinePaymentId(paymentId);
+        if (v == null) throw new ApiException(404, "NOT_FOUND");
+        Bordereau b = v.getBordereau();
+        String status = str(paymentHub.getPayment(paymentId).get("status"));
+        applyOnlineStatus(b, v, status, "reconfirmation");
+        repo.save(b);
+        return Map.of("status", v.getStatus() == null ? "PENDING" : v.getStatus());
+    }
+
+    /**
+     * Traite une notification signée du Hub. La signature est vérifiée sur le
+     * corps BRUT ; on reconfirme ensuite avec le Hub (source de vérité) avant
+     * d'agir. Idempotent : une même notification reçue deux fois n'a pas d'effet.
+     */
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> handleWebhook(String rawBody, String signature) {
+        if (!paymentHub.verifySignature(rawBody, signature)) throw new ApiException(401, "INVALID_SIGNATURE");
+        String paymentId;
+        String eventStatus;
+        try {
+            Map<String, Object> event = objectMapper.readValue(rawBody, Map.class);
+            paymentId = str(event.get("id"));
+            eventStatus = str(event.get("status"));
+        } catch (Exception e) {
+            throw new ApiException(400, "INVALID_PAYLOAD");
+        }
+        Versement v = paymentId == null ? null : findByOnlinePaymentId(paymentId);
+        if (v == null) return Map.of("received", true); // inconnu → on acquitte sans agir
+        Bordereau b = v.getBordereau();
+        String status;
+        try {
+            status = str(paymentHub.getPayment(paymentId).get("status"));
+        } catch (Exception e) {
+            status = eventStatus; // Hub injoignable : on se rabat sur l'événement signé
+        }
+        applyOnlineStatus(b, v, status, "payment-hub");
+        repo.save(b);
+        return Map.of("received", true);
+    }
+
+    private Versement findByOnlinePaymentId(String paymentId) {
+        if (paymentId == null || paymentId.isBlank()) return null;
+        return repo.findAll().stream().flatMap(x -> x.getVersements().stream())
+                .filter(v -> paymentId.equals(v.getOnlinePaymentId()))
+                .findFirst().orElse(null);
+    }
+
+    private void applyOnlineStatus(Bordereau b, Versement v, String status, String actor) {
+        if (!"PENDING".equals(v.getStatus())) return; // déjà tranché → idempotent
+        String s = status == null ? "" : status.trim().toUpperCase();
+        if (VALIDE_ALIASES.contains(s)) {
+            v.setStatus("VALIDE");
+            v.setValidatedAt(LocalDate.now());
+            v.setValidatedBy(actor);
+            v.setNote("Paiement en ligne (Payment Hub)");
+            notifications.notifyPilgrim(b, "Copilote Hadj: votre paiement en ligne a été confirmé et comptabilisé.");
+            audit.log("PAIEMENT_EN_LIGNE_CONFIRME", b.getId() + " / " + v.getId(), actor);
+        } else if (REJETE_ALIASES.contains(s)) {
+            v.setStatus("REJETE");
+            v.setValidatedAt(LocalDate.now());
+            v.setValidatedBy(actor);
+            v.setNote("Paiement en ligne échoué");
+            audit.log("PAIEMENT_EN_LIGNE_ECHEC", b.getId() + " / " + v.getId(), actor);
+        }
+        // sinon toujours en cours côté Hub : on ne change rien.
     }
 
     @Transactional

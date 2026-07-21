@@ -72,6 +72,9 @@ const ROUTES = [
   ['POST', /^\/versements\/import-statuts$/, ({ body, actor }) =>
     fake.importPaymentStatusesByReference(body.rows, actor)],
   ['POST', /^\/versements\/rapprochement$/, ({ body, actor }) => fake.reconcilePayments(body.rows, actor)],
+  ['GET', /^\/versements\/paiement-en-ligne\/config$/, () => fake.getOnlinePaymentConfig()],
+  ['GET', /^\/versements\/paiement-en-ligne\/([^/]+)\/statut$/, ({ path }) => fake.confirmOnlinePayment(path[1])],
+  ['POST', /^\/versements\/paiement-en-ligne$/, ({ body }) => fake.createOnlinePayment(body.idNumber, body.phone)],
   ['POST', /^\/versements$/, ({ body }) => fake.createVersementOnline(body.idNumber, body.phone, body)],
   ['PUT', /^\/versements\/valider-en-masse$/, ({ body, actor }) => fake.bulkValidateVersements(body.items, actor)],
   ['PUT', /^\/versements\/([^/]+)\/valider$/, ({ path, body, actor }) =>

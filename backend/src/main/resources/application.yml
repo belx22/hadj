@@ -35,6 +35,16 @@ copilote:
   seed:
     # Injecte le jeu de données de démonstration au démarrage si la base est vide.
     enabled: ${COPILOTE_SEED_ENABLED:true}
+  # Paiement en ligne via Payment Hub (pay.bbcomplex.com). La clé d'API et le
+  # secret de signature ne doivent JAMAIS atteindre le navigateur : seuls des
+  # appels serveur→serveur les utilisent. Désactivé tant qu'ils ne sont pas
+  # renseignés (le bouton « Payer en ligne » n'apparaît alors pas).
+  payment-hub:
+    enabled: ${PAYMENT_HUB_ENABLED:false}
+    base-url: ${PAYMENT_HUB_BASE_URL:https://pay.bbcomplex.com}
+    api-key: ${PAYMENT_HUB_API_KEY:}
+    secret: ${PAYMENT_HUB_SECRET:}
+    currency: ${PAYMENT_HUB_CURRENCY:XAF}
 
 logging:
   level:

@@ -87,4 +87,32 @@ public class VersementController {
     public Map<String, Object> reconcile(@RequestBody Map<String, Object> body) {
         return service.reconcile((List<Map<String, Object>>) body.get("rows"), audit.currentUser());
     }
+
+    // --- Paiement en ligne (Payment Hub) — endpoints publics (self-service pèlerin) ---
+
+    // Disponibilité + moyens activés, pour aligner l'interface.
+    @GetMapping("/paiement-en-ligne/config")
+    public Map<String, Object> onlinePaymentConfig() {
+        return Map.of("enabled", service.onlinePaymentEnabled(),
+                "methods", service.onlinePaymentMethods());
+    }
+
+    // Initie le paiement du solde restant : renvoie l'adresse de règlement (checkoutUrl).
+    @PostMapping("/paiement-en-ligne")
+    public Map<String, Object> createOnlinePayment(@RequestBody Map<String, String> body) {
+        return service.createOnlinePayment(body.get("idNumber"), body.get("phone"));
+    }
+
+    // Reconfirmation (source de vérité) : à appeler au retour de la page de paiement.
+    @GetMapping("/paiement-en-ligne/{paymentId}/statut")
+    public Map<String, Object> confirmOnlinePayment(@PathVariable String paymentId) {
+        return service.confirmOnlinePayment(paymentId);
+    }
+
+    // Notification signée du Hub : le corps BRUT est requis pour vérifier le HMAC.
+    @PostMapping("/paiement-en-ligne/webhook")
+    public Map<String, Object> onlinePaymentWebhook(@RequestBody String rawBody,
+                                                    @RequestHeader(value = "X-PayHub-Signature", required = false) String signature) {
+        return service.handleWebhook(rawBody, signature);
+    }
 }

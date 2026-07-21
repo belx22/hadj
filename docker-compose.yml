@@ -34,6 +34,12 @@ services:
       COPILOTE_JWT_SECRET: ${COPILOTE_JWT_SECRET:-copilote-hadj-secret-key-change-me-in-production-please-1234567890}
       COPILOTE_CORS_ORIGINS: ${COPILOTE_CORS_ORIGINS:-http://localhost:4456,http://62.169.26.178:4456}
       COPILOTE_SEED_ENABLED: ${COPILOTE_SEED_ENABLED:-true}
+      # Paiement en ligne (Payment Hub). Désactivé tant que la clé n'est pas fournie.
+      PAYMENT_HUB_ENABLED: ${PAYMENT_HUB_ENABLED:-false}
+      PAYMENT_HUB_BASE_URL: ${PAYMENT_HUB_BASE_URL:-https://pay.bbcomplex.com}
+      PAYMENT_HUB_API_KEY: ${PAYMENT_HUB_API_KEY:-}
+      PAYMENT_HUB_SECRET: ${PAYMENT_HUB_SECRET:-}
+      PAYMENT_HUB_CURRENCY: ${PAYMENT_HUB_CURRENCY:-XAF}
     # Publié sur la boucle locale uniquement (jamais exposé sur l'extérieur) :
     # permet au serveur de dev Vite (`npm run dev`) de proxifier /api vers le
     # backend conteneurisé. En production, le trafic passe par Nginx.

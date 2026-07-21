@@ -55,6 +55,10 @@ public class SecurityConfig {
                                 "/versements",
                                 "/versements/groupe",
                                 "/versements/beneficiaire/**",
+                                // Paiement en ligne (self-service pèlerin) : config, création,
+                                // reconfirmation et notification signée du Hub.
+                                "/versements/paiement-en-ligne",
+                                "/versements/paiement-en-ligne/**",
                                 "/encadreurs",
                                 "/saisons",
                                 "/parametrage/prix-officiel"

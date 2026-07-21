@@ -46,4 +46,8 @@ public class Versement {
     private String groupPaymentId;
     private String payerIdNumber;
     private String payerName;
+
+    // Paiement en ligne (Payment Hub) : identifiant du paiement côté Hub, pour
+    // relier la notification (webhook) et la reconfirmation à ce versement.
+    private String onlinePaymentId;
 }
