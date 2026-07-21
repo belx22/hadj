@@ -15,8 +15,8 @@ import VisaEncadreurPortalPage from './visa/VisaEncadreurPortalPage';
 const admin = { id: 'U-5', username: 'admin', role: 'ADMIN_DSI', name: 'Admin', agency: 'Yaoundé - Siège' };
 
 function loginAdmin() {
-  localStorage.setItem('copilote-hadj-token', 'test-token');
-  localStorage.setItem('copilote-hadj-user', JSON.stringify(admin));
+  sessionStorage.setItem('copilote-hadj-token', 'test-token');
+  sessionStorage.setItem('copilote-hadj-user', JSON.stringify(admin));
 }
 
 // Parcourt une page : remplit les champs texte/nombre, sélectionne une option
@@ -112,7 +112,7 @@ describe('validation des paiements : onglets + validation (données semées)', (
 describe('portail encadreur : inscription d’un pèlerin', () => {
   beforeEach(() => {
     loginAdmin();
-    localStorage.setItem(
+    sessionStorage.setItem(
       'copilote-hadj-user',
       JSON.stringify({ id: 'U-4', username: 'encadreur1', role: 'ENCADREUR', name: 'Guide', encadreurId: 'ENC-001' })
     );

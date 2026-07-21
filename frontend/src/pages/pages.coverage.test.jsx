@@ -56,8 +56,8 @@ const TOKEN_KEY = 'copilote-hadj-token';
 const PILGRIM_SESSION = 'copilote-hadj-pilgrim-session';
 
 function loginAs(user) {
-  localStorage.setItem(TOKEN_KEY, 'test-token');
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  sessionStorage.setItem(TOKEN_KEY, 'test-token');
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
 const admin = { id: 'U-5', username: 'admin', role: 'ADMIN_DSI', name: 'Admin', agency: 'Yaoundé - Siège' };
@@ -128,7 +128,7 @@ describe('composants de support', () => {
     loginAs(admin);
     renderWithProviders(<SessionWatcher />, { route: '/dashboard' });
     window.dispatchEvent(new Event('auth:unauthorized'));
-    await waitFor(() => expect(localStorage.getItem(TOKEN_KEY)).toBeNull());
+    await waitFor(() => expect(sessionStorage.getItem(TOKEN_KEY)).toBeNull());
   });
 
   it('ProtectedRoute redirige selon la session et le rôle', async () => {
@@ -689,7 +689,7 @@ describe('couverture complémentaire', () => {
     const otp = await screen.findByLabelText(/code de connexion/i);
     fireEvent.change(otp, { target: { value: '123456' } });
     fireEvent.click(screen.getByRole('button', { name: /vérifier/i }));
-    await waitFor(() => expect(localStorage.getItem(TOKEN_KEY)).toBeTruthy());
+    await waitFor(() => expect(sessionStorage.getItem(TOKEN_KEY)).toBeTruthy());
     setLoginOtpMode(false);
   });
 

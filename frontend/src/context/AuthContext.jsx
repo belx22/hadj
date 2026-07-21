@@ -8,7 +8,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    const raw = localStorage.getItem(USER_KEY);
+    const raw = sessionStorage.getItem(USER_KEY);
     return raw ? JSON.parse(raw) : null;
   });
   const [loading, setLoading] = useState(false);
@@ -16,9 +16,9 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      sessionStorage.setItem(USER_KEY, JSON.stringify(user));
     } else {
-      localStorage.removeItem(USER_KEY);
+      sessionStorage.removeItem(USER_KEY);
     }
   }, [user]);
 
@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
       if (data.otpRequired) {
         return { otpRequired: true, maskedEmail: data.maskedEmail };
       }
-      localStorage.setItem(TOKEN_KEY, data.token);
+      sessionStorage.setItem(TOKEN_KEY, data.token);
       setUser(data.user);
       return { otpRequired: false, user: data.user };
     } catch (err) {
@@ -47,7 +47,7 @@ export function AuthProvider({ children }) {
     setError(null);
     try {
       const { token, user: loggedUser } = await verifyLoginOtpApi(username, otp);
-      localStorage.setItem(TOKEN_KEY, token);
+      sessionStorage.setItem(TOKEN_KEY, token);
       setUser(loggedUser);
       return loggedUser;
     } catch (err) {
@@ -63,7 +63,7 @@ export function AuthProvider({ children }) {
     setError(null);
     try {
       const { token, user: loggedUser } = await loginEncadreurApi(username, password);
-      localStorage.setItem(TOKEN_KEY, token);
+      sessionStorage.setItem(TOKEN_KEY, token);
       setUser(loggedUser);
       return loggedUser;
     } catch (err) {
@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
   }
 
   function logout() {
-    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
     setUser(null);
   }
 

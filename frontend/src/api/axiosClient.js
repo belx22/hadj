@@ -8,7 +8,7 @@ const axiosClient = axios.create({
 });
 
 axiosClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('copilote-hadj-token');
+  const token = sessionStorage.getItem('copilote-hadj-token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -19,8 +19,8 @@ axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('copilote-hadj-token');
-      localStorage.removeItem('copilote-hadj-user');
+      sessionStorage.removeItem('copilote-hadj-token');
+      sessionStorage.removeItem('copilote-hadj-user');
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
     // Le backend renvoie un code applicatif ({ code, message }) : on l'expose sur

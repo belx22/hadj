@@ -32,8 +32,8 @@ const TOKEN_KEY = 'copilote-hadj-token';
 const PILGRIM_SESSION = 'copilote-hadj-pilgrim-session';
 
 function loginAs(user) {
-  localStorage.setItem(TOKEN_KEY, 'test-token');
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  sessionStorage.setItem(TOKEN_KEY, 'test-token');
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 const admin = { id: 'U-5', username: 'admin', role: 'ADMIN_DSI', name: 'Admin', agency: 'Yaoundé - Siège' };
 const encadreur = { id: 'U-4', username: 'encadreur1', role: 'ENCADREUR', name: 'Guide', encadreurId: 'ENC-001' };

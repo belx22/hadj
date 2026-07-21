@@ -27,8 +27,8 @@ import PowerBiConnectorPage from './admin/PowerBiConnectorPage';
 // Authentifie un admin (l'AuthProvider lit le user depuis localStorage à l'init)
 // pour que les pages back-office s'affichent avec un rôle valide.
 function loginAdmin() {
-  localStorage.setItem('copilote-hadj-token', 'test-token');
-  localStorage.setItem(
+  sessionStorage.setItem('copilote-hadj-token', 'test-token');
+  sessionStorage.setItem(
     'copilote-hadj-user',
     JSON.stringify({ id: 'U-5', username: 'admin', role: 'ADMIN_DSI', name: 'Admin Test', agency: 'Yaoundé - Siège' })
   );
