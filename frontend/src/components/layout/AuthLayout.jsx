@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import logo from '../../assets/logo-afriland.png';
 import loginHero from '../../assets/login.png';
+import islamicLogo from '../../assets/Image2.png';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 
 export default function AuthLayout({ children, subtitle }) {
@@ -12,6 +13,13 @@ export default function AuthLayout({ children, subtitle }) {
           disparaît pour laisser le formulaire occuper tout l'écran. */}
       <div className="relative hidden overflow-hidden bg-afriland-red lg:block">
         <img src={loginHero} alt={t('app.name')} className="absolute inset-0 h-full w-full object-cover" />
+        {/* Logo Afriland — Banque Islamique, en haut à gauche du visuel. Fond
+            blanc léger pour rester lisible sur le rouge. */}
+        <img
+          src={islamicLogo}
+          alt="Afriland First Bank — Banque Islamique"
+          className="absolute left-6 top-6 z-10 w-44 rounded-md bg-white/90 p-2 shadow-md"
+        />
       </div>
 
       <div className="app-shell-bg flex flex-col justify-center px-6 py-10 sm:px-12">
